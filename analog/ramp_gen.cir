@@ -1,0 +1,14 @@
+* Ramp Generator
+
+.subckt ramp_gen vdd vss vref vo
+.include lib/lmx58_lm2904.lib
+
+.param R = 100
+.param C = 1u
+
+xramp vref vn vdd vss vo LMX58_LM2904
+
+r1   vref vn  {R}
+c1   vn   vo  {C}
+
+.ends

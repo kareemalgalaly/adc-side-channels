@@ -1,0 +1,2 @@
+* spiceinit for ti pspice compatibility
+set ngbehavior=ps
