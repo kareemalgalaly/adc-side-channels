@@ -1,8 +1,10 @@
 module control (
+    // dclk drst dcomp dstart_over
     input  clk,
     input  rstn,
     input  comp_out,
     input  restart,
+    // drs dre db dvld dc7 dc6 dc5 dc4 dc3 dc2 dc1 dc0
     output ramp_reset,
     output ramp_en,
     output busy,
@@ -21,6 +23,8 @@ typedef enum {
 
 state_e state_d;
 state_e state_q;
+
+// initial $display("Loaded verilog");
 
 always @(*) begin
     if (rstn == 0) begin
@@ -47,6 +51,8 @@ always @(posedge clk) begin
     // else begin
     state_q <= state_d;
     // end
+
+    // $display("clk");
 
     if (state_d == START) count = 0;
     else if (state_d == COUNT) count += 1;

@@ -1,33 +1,38 @@
 * Single slope adc
-.include lib/lmx58_lm2904.lib
+*.include lib/lmx58_lm2904.lib
+.include ~/Documents/SpiceLibraries/LT/ADI_ng.lib
+.include ~/Documents/SpiceLibraries/kareem.lib
 
-.subckt ramp_gen vdd vss vref vo ; res=100 cap=1u
+.subckt RAMP_GEN vdd vss vref vo vrst ven; res=100 cap=1u
+    *srst vn vo    vrst vss sw_ideal
+    *sin  vref vin ven  vss sw_ideal
 
-    xramp vref vn vdd vss vo LMX58_LM2904
-
-    r1   vref vn  1
-    c1   vn   vo  1
+*   xramp vref vn vdd vss vo LMX58_LM2904
+    xramp vref  vn vdd vss vo AD8648
+    r1    vref  vn  100
+    c1    vn   vo  1n
 .ends
 
-.subckt ADC_CORE vdd vss vin vref reset comp
-    xcomp vramp vin vdd vss vcomp LMX58_LM2904   ; comparator
-    xramp vdd vss vref vramp RAMP_GEN ;res=100 cap=1u ; ramp generator
+.subckt ADC_CORE vdd vss vin vref reset en comp
+*   xcomp vramp vin vdd vss vcomp LMX58_LM2904   ; comparator
+    xcomp vramp vin vdd vss vcomp AD8648         ; comparator
+    xramp vdd vss vref vramp reset en RAMP_GEN ;res=100 cap=1u ; ramp generator
 .ends
 
 .subckt ADC vdd vss vin vref vclk vreset vrestart vo7 vo6 vo5 vo4 vo3 vo2 vo1 vo0  
     .param vdd = 3.3
     .param vss = -3.3
     .param vmid = {(vdd-vss)/2+vss}
-    .model auto_adc adc_bridge(in_low  = {vmid-0.1}  in_high  = {vmid+0.1})
-    .model auto_dac dac_bridge(out_low = {vss}       out_high = {vdd})
+    .model auto_adc adc_bridge(in_low  = {vmid-.1}  in_high  = {vmid+.1})
+    .model auto_dac dac_bridge(out_low = {vss}      out_high = {vdd})
 
-    xcore vdd vss vin vref vrreset vcomp ADC_CORE
+    xcore vdd vss vin vref vrreset vre vcomp ADC_CORE
 
     a_dig_ctrl [dclk drst dcomp dstart_over] [drs dre db dvld dc7 dc6 dc5 dc4 dc3 dc2 dc1 dc0] null dmodel
     .model dmodel d_cosim simulation="adc.so"
 
     abridge_a [vclk vreset vcomp vrestart] [dclk drst dcomp dstart_over] auto_adc ; analog to digital
-    abridge_d [drs dre db dvld dc7 dc6 dc5 dc4 dc3 dc2 dc1 dc0 drs] [vrreset vre vb vv vo7 vo6 vo5 vo4 vo3 vo2 vo1 vo0] auto_dac ; digital to analog
+    abridge_d [drs dre db dvld dc7 dc6 dc5 dc4 dc3 dc2 dc1 dc0] [vrreset vre vb vv vo7 vo6 vo5 vo4 vo3 vo2 vo1 vo0] auto_dac ; digital to analog
 .ends
 
 .param vdd=3.3
@@ -36,31 +41,35 @@
 
 * Clock/Reset
 
-r0 vc0 gnd 1k
-r1 vc1 gnd 1k
-r2 vc2 gnd 1k
-r3 vc3 gnd 1k
-r4 vc4 gnd 1k
-r5 vc5 gnd 1k
-r6 vc6 gnd 1k
-r7 vc7 gnd 1k
+* r0 vc0 gnd 1k
+* r1 vc1 gnd 1k
+* r2 vc2 gnd 1k
+* r3 vc3 gnd 1k
+* r4 vc4 gnd 1k
+* r5 vc5 gnd 1k
+* r6 vc6 gnd 1k
+* r7 vc7 gnd 1k
 
 xadc vdd vss vin vref vclk vrst vrestart vc7 vc6 vc5 vc4 vc3 vc2 vc1 vc0 ADC
 
-vdd  vdd  gnd  3.3
-vss  vss  gnd -3.3
+vdd  vdd  gnd {vdd}
+vss  vss  gnd {vss}
 vin  vin  gnd  1
 vref vref gnd -1
 
-vclk vclk gnd PULSE({vss} {vdd} {per/2} 1n 1n {per/2} {per})
-vrst vrst gnd PWL(0 {vss}, {per*4}, {vss}, {per*4.1}, {vdd})
-vrestart vrestart gnd PULSE({vss} {vdd} {per*6.5} 1n 1n {per} {per*256})
+vclk vclk gnd PULSE({vss} {vdd} {per/2} 10n 10n {per/2} {per})
+vrst vrst gnd PWL(0 {vss}, {per*4}, {vss}, {per*4.2}, {vdd})
+vrestart vrestart gnd PULSE({vss} {vdd} {per*6.2} 10n 10n {per} {per*256})
 
 .control
-tran 100n 40u
-plot V(vclk)*.1 V(vrst)*.1+.1 V(xadc.vcomp)
-plot V(vc0)/{vdd} V(vc1)/{vdd}+1 V(vc2)/{vdd}+2 V(vc3)/{vdd}+3
-plot V(vin) V(xadc.vramp) V(xadc.xcore.vcomp)
+tran 100n 550u uic
+plot V(vrst) V(vrestart)
+plot V(vc0)/128 + V(vc1)/64 + V(vc2)/32 + V(vc3)/16 + V(vc4)/8 + V(vc5)/4 + V(vc6)/2 + V(vc7)
+plot V(vin) V(xadc.xcore.vramp) V(xadc.xcore.vcomp)
+plot I(vdd)
+
+*linearize I(vdd)
+*wrdata out.txt I(vdd)
 .endc
 
 .end
