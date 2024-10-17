@@ -1,0 +1,39 @@
+* ADC Library
+* Author: Kareem Ahmad
+
+.include ~/Documents/SpiceLibraries/LT/ADI_ng.lib
+.include ~/Documents/SpiceLibraries/kareem.lib
+
+* Ramp Generator
+.subckt RAMP_GEN vref vo reset enable vdd vss r=100 c=1u; res=100 cap=1u
+    srst vn   vo  reset  vss sw_ideal_n
+    *sin  vref vin enable vss sw_ideal_n
+
+    xamp vss   vn vdd vss vo AD8648
+    r1   vref  vn  {r}; 100
+    c1   vn    vo  {c}; 500n
+.ends
+
+* Generic ADC Core
+.subckt ADC_CORE vin vref comp_out reset enable vdd vss r=100 c=1u
+    xcomp ramp_out vin vdd vss comp_out AD8648
+    xramp vref ramp_out reset enable vdd vss RAMP_GEN r={r} c={c}
+.ends
+
+* Generic ADC
+.subckt ADC vin vref resetn restart 7 6 5 4 3 2 1 0 vdd vss vdd=3.3 vss=0 r=100 c=1u
+    .param vmid = {(vdd-vss)/2+vss}
+
+    * Analog Components
+    xcore vin vref comp_out restart enable vdd vss ADC_CORE r={r} c={c}
+
+    * Digital Components
+    a_dig_ctrl [d_clk d_resetn d_comp_out d_start_over] [d_ramp_reset d_enable d_busy d_valid d7 d6 d5 d4 d3 d2 d1 d0] null dmodel
+    .model dmodel d_cosim simulation="adc.so"
+
+    * Interface
+    abridge_a [clk resetn comp_out restart] [d_clk d_resetn d_comp_out d_start_over] auto_adc
+    abridge_d [d_ramp_reset d_enable d_busy d_valid d7 d6 d5 d4 d3 d2 d1 d0] [rreset enable busy valid 7 6 5 4 3 2 1 0] auto_dac
+    .model auto_adc adc_bridge(in_low  = {vmid-.1}  in_high  = {vmid+.1})
+    .model auto_dac dac_bridge(out_low = {vss}      out_high = {vdd})
+.ends
