@@ -9,7 +9,7 @@
 .param vdd=3.3
 .param vss=0
 .param per={1u}
-.param rise={per/10}
+.param rise={per/5}
 
 * Supplies / References
 
@@ -25,8 +25,17 @@ vresetn  resetn  gnd PWL(0 {vss}, {per*8}, {vss}, {per*8.2}, {vdd})
 
 * DUT
 
-*xadc vin vref resetn restart 7 6 5 4 3 2 1 0 vdd vss ADC vdd={vdd} vss={vss}
-xcore vin vref comp_out restart resetn vdd gnd ADC_CORE r=250 c={330n}
+*xcore vin vref comp_out restart resetn vdd gnd ADC_CORE r=250 c={330n}
+xadc vin vref clock resetn restart d7 d6 d5 d4 d3 d2 d1 d0 vdd gnd ADC vdd={vdd} vss={vss}
+
+r7 d7 gnd 1k
+r6 d6 gnd 1k
+r5 d5 gnd 1k
+r4 d4 gnd 1k
+r3 d3 gnd 1k
+r2 d2 gnd 1k
+r1 d1 gnd 1k
+r0 d0 gnd 1k
 
 .options TRTOL=1.0 CHGTOL=1e-16 ; switches near caps
 
@@ -35,18 +44,26 @@ tran 10n 550u uic
 *tran 100n 550u
 
 * adc_core
-plot V(vin) V(comp_out) V(xcore.ramp_out) V(restart)
-plot V(resetn) V(restart)
+* plot V(vin) V(comp_out) V(xcore.ramp_out) V(restart)
+* plot V(resetn) V(restart)
 
-*let digitized=(V(0)/128 + V(1)/64 + V(2)/32 + V(3)/16 + V(4)/8 + V(5)/4 + V(6)/2 + V(7))/13.2+0.5
-*plot digitized
-*plot V(vin) V(xadc.xcore.ramp_out) V(xadc.comp_out)
+plot V(vin) V(xadc.comp_out) V(xadc.xcore.ramp_out) V(restart)
 plot -I(vdd)
 
+let digitized=(V(d0)/128 + V(d1)/64 + V(d2)/32 + V(d3)/16 + V(d4)/8 + V(d5)/4 + V(d6)/2 + V(d7))/6.6
+plot digitized V(xadc.valid) V(xadc.busy)
+*plot V(vin) V(xadc.xcore.ramp_out) V(xadc.comp_out)
 
 
-*linearize I(vdd)
-*wrdata out.txt I(vdd)
+linearize I(vdd) digitized
+let cut-tstart = 9u
+let cut-tstop  = 270u
+cutout
+
+set wr_singlescale
+set wr_vecnames
+wrdata out.txt -I(vdd) digitized
+plot -I(vdd)
 .endc
 
 .end

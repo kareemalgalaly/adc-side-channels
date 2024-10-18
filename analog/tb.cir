@@ -1,0 +1,31 @@
+* ADC Testbench
+
+* Control Signals
+
+.param vdd=3.3
+.param vss=0; {-vdd}
+.param per={10u}
+.param rise={per/10}
+
+vdd   vdd   gnd {vdd}
+vin   vin   gnd  1
+vref  vref  gnd -1
+
+vclk     clock   gnd PULSE({vss} {vdd} {per/2} {rise} {rise} {per/2} {per})
+vresetn  resetn  gnd PWL(0 {vss}, {per*8}, {vss}, {per*8.2}, {vdd})
+vrestart restart gnd PULSE({vss} {vdd} {per*10} {rise} {rise} {per} {per*256})
+
+* DUT
+
+.include adc.lib
+
+xramp vref ramp_out restart resetn vdd gnd RAMP_GEN r=100 c=1u
+
+.options TRTOL=1.0 CHGTOL=1e-16 ; switches near caps
+
+.control
+tran 50n 550u
+plot V(resetn) V(restart) V(ramp_out)
+plot V(vref) - V(xramp.vn) V(xramp.vn)
+plot V(ramp_out)
+.endc 
