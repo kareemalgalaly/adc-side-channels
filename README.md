@@ -2,7 +2,6 @@
 
 # Tools Required
 - ngspice
-- verilog
 - verilator
 - x-server (XQuartz on Mac)
 
