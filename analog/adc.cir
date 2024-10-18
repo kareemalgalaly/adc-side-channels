@@ -1,7 +1,5 @@
 * Single slope adc
 *.include lib/lmx58_lm2904.lib
-*.include ~/Documents/SpiceLibraries/LT/ADI_ng.lib
-*.include ~/Documents/SpiceLibraries/kareem.lib
 .include adc.lib
 
 * Parameters

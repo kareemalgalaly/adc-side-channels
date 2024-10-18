@@ -1,8 +1,13 @@
 * ADC Library
 * Author: Kareem Ahmad
 
-.include ~/Documents/SpiceLibraries/LT/ADI_ng.lib
-.include ~/Documents/SpiceLibraries/kareem.lib
+.include lib/adi.lib
+
+* Models
+.model sw_ideal_n SW(RON=0.1 VT=0.5)
+.model sw_ideal_p SW(RON=0.1 VT=-0.5)
+.model auto_adc adc_bridge(in_low  = {vmid-.1}  in_high  = {vmid+.1})
+.model auto_dac dac_bridge(out_low = {vss}      out_high = {vdd})
 
 * Ramp Generator
 .subckt RAMP_GEN vref vo reset enable vdd vss r=100 c=1u; res=100 cap=1u

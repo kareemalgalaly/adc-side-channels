@@ -1,3 +1,4 @@
 analog/adc_obj_dir
-analog/lib
+analog/*.h
 *.swp
+*.so
