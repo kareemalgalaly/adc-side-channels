@@ -38,30 +38,55 @@ r0 d0 gnd 1k
 .options TRTOL=1.0 CHGTOL=1e-16 ; switches near caps
 
 .control
-tran 10n 550u uic
+*tran 10n 550u uic
 *tran 100n 550u
 
 * adc_core
 * plot V(vin) V(comp_out) V(xcore.ramp_out) V(restart)
 * plot V(resetn) V(restart)
 
-plot V(vin) V(xadc.comp_out) V(xadc.xcore.ramp_out) V(restart)
-plot -I(vdd)
+;plot V(vin) V(xadc.comp_out) V(xadc.xcore.ramp_out) V(restart)
+;plot -I(vdd)
+let vstart = 1
+let vstop  = 3.3
+let vdelta = 4.0
+let vact   = vstart
 
-let digitized=(V(d0)/128 + V(d1)/64 + V(d2)/32 + V(d3)/16 + V(d4)/8 + V(d5)/4 + V(d6)/2 + V(d7))/6.6
-plot digitized V(xadc.valid) V(xadc.busy)
-*plot V(vin) V(xadc.xcore.ramp_out) V(xadc.comp_out)
+while vact <= vstop
+    echo Running Sweep $&vact/$&vstop
+    echo
+    alter vin vact
+    ;run
+    tran 10n 550u uic
+
+    let digitized=(V(d0) + V(d1)*2 + V(d2)*4 + V(d3)*8 + V(d4)*16 + V(d5)*32 + V(d6)*64 + V(d7))*128
+    ;plot digitized -I(vdd)
+
+    linearize I(vdd) digitized
+
+    meas tran teval WHEN digitized=0.001 RISE=1
+    echo Start point $&teval
+    let cut-tstart = teval
+
+    meas tran teval WHEN digitized=0.001 FALL=1
+    echo End point $&teval
+    let cut-tstop = teval
+
+    cutout
 
 
-linearize I(vdd) digitized
-let cut-tstart = 9u
-let cut-tstop  = 270u
-cutout
+    plot I(vdd) digitized
 
-set wr_singlescale
-set wr_vecnames
-wrdata out.txt -I(vdd) digitized
-plot -I(vdd)
+    set wr_singlescale
+    set wr_vecnames
+    wrdata out.txt -I(vdd) digitized
+    set appendwrite
+
+    let vact = vact + vdelta
+end
+
+;plot tran1.digitized tran2.digitized tran3.digitized
+plot I(tran1.vdd) I(tran2.vdd) I(tran3.vdd)
 .endc
 
 .end
