@@ -3,15 +3,15 @@
 ## Organization
 ```
 analog
-  adc.cir
+  adc/adc.cir
+  test
   lib
-attack
-  cnn 
-    traces
 digital
   tb
   design
 build
+synth
+Makefile
 ```
 
 ## Tools Used
@@ -22,4 +22,10 @@ build
 - python
   - pytorch
 
-## See subdirectory READMEs for further details
+## Make Commands
+
+### Synthesize module
+`make control_v0.synth`
+
+### Simulate adc with given module verilog
+`make control_v0.adcsim`
