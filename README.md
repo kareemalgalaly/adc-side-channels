@@ -9,6 +9,9 @@ analog
 digital
   tb
   design
+    top
+    unprotected
+attack/cnn
 build
 synth
 Makefile
