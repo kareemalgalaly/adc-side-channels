@@ -1,0 +1,42 @@
+* Single slope adc
+*.include lib/lmx58_lm2904.lib
+.include adc.lib
+
+* Parameters
+
+.param vdd=3.3
+.param vss=0
+.param per={1u}
+.param rise={per/5}
+
+* Supplies / References
+
+vdd   vdd   gnd {vdd}
+vin   vin   gnd  1
+vref  vref  gnd -1
+
+* Control Signals
+
+vclk     clock   gnd PULSE({vss} {vdd} {per/2}  {rise} {rise} {per/2} {per})
+vrestart restart gnd PULSE({vss} {vdd} {per*10} {rise} {rise} {per}   {per*256})
+vresetn  resetn  gnd PWL(0 {vss}, {per*8}, {vss}, {per*8.2}, {vdd})
+
+* DUT
+
+*xcore vin vref comp_out restart resetn vdd gnd ADC_CORE r=250 c={330n}
+xadc vin vref clock resetn restart d7 d6 d5 d4 d3 d2 d1 d0 vdd gnd ADC vdd={vdd} vss={vss}
+
+r7 d7 gnd 1k
+r6 d6 gnd 1k
+r5 d5 gnd 1k
+r4 d4 gnd 1k
+r3 d3 gnd 1k
+r2 d2 gnd 1k
+r1 d1 gnd 1k
+r0 d0 gnd 1k
+
+.options TRTOL=1.0 CHGTOL=1e-16 ; switches near caps
+
+.tran 10n 550u uic
+
+.end

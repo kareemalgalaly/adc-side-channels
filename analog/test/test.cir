@@ -1,0 +1,15 @@
+* flip flop test
+.lib "models/sky130.lib.spice" tt
+.inc "cells/dfxtp/sky130_fd_sc_hs__dfxtp_1.spice"
+
+xff clk data 0 0 vdd vdd Q sky130_fd_sc_hs__dfxtp_1  
+
+vdata data 0 PULSE(0 1.2 0 1n 1n 1.5u 3u)
+vclk  clk  0 PULSE(0 1.2 0 1n 1n 0.5u 1u)
+vdd   vdd  0 dc=1.2
+
+.control
+tran 100n 10u uic
+plot V(data) V(Q) V(clk)
+.endc
+.end

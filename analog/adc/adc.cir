@@ -1,6 +1,5 @@
 * Single slope adc
-*.include lib/lmx58_lm2904.lib
-.include adc.lib
+.include ../lib/adc.lib
 
 * Parameters
 
@@ -38,18 +37,10 @@ r0 d0 gnd 1k
 .options TRTOL=1.0 CHGTOL=1e-16 ; switches near caps
 
 .control
-*tran 10n 550u uic
-*tran 100n 550u
 
-* adc_core
-* plot V(vin) V(comp_out) V(xcore.ramp_out) V(restart)
-* plot V(resetn) V(restart)
-
-;plot V(vin) V(xadc.comp_out) V(xadc.xcore.ramp_out) V(restart)
-;plot -I(vdd)
-let vstart = 1
+let vstart = 0
 let vstop  = 3.3
-let vdelta = 4.0
+let vdelta = 1.0
 let vact   = vstart
 
 while vact <= vstop
@@ -60,33 +51,23 @@ while vact <= vstop
     tran 10n 550u uic
 
     let digitized=(V(d0) + V(d1)*2 + V(d2)*4 + V(d3)*8 + V(d4)*16 + V(d5)*32 + V(d6)*64 + V(d7))*128
-    ;plot digitized -I(vdd)
 
-    linearize I(vdd) digitized
+    linearize I(vdd) digitized V(restart)
 
-    meas tran teval WHEN digitized=0.001 RISE=1
-    echo Start point $&teval
-    let cut-tstart = teval
-
-    meas tran teval WHEN digitized=0.001 FALL=1
-    echo End point $&teval
-    let cut-tstop = teval
+    let cut-tstart = 10u
+    let cut-tstop = 266u
 
     cutout
 
-
-    plot I(vdd) digitized
+    plot -I(vdd) digitized*2e-7 ; V(restart)*2m
 
     set wr_singlescale
     set wr_vecnames
-    wrdata out.txt -I(vdd) digitized
+    wrdata analog/outfiles/out_$&vact -I(vdd) digitized
     set appendwrite
 
     let vact = vact + vdelta
 end
-
-;plot tran1.digitized tran2.digitized tran3.digitized
-plot I(tran1.vdd) I(tran2.vdd) I(tran3.vdd)
 .endc
 
 .end

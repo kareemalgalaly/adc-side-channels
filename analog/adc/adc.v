@@ -54,8 +54,8 @@ always @(posedge clk) begin
 
     // $display("clk");
 
-    if (state_d == START) count = 0;
-    else if (state_d == COUNT) count += 1;
+    if (state_d == START) count <= 0;
+    else if (state_d == COUNT) count <= count + 1;
 end
 
 // need safe values for these in power-off cases
