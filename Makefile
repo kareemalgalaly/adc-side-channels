@@ -20,7 +20,8 @@ SIM_SO_OBJ 	  = $(addsuffix .so, $(addprefix ${BUILD}/, $(DIGITAL_MODULES)))
 #$(SYNTH_TARGETS): %.synth: ${SYNTH}/%.v:
 $(SYNTH_TARGETS): %.synth: ${DESIGN}/top/%.v
 	SYNTH_VERILOG=${DESIGN}/top/$*.v SYNTH_TARGET=${SYNTH}/$* yosys -c ${SCRIPT}/synth.tcl
-	python script/synth_post.py ${SYNTH}/$*.spice ${SYNTH}/$*.v ${PDK_PROCESS_LIB} ${PROCESS_CORNER} ${PDK_CELL_LIB} ${SYNTH}/$*_wrap.spice
+	#python script/synth_post.py ${SYNTH}/$*.spice ${SYNTH}/$*.v ${PDK_PROCESS_LIB} ${PROCESS_CORNER} ${PDK_CELL_LIB} ${SYNTH}/$*_wrap.spice
+	python script/json2spice.py ${SYNTH}/$*.json ${PDK_CELL_LIB}/cells control ${SYNTH}/$*.spice
 
 $(SIM_TARGETS): %.adcsim: ${BUILD}/%.so
 	cp ${BUILD}/$*.so ${BUILD}/adc.so
