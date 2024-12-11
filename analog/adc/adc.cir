@@ -11,8 +11,11 @@
 * Supplies / References
 
 vdd   vdd   gnd {vdd}
+rdd   vdd   gnd 1e6
 vin   vin   gnd  1
+rin   vin   gnd 1e6
 vref  vref  gnd -1
+rref  vref  gnd 1e6
 
 * Control Signals
 
@@ -52,6 +55,7 @@ while vact <= vstop
 
     let digitized=(V(d0) + V(d1)*2 + V(d2)*4 + V(d3)*8 + V(d4)*16 + V(d5)*32 + V(d6)*64 + V(d7))*128
 
+    plot -I(vdd) digitized*2e-7 ; V(restart)*2m
     linearize I(vdd) digitized V(restart)
 
     let cut-tstart = 10u
@@ -59,11 +63,9 @@ while vact <= vstop
 
     cutout
 
-    plot -I(vdd) digitized*2e-7 ; V(restart)*2m
-
     set wr_singlescale
     set wr_vecnames
-    wrdata analog/outfiles/out_$&vact -I(vdd) digitized
+    wrdata ../outfiles/out_$&vact -I(vdd) digitized
     set appendwrite
 
     let vact = vact + vdelta

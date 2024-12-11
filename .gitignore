@@ -2,3 +2,5 @@ analog/adc_obj_dir
 analog/*.h
 *.swp
 *.so
+synth/*
+.DS_Store

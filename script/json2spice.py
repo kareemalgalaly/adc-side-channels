@@ -105,6 +105,7 @@ def parse_cell_types(celltypes, cell_path, module_dict):
 
     return all_pg_pins
 
+
 ## Build Spice Includes -----------------------------
 
 def gen_spice_inc(celltypes, file):
@@ -113,7 +114,7 @@ def gen_spice_inc(celltypes, file):
     for ctype, cell in celltypes.items():
         file.write(f".include {cell['path']}\n")
 
-def gen_spice_mod(celltypes, cells):
+def gen_spice_mod(celltypes, cells, netnames):
     file.write("* Standard Cells\n")
 
     for cellname, cell in cells.items():
@@ -124,7 +125,7 @@ def gen_spice_mod(celltypes, cells):
             if pg:
                 ports.append(pin)
             else:
-                ports.append(str(cell['conn'][pin][0]))
+                ports.append(netnames[cell['conn'][pin][0]])
 
         file.write(f"x{cellname} {' '.join(ports)} {cell['type']}\n")
 
@@ -188,7 +189,7 @@ if __name__ == '__main__':
 
         gen_spice_inc(celltypes, file)
         gen_spice_ports(module, args.module, all_pg_pins, file)
-        gen_spice_mod(celltypes, cells)
+        gen_spice_mod(celltypes, cells, netnames)
         file.write("\n")
         gen_spice_ties(tieoffs, "VGND", "VPWR", file)
         file.write("\n.ends\n\n")
