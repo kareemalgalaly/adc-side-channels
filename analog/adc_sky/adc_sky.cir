@@ -1,0 +1,64 @@
+* Two Stage Single Slope ADC using skywater 130nm
+
+.lib "models/sky130.lib.spice" tt
+.inc adc_sky.lib
+
+xadc_a vref vin clock reset vdd gnd xout yout RAMP_TWOSTAGE 
+
+* Input Signals
+
+Vdd vdd GND 1.8
+V5  clock GND PULSE(0 1.8 0 10p 10p .5u 1u)
+Vin vin GND 0.5
+V2  GND vref 1
+V3  reset GND PULSE(0 1.8 0 10p 10p 20n 256.02u)
+
+
+.option method=Gear
+.ic v(xadc_a.inp)=0
+
+.control
+set color0=white
+
+let vstart = 0
+let vstop  = 1.0
+let vdelta = 0.2
+let vact   = vstart
+
+while vact <= vstop
+    echo
+    echo Running Sweep $&vact/$&vstop
+    echo
+    alter vin vact
+    ;run
+    tran 1u 300u uic
+
+    plot vin xadc_a.inp xout i(vdd)*1000
+    ;let digitized=(V(d0) + V(d1)*2 + V(d2)*4 + V(d3)*8 + V(d4)*16 + V(d5)*32 + V(d6)*64 + V(d7))*128
+
+    ;plot -I(vdd) digitized*2e-7 ; V(restart)*2m
+    ;linearize I(vdd) digitized V(restart)
+
+    ;let cut-tstart = 10u
+    ;let cut-tstop = 266u
+
+    cutout
+
+    set wr_singlescale
+    set wr_vecnames
+    wrdata ../outfiles/sky_$&vact -I(vdd) ;digitized
+    set appendwrite
+
+    let vact = vact + vdelta
+end
+*plot xadc_a.in1 xadc_a.in2 i(vdd)*1000 xout yout reset
+*meas tran total_offset find v(xadc_a.inp) when v(xout)=1.8 cross=1
+
+*show all
+.endc
+
+
+**** end user architecture code
+**.ends
+.GLOBAL GND
+.end
