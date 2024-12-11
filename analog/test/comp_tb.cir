@@ -1,0 +1,47 @@
+** sch_path: /foss/design/comparator/comp_with_preamp_large_new.sch
+**.subckt comp_with_preamp_large_new
+.lib "models/sky130.lib.spice" tt
+.inc comp_ceyda.spice
+
+xcomp inn inp ck vdd gnd xout yout COMP
+V2 vdd GND 1.8
+V4 ck GND PULSE(0 1.8 0 10p 10p .5u 1u)
+V6 inn GND 0.5
+V7 inp GND PULSE(0 1 0 255.9u .1u 0 256u)
+V8 inn2 GND 0.5001
+**** begin user architecture code
+
+
+*.lib /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice tt
+*.include /foss/pdk/sky130A/libs.ref/sky130_fd_sc_hd/spice/sky130_fd_sc_hd.spice
+
+
+
+
+
+.option method=Gear
+.control
+set color0=white
+save all
+tran 100n 256u
+
+
+plot inn inp i(v2)*1000 xout yout
+plot in1 in2 i(v2)*1000 xout yout
+*plot in1 in2 vds_tail ck i(v5)*100
+*plot X Y ck
+*plot X Y P Q ck
+*plot i(V5)
+*plot vds_tail ck
+*plot P-Q ck
+*plot i(v2) i(v8) i(v9) i(v10) i(v11) i(v12) i(v13)
+meas tran total_offset find v(inp) when v(xout)=1.8 cross=1
+
+show all
+.endc
+
+
+**** end user architecture code
+**.ends
+.GLOBAL GND
+.end
