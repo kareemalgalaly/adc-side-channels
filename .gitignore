@@ -1,5 +1,6 @@
 analog/adc_obj_dir
 analog/*.h
+analog/outfiles/*
 *.swp
 *.so
 synth/*
