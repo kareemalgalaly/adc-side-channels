@@ -37,18 +37,20 @@ while vact <= vstop
     echo
     alter vin vact
     ;run
-    tran 1u 300u uic
+    tran 100n 300u uic
 
     ;plot vin xadc_a.inp xout i(vdd)*1000
     ;let digitized=(V(d0) + V(d1)*2 + V(d2)*4 + V(d3)*8 + V(d4)*16 + V(d5)*32 + V(d6)*64 + V(d7))*128
 
-    ;plot -I(vdd) digitized*2e-7 ; V(restart)*2m
-    ;linearize I(vdd) digitized V(restart)
+    ; let lin-tstart = 10u
+    ; let lin-tstop  = 266u
+    ; let lin-tstep  = 100n
 
-    ;let cut-tstart = 10u
-    ;let cut-tstop = 266u
+    linearize I(vdd) ; digitized
 
-    cutout
+    ; let cut-tstart = 10u
+    ; let cut-tstop = 266u
+    ; cutout
 
     set wr_singlescale
     set wr_vecnames
