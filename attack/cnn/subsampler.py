@@ -1,3 +1,10 @@
+###############################################################################
+# File        : attack/cnn/subsampler.py
+# Author      : kareemahmad
+# Created     : 
+# Description : Subsample ngspice output file to csv 
+###############################################################################
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -17,8 +24,57 @@ def select_func_gen(mode):
     elif mode == "LINEAR": return mlin
     else: raise ValueError("Illegal mode selected")
 
-def do_parse(file_in, file_out, interval=1e-6, samples=1000, time=2.5e-4, index=0, sample_mode="LINEAR"):
+def sample_func_gen(mode):
+    if   mode == 'MIN': return lambda x: np.min(x)
+    elif mode == 'MAX': return lambda x: np.max(x)
+    elif mode == 'AVG': return lambda x: np.average(x)
+    else: raise ValueError("Illegal mode selected")
 
+def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0):
+    time_col = column << 1
+    valu_col = time_col + 1
+
+    f = sample_func_gen(sample_mode)
+    l = select_func_gen('LINEAR')
+
+    with open(fpath, 'r') as file:
+        header = file.readline()
+
+        val_arr = []
+        val_win = []
+
+        stim, value = file.readline().strip().split()
+        stim = float(stim)
+        value = float(value)
+        ptim = stim
+        wtim = stim + sample_interval
+        val_win.append(value)
+
+        for line in file.readlines():
+            if len(val_arr) == max_samples: break
+            stim, value = line.strip().split()
+            stim = float(stim)
+            value = float(value)
+
+            if stim >= wtim:
+                val_arr.append(f(val_win))
+
+                # if time is too big a gap:
+                wtim += sample_interval
+                while stim > wtim:
+                    val_arr.append(l(ptim, val_arr[-1], stim, value, (len(val_arr)+0.5)*sample_interval))
+                    wtim += sample_interval
+
+                val_win = [value]
+
+            else:
+                val_win.append(value)
+
+            ptim = stim
+
+        return val_arr
+
+def do_parse(file_in, file_out, interval=1e-6, samples=1000, time=2.5e-4, index=0, sample_mode="LINEAR"):
     col_t = index << 1
     col_v = col_t + 1
 

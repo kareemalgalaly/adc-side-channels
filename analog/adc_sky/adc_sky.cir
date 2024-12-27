@@ -30,23 +30,25 @@ let digit  = 0
 set ext = "v.txt"
 set dlm = "_"
 
-while vact <= vstop
+while vact < vstop
     echo
     ;echo Running Sweep $&vact/$&vstop
     echo Running Sweep $&digit/$&num_sim
     echo
     alter vin vact
     ;run
-    tran 100n 300u uic
+    tran 1u 300u uic
 
     ;plot vin xadc_a.inp xout i(vdd)*1000
     ;let digitized=(V(d0) + V(d1)*2 + V(d2)*4 + V(d3)*8 + V(d4)*16 + V(d5)*32 + V(d6)*64 + V(d7))*128
 
     ; let lin-tstart = 10u
     ; let lin-tstop  = 266u
-    ; let lin-tstep  = 100n
+    ; let lin-tstep  = 0.01n
 
-    linearize I(vdd) ; digitized
+    ; plot I(vdd)
+    ; linearize I(vdd) ; digitized
+    ; plot I(vdd)
 
     ; let cut-tstart = 10u
     ; let cut-tstop = 266u
@@ -60,13 +62,13 @@ while vact <= vstop
     let vact = vact + vdelta
     let digit = digit + 1
 
-    destroy all
+    ;destroy all
 end
 *plot xadc_a.in1 xadc_a.in2 i(vdd)*1000 xout yout reset
 *meas tran total_offset find v(xadc_a.inp) when v(xout)=1.8 cross=1
 
 *show all
-exit
+*exit
 .endc
 
 

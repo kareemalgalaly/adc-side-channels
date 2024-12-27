@@ -2,9 +2,7 @@ import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import numpy as np
 import matplotlib.pyplot as plt
-from torch.utils.data import DataLoader, TensorDataset
 import datetime
 
 # import pt_parser as parser
@@ -12,7 +10,7 @@ import dataloader
 
 # CNN defined in paper
 class pt_CNN(nn.Module):
-    def __init__(self):
+    def __init__(self, trace_len=3000):
         super(pt_CNN, self).__init__()
         # 1-D convolution layers
         # Activation = ReLU
@@ -26,7 +24,7 @@ class pt_CNN(nn.Module):
         # Fully connected layers
         # Activation = ReLU
         # 100 neurons
-        self.fc1 = nn.Linear(5 * 298, 100)
+        self.fc1 = nn.Linear(int(5 * (trace_len/10-2)), 100)
         self.fc2 = nn.Linear(100, 100)
         self.fc3 = nn.Linear(100, 100)
         # Output layer
@@ -50,7 +48,7 @@ class pt_CNN(nn.Module):
         # Fully connected layers
         x = torch.relu(self.fc1(x))
         x = torch.relu(self.fc2(x))
-        #x = torch.relu(self.fc3(x))
+        x = torch.relu(self.fc3(x))
         # Output layer, softmax
         x = self.o2(self.o1(x))
         return x
@@ -59,10 +57,27 @@ pwd      = os.path.dirname(os.path.abspath(__file__))
 proj_dir = os.path.dirname(os.path.dirname(pwd))
 data_dir = os.path.join(proj_dir, 'analog', 'outfiles')
 
-builder  = dataloader.TraceDatasetBuilder(adc_bitwidth=8, cache=True)
-builder.add_files(os.path.join(data_dir, 'sky_Dec_18_2151'), "sky_d(\\d+)_.*\\.txt", 0)
-builder.build()
-builder.build_dataloaders(batch_size=256, shuffle=True)
+mode = 'LINEAR'
+
+if mode == 'LINEAR':
+    dataset  = os.path.join(data_dir, 'sky_Dec_18_2151')
+    trace_length    = 3000
+    sample_mode     = None
+    sample_interval = None
+    sample_duration = None
+
+elif mode == 'SAMPLED':
+    dataset  = os.path.join(data_dir, 'sky')
+    sample_mode = 'MIN'
+    sample_interval = 0.1e-6
+    sample_duration = 300e-6
+    trace_length    = sample_duration / sample_interval
+
+loader  = dataloader.TraceDatasetBuilder(adc_bitwidth=8, cache=True)
+loader.add_files(dataset, "sky_d(\\d+)_.*\\.txt", sample_mode=sample_mode, sample_int=sample_interval, sample_time=sample_duration)
+loader.build()
+#loader.cache_all()
+loader.build_dataloaders(batch_size=256, shuffle=True)
 
 #for i in range(len(builder.dataset)):
 #    print(builder.dataset.get_info(i))
@@ -71,8 +86,16 @@ builder.build_dataloaders(batch_size=256, shuffle=True)
 #    print(dataset.bit_mask)
 #    print(dataset[5][1])
 
+#off = 0.0015
+#ids = [0, 1, 2, 3, 4, 5, 6, 7, 40, 80, 160, 250]
+#for i, label in enumerate(ids):
+#    plt.plot(loader.dataset.get_by_label(label) + i*off, label=f'{label}')
+#plt.gca().set_ylim([0.00, off*len(ids)])
+#plt.legend()
+#plt.show()
+
 cnns = []
-dataloaders = builder.dataloaders 
+dataloaders = loader.dataloaders 
 timestamp   = datetime.datetime.now().strftime('%Y%m%d_%H%M')
 
 plt.ion()
@@ -85,7 +108,7 @@ for i in range(7,-1,-1):
     # Model: our CNN
     # Loss function: not specified in paper, used Cross Entropy Loss
     # Optimizer: not specified in paper, used Adam
-    cnn = pt_CNN()
+    cnn = pt_CNN(trace_length)
     cnns.append(cnn)
     loss_arr = []
     acc_arr  = []
@@ -94,7 +117,8 @@ for i in range(7,-1,-1):
 
     criterion = nn.CrossEntropyLoss()
     #optimizer = optim.Adam(cnn.parameters(), lr=0.001)
-    optimizer = optim.Adam(cnn.parameters(), lr=0.0005)
+    #optimizer = optim.Adam(cnn.parameters(), lr=0.0005) # linearized data
+    optimizer = optim.Adam(cnn.parameters(), lr=0.0001) # sampled data
 
     # Train the model
     # Can use separate yml file
@@ -117,11 +141,11 @@ for i in range(7,-1,-1):
         if epoch % 10 == 0:
             print(f'TRAINING: cnn[{i}], Epoch {epoch+1}, Loss: {loss.item()}')
             print(f'TRAINING: cnn[{i}], Epoch {epoch+1}, Accuracy: {accuracy}')
-        if epoch % 50 == 0: 
+        #if epoch % 50 == 0: 
             if loss_g: loss_g.remove()
             if acc_g:  acc_g.remove()
-            loss_g = axs[0].plot(loss_arr, color='lightgray', linestyle='dotted')[0]
-            loss_a = axs[1].plot(acc_arr,  color='lightgray', linestyle='dotted')[0]
+            loss_g = axs[0].plot(loss_arr, color='gray', linestyle='dotted')[0]
+            loss_a = axs[1].plot(acc_arr,  color='gray', linestyle='dotted')[0]
             plt.pause(0.01)
 
     torch.save(cnn.state_dict(), f'trained_models/{timestamp}_cnn_{i}.state')
@@ -133,4 +157,4 @@ for i in range(7,-1,-1):
     axs[1].legend()
     plt.pause(0.01)
 
-plt.pause(60*10)
+input("==== Job Complete. Press Enter to Exit ====")
