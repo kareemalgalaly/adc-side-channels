@@ -56,28 +56,36 @@ class pt_CNN(nn.Module):
 pwd      = os.path.dirname(os.path.abspath(__file__))
 proj_dir = os.path.dirname(os.path.dirname(pwd))
 data_dir = os.path.join(proj_dir, 'analog', 'outfiles')
+device   = torch.device("cuda") if torch.cuda.is_available() else None
 
 mode = 'LINEAR'
+plot_period = 1000 if device else 10
+epoch_count = 10000
+batch_size  = 256
 
 if mode == 'LINEAR':
-    dataset  = os.path.join(data_dir, 'sky_Dec_18_2151')
+    dataset_dir = os.path.join(data_dir, 'sky_Dec_18_2151')
     trace_length    = 3000
     sample_mode     = None
     sample_interval = None
     sample_duration = None
 
 elif mode == 'SAMPLED':
-    dataset  = os.path.join(data_dir, 'sky')
+    dataset_dir = os.path.join(data_dir, 'sky')
     sample_mode = 'MIN'
     sample_interval = 0.1e-6
     sample_duration = 300e-6
     trace_length    = sample_duration / sample_interval
 
-loader  = dataloader.TraceDatasetBuilder(adc_bitwidth=8, cache=True)
-loader.add_files(dataset, "sky_d(\\d+)_.*\\.txt", sample_mode=sample_mode, sample_int=sample_interval, sample_time=sample_duration)
+print(f"Launching on device {device}")
+
+loader  = dataloader.TraceDatasetBuilder(adc_bitwidth=8, cache=True, device=device)
+loader.add_files(dataset_dir, "sky_d(\\d+)_.*\\.txt", sample_mode=sample_mode, sample_int=sample_interval, sample_time=sample_duration)
 loader.build()
 #loader.cache_all()
-loader.build_dataloaders(batch_size=256, shuffle=True)
+loader.build_dataloaders(batch_size=batch_size, shuffle=True)
+
+batch_count = -(len(loader.dataset) / -batch_size)
 
 #for i in range(len(builder.dataset)):
 #    print(builder.dataset.get_info(i))
@@ -108,10 +116,10 @@ for i in range(7,-1,-1):
     # Model: our CNN
     # Loss function: not specified in paper, used Cross Entropy Loss
     # Optimizer: not specified in paper, used Adam
-    cnn = pt_CNN(trace_length)
+    cnn = pt_CNN(trace_length).to(device)
     cnns.append(cnn)
-    loss_arr = []
-    acc_arr  = []
+    loss_arr = torch.empty(epoch_count, device=device)
+    acc_arr  = torch.empty(epoch_count, device=device)
     loss_g = None
     acc_g  = None
 
@@ -122,37 +130,47 @@ for i in range(7,-1,-1):
 
     # Train the model
     # Can use separate yml file
-    for epoch in range(2000):
+    for epoch in range(epoch_count):
         correct = 0
-        for powertraces, labels in dataloaders[i]:
+        for inputs, labels in dataloaders[i]:
+            if device:
+                inputs = inputs.cuda()
+                labels = labels.cuda()
+
+            # Do Training Step
+
             optimizer.zero_grad()
-            output = cnn(powertraces)
-            labels = labels.long()
+            output = cnn(inputs)
 
             loss = criterion(output, labels)
             loss.backward()
             optimizer.step()
 
-            _, predicted = torch.max(output, 1)
-            correct += (predicted == labels).sum()
-        accuracy = correct / 257
-        acc_arr.append(accuracy)
-        loss_arr.append(loss.item())
-        if epoch % 10 == 0:
-            print(f'TRAINING: cnn[{i}], Epoch {epoch+1}, Loss: {loss.item()}')
-            print(f'TRAINING: cnn[{i}], Epoch {epoch+1}, Accuracy: {accuracy}')
+            # Calculate Accuracy
+
+            if (epoch % plot_period) == 0:
+                _, predicted = torch.max(output, 1)
+                correct += (predicted == labels).sum()
+                accuracy = correct / 257
+
+        acc_arr[epoch] = accuracy
+        loss_arr[epoch] = loss
+
+        if epoch % plot_period == 0:
+            print(f'TRAINING: cnn[{i}], Epoch {epoch}, Loss: {loss.item()}')
+            print(f'TRAINING: cnn[{i}], Epoch {epoch}, Accuracy: {accuracy}')
         #if epoch % 50 == 0: 
             if loss_g: loss_g.remove()
             if acc_g:  acc_g.remove()
-            loss_g = axs[0].plot(loss_arr, color='gray', linestyle='dotted')[0]
-            loss_a = axs[1].plot(acc_arr,  color='gray', linestyle='dotted')[0]
+            loss_g = axs[0].plot(loss_arr.detach().cpu(), color='gray', linestyle='dotted')[0]
+            acc_g  = axs[1].plot(acc_arr.cpu(),  color='gray', linestyle='dotted')[0]
             plt.pause(0.01)
 
     torch.save(cnn.state_dict(), f'trained_models/{timestamp}_cnn_{i}.state')
 
     label = f'cnn[{i}]'
-    axs[0].plot(loss_arr, label=label)
-    axs[1].plot(acc_arr,  label=label)
+    axs[0].plot(loss_arr.detach().cpu(), label=label)
+    axs[1].plot(acc_arr.cpu(),           label=label)
     axs[0].legend()
     axs[1].legend()
     plt.pause(0.01)
