@@ -7,6 +7,7 @@ import datetime
 
 # import pt_parser as parser
 import dataloader
+import cnn_gen
 
 # CNN defined in paper
 class pt_CNN(nn.Module):
@@ -116,7 +117,13 @@ for i in range(7,-1,-1):
     # Model: our CNN
     # Loss function: not specified in paper, used Cross Entropy Loss
     # Optimizer: not specified in paper, used Adam
-    cnn = pt_CNN(trace_length).to(device)
+    print(trace_length)
+    cnn = pt_CNN(trace_length)
+    print(cnn)
+    cnn = cnn_gen.GenericCNN(f"{trace_length},1:C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:F(100):R:F(100):R:F(2):S")
+    print(cnn)
+
+    cnn = cnn.to(device)
     cnns.append(cnn)
     loss_arr = torch.empty(epoch_count, device=device)
     acc_arr  = torch.empty(epoch_count, device=device)
