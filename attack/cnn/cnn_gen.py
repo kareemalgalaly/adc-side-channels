@@ -74,7 +74,6 @@ def build_cnn(definition):
         else:
             raise RuntimeError(f"Could not parse definition entry <{token}>")
 
-    print(shapes)
     return nn.ModuleList(layers), flatten
 
 class GenericCNN(nn.Module):

@@ -5,33 +5,6 @@ import numpy as np
 import os
 import re
 
-def get_files(directory, format, digital_index=0):
-
-    format = re.compile(format)
-    files = os.listdir(directory)
-
-    label_dict = {} # label : index (in file_list)
-    file_list = [] # fname, fpath, label
-    sample_info = (sample_mode, sample_int, max_sample)
-
-    i = 0
-    for fname in files:
-        if match := format.match(fname):
-            fpath = os.path.join(directory, fname)
-
-            dvalue = int(match.groups()[digital_index])
-            
-            file_list.append((fname, fpath, dvalue, sample_info))
-
-            if dvalue in label_dict:
-                label_dict[dvalue].append(i)
-            else:
-                label_dict[dvalue] = [i]
-
-            i += 1
-
-    return file_path, label_dict
-
 class TraceDataset(Dataset):
     cached_traces = {}
     labelled_traces = {}
@@ -43,6 +16,10 @@ class TraceDataset(Dataset):
         self.cache      = cache
         self.device     = device
 
+    @classmethod
+    def purge_cache(cls):
+        cls.cached_traces = {}
+
     def __len__(self):
         return len(self.file_list)
 
@@ -50,8 +27,8 @@ class TraceDataset(Dataset):
         fname, fpath, label, sample_info = self.file_list[index]
         label = self.process_label(label)
 
-        if self.cache and fname in self.cached_traces:
-            return self.cached_traces[fname], label
+        if self.cache and (fname, fpath) in self.cached_traces:
+            return self.cached_traces[(fname, fpath)], label
         else:
             return self.load_trace(fname, fpath, label, sample_info), label
 
@@ -76,7 +53,7 @@ class TraceDataset(Dataset):
         #trace = torch.tensor(valu_arr, dtype=torch.float32, device=self.device)
 
         if self.cache: 
-            self.cached_traces[fname] = trace
+            self.cached_traces[(fname, fpath)] = trace
             self.trace_list.append(trace)
 
             if label in self.labelled_traces:
