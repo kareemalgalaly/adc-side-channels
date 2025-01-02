@@ -20,6 +20,7 @@ import argparse
 argparser = argparse.ArgumentParser(prog="regress.py", description="Run cnn regressions")
 argparser.add_argument("-i", "--json",   type=str, default='regression.json', help="JSON description of CNNs")
 argparser.add_argument("-o", "--output", type=str, default='outputs', help="Directory for output files")
+argparser.add_argument("-c", "--cpuonly", const=True, default=False, action='store_const', help="Don't use GPU even if available")
 argparser.add_argument("-n", "--nowrite", const=True, default=False, action='store_const', help="Don't write any outputs")
 argparser.add_argument("-f", "--force", const=True, default=False, action='store_const', help="Overwrite output files")
 argparser.add_argument("-p", "--preview", const=True, default=False, action='store_const', help="Don't run anything only list runs that would occur")
@@ -138,7 +139,7 @@ class Network(HashableBase):
         self.inputs     = info['inputs']
 
     def get_csv(self):
-        return f"{self.type},{self.definition},{self.inputs}"
+        return f"{self.type},{self.definition.replace(',',';')},{self.inputs}"
 
     def create(self, input_len, input_ch):
         desc = f"{input_len},{input_ch}:{self.definition}"
@@ -289,7 +290,11 @@ class Regression:
                 self.tests.append(test)
 
     def run_all(self):
-        device = torch.device("cuda") if torch.cuda.is_available() else None
+        if args.cpuonly:
+            device = None
+        else:
+            device = torch.device("cuda") if torch.cuda.is_available() else None
+
         if not(args.preview): plt.ion()
 
         for test in self.tests:
@@ -426,6 +431,9 @@ if __name__  == '__main__':
     args = argparser.parse_args()
 
     os.makedirs(args.output, exist_ok=True)
+    if not(os.path.isfile(f'{args.output}/run_results.csv')):
+        with open(f'{args.output}/run_results.csv', 'a') as file:
+            file.write(f"Run ID,Network,Network ID,Network Type,Definition,Inputs,Dataset,Datset ID,Type,Path,Dataset Cols,Datset Info,Test ID,Learning Rate,Optimizer,Batch Size,Max Epochs,Target Accuracy,Target Loss,Bit,Accuracy,Loss,Epoch,Runtime\n")
 
     regression = Regression(args.json)
     regression.load()
