@@ -6,15 +6,17 @@ import os
 import re
 
 class TraceDataset(Dataset):
-    cached_traces = {}
+    #cached_traces = {}
     labelled_traces = {}
     trace_list    = []
 
-    def __init__(self, file_list, label_dict, cache=True, device=None):
+    def __init__(self, file_list, label_dict, cache=True, trace_cache={}, device=None):
         self.file_list  = file_list
         self.label_dict = label_dict
         self.cache      = cache
         self.device     = device
+
+        if cache: self.trace_cache = trace_cache
 
     @classmethod
     def purge_cache(cls):
@@ -27,8 +29,8 @@ class TraceDataset(Dataset):
         fname, fpath, label, sample_info = self.file_list[index]
         label = self.process_label(label)
 
-        if self.cache and (fname, fpath) in self.cached_traces:
-            return self.cached_traces[(fname, fpath)], label
+        if self.cache and (fname, fpath) in self.trace_cache:
+            return self.trace_cache[(fname, fpath)], label
         else:
             return self.load_trace(fname, fpath, label, sample_info), label
 
@@ -42,18 +44,30 @@ class TraceDataset(Dataset):
     def load_trace(self, fname, fpath, label, sample_info):
         sample_mode, sample_int, max_sample = sample_info
 
-        if sample_mode:
+        if sample_mode == 'timed':
+            print("timedddd")
+            with open(fpath, 'r') as file:
+                header = file.readline()
+                splitf = lambda x: (np.float32(x[0]), np.float32(x[1]))
+
+                valu_arr = [splitf(line.strip().split()) for line in file.readlines()]
+                time_arr, valu_arr = zip(*valu_arr)
+                trace = (np.array((time_arr, valu_arr), dtype=np.float32)) #, np.array(valu_arr, dtype=np.float32))
+                print(trace.shape)
+
+        elif sample_mode:
             valu_arr = sample_file(fpath, sample_int, max_sample, sample_mode=sample_mode)
+            trace = np.array(valu_arr, dtype=np.float32)
         else:
             with open(fpath, 'r') as file:
                 header = file.readline()
                 valu_arr = [np.float32(line.strip().split()[1]) for line in file.readlines()]
+                trace = np.array(valu_arr, dtype=np.float32)
 
-        trace = np.array(valu_arr, dtype=np.float32)
         #trace = torch.tensor(valu_arr, dtype=torch.float32, device=self.device)
 
         if self.cache: 
-            self.cached_traces[(fname, fpath)] = trace
+            self.trace_cache[(fname, fpath)] = trace
             self.trace_list.append(trace)
 
             if label in self.labelled_traces:
@@ -74,9 +88,9 @@ class TraceDataset(Dataset):
         print("DONE Caching all traces")
 
 class TraceDatasetBW(TraceDataset):
-    def __init__(self, file_list, label_dict, bit_select, cache=True, device=None):
+    def __init__(self, file_list, label_dict, bit_select, cache=True, trace_cache={}, device=None):
         self.bit_mask = 1 << bit_select
-        super().__init__(file_list, label_dict, cache=cache, device=device)
+        super().__init__(file_list, label_dict, cache=cache, trace_cache=trace_cache, device=device)
 
     def process_label(self, label):
         return 1 if label & self.bit_mask else 0
@@ -93,6 +107,8 @@ class TraceDatasetBuilder:
         self.dataloader = None
         self.datasets   = []
         self.dataloaders = []
+
+        self.trace_cache = {}
 
     def add_files(self, directory, format, label_group=0, sample_mode=None, sample_int=0.1e-6, sample_time=300e-6):
         ''' Builds list of powertrace files
@@ -122,9 +138,9 @@ class TraceDatasetBuilder:
                 i += 1
 
     def build(self):
-        self.dataset = TraceDataset(self.file_list, self.label_dict, cache=self.cache, device=self.device)
+        self.dataset = TraceDataset(self.file_list, self.label_dict, cache=self.cache, trace_cache=self.trace_cache, device=self.device)
         for b in range(self.adc_bits):
-            self.datasets.append(TraceDatasetBW(self.file_list, self.label_dict, b, cache=self.cache, device=self.device))
+            self.datasets.append(TraceDatasetBW(self.file_list, self.label_dict, b, cache=self.cache, trace_cache=self.trace_cache, device=self.device))
 
     def cache_all(self):
         assert self.cache

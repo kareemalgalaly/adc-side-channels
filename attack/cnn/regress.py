@@ -29,6 +29,17 @@ pwd      = os.path.dirname(os.path.abspath(__file__))
 proj_dir = os.path.dirname(os.path.dirname(pwd))
 data_dir = os.path.join(proj_dir, 'analog', 'outfiles')
 
+# Fake Args ######################################
+
+class Args:
+    def __init__(self, json='regression.json', output='outputs', cpuonly=False, nowrite=False, force=False, preview=False):
+        self.json    = json
+        self.output  = output
+        self.cpuonly = cpuonly
+        self.nowrite = nowrite
+        self.force   = force
+        self.preview = preview
+
 # Helpers ########################################
 
 class ProgressBar:
@@ -164,6 +175,8 @@ class Dataset(HashableBase):
     def from_info(cls, name, info):
         if info['type'] == 'raw':
             return RawDataset(name, info)
+        elif info['type'] == 'timed':
+            return TimedDataset(name, info)
         else:
             return SampledDataset(name, info)
 
@@ -173,6 +186,10 @@ class Dataset(HashableBase):
     def build(self, adc_bitwidth=8, device=None):
         self.builder = TraceDatasetBuilder(adc_bitwidth=adc_bitwidth, cache=True, device=device)
         return self.builder
+    
+    def get_trace(self, label, index=0, bit=-1):
+        dataset = self.builder.dataset if bit == -1 else self.builder.datasets[bit]
+        return dataset.get_by_label(label, index=index)
 
 
 class RawDataset(Dataset):
@@ -209,6 +226,19 @@ class SampledDataset(Dataset):
         self.builder.add_files(self.path, self.frmt, sample_mode=self.mode, sample_int=self.interval, sample_time=self.duration)
         self.builder.build()
 
+class TimedDataset(Dataset):
+    def __init__(self, name, info):
+        assert info['type'] == 'timed'
+        super().__init__(name, info)
+
+    def get_csv(self):
+        return f"{super().get_csv()},{self.mode};{self.interval};{self.duration}"
+
+    def build(self, adc_bitwidth=8, device=None):
+        super().build(adc_bitwidth, device)
+        self.builder.add_files(self.path, self.frmt, sample_mode="timed")
+        self.builder.build()
+
 
 # Test ###########################################
 
@@ -217,6 +247,7 @@ class Test(HashableBase):
         self.networks = [networks[n] for n in info['networks']]
         self.datasets = [datasets[d] for d in info['datasets']]
 
+        self.skip          = info.get('skip',           False)
         self.learning_rate = info.get('learning_rate',  defaults['learning_rate'])
         self.optimizer     = info.get('optimizer',      defaults['optimizer'])
         self.max_epochs    = info.get('max_epochs',     defaults['max_epochs'])
@@ -247,6 +278,12 @@ class Test(HashableBase):
         if self.optimizer == 'Adam':
             return optim.Adam(cnn.parameters(), lr=self.learning_rate)
 
+        if self.optimizer == 'Amsgrad':
+            return optim.Adam(cnn.parameters(), lr=self.learning_rate, amsgrad=True)
+
+        if self.optimizer == 'Adamax':
+            return optim.Adam(cnn.parameters(), lr=self.learning_rate)
+
         if self.optimizer == 'SGD':
             return optim.SGD(cnn.parameters(), lr=self.learning_rate)
 
@@ -255,8 +292,10 @@ class Test(HashableBase):
 # Regression #####################################
 
 class Regression:
-    def __init__(self, path, overwrite=False, adc_bitwidth=8):
-        self.path = path
+    def __init__(self, args, overwrite=False, adc_bitwidth=8):
+        self.args = args
+        self.json = args.json
+        self.csv  = f'{args.output}/run_results.csv'
         self.dict = None
 
         self.adc_bitwidth = adc_bitwidth
@@ -264,10 +303,10 @@ class Regression:
         self.timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M')
 
     def load(self):
-        with open(self.path, "r") as file: 
+        with open(self.json, "r") as file: 
             self.dict = json.load(file)
 
-        print(json.dumps(self.dict, indent=2))
+        # print(json.dumps(self.dict, indent=2))
 
         self.defaults = self.dict['defaults']
 
@@ -280,6 +319,7 @@ class Regression:
 
         for info in tests:
             test = Test(info, self.networks, self.datasets, self.defaults)
+            if test.skip: continue
 
             if isinstance(test.learning_rate, list):
                 for lr in test.learning_rate:
@@ -289,39 +329,83 @@ class Regression:
             else:
                 self.tests.append(test)
 
+    def build_datasets(self, *datasets, device=None):
+        for d in datasets:
+            d.build(adc_bitwidth=self.adc_bitwidth, device=device)
+
     def run_all(self):
-        if args.cpuonly:
+        # Header
+
+        if not(self.args.nowrite or self.args.preview):
+            if not(os.path.isfile(self.csv)):
+                with open(self.csv, "w") as file:
+                    file.write("Run ID,Network,Network ID,Network Type,Definition,Inputs,")
+                    file.write("Dataset,Datset ID,Type,Path,Dataset Cols,Datset Info,Test ID,")
+                    file.write("Learning Rate,Optimizer,Batch Size,Max Epochs,Target Accuracy,")
+                    file.write("Target Loss,Bit,Accuracy,Loss,Epoch,Runtime\n")
+
+        # Skipped tests
+
+        skip_tests = set()
+        if not(self.args.force):
+            if os.path.isfile(self.csv):
+                with open(self.csv, "r") as file:
+                    file.readline()
+                    for line in file.readlines():
+                        skip_tests.add(line.partition(",")[0])
+
+        # Device detection
+
+        if self.args.cpuonly:
             device = None
         else:
             device = torch.device("cuda") if torch.cuda.is_available() else None
 
-        if not(args.preview): plt.ion()
+        # Plotter setup
+
+        if not(self.args.preview): plt.ion()
+
+        # Regression main
 
         for test in self.tests:
             for dataset in test.datasets:
-                dataset.build(adc_bitwidth=self.adc_bitwidth, device=device)
+                self.build_datasets(dataset, device=device)
 
                 for network in test.networks:
                     assert network.inputs == dataset.cols
 
-                    if not(args.preview):
+                    run_hash = base36hash(network.get_csv() + dataset.get_csv() + test.get_csv())
+                    print(f"{run_hash},{network.name},{dataset.name},{test}")
+
+                    if not(self.args.preview):
                         fig, axs = plt.subplots(2, figsize=(8,8))
+                        fig.suptitle(f"{run_hash}\n{network.name}  -  {dataset.name}  -  {test.optimizer}({test.learning_rate})\n")
                         axs[0].set_title("Loss")
                         axs[1].set_title("Accuracy")
                     else:
                         axs = None
     
-                    run_hash = base36(hash(network.get_csv() + dataset.get_csv() + test.get_csv()))
-                    print(f"{run_hash},{network.name},{dataset.name},{test}")
+                    try:
+                        if network.type == 'bitwise':
+                            for i in range(self.adc_bitwidth-1, -1, -1):
+                                run_hash_i = f"{run_hash}_{i}"
+                                if run_hash_i in skip_tests: 
+                                    print(f"  SKIPPING {run_hash_i}"); continue
+                                self.run_eval_cnn(test, network, dataset, device, run_hash_i, axs, bit=i)
+                        else:
+                            if run_hash in skip_tests: 
+                                print(f"  SKIPPING {run_hash}"); continue
+                            self.run_eval_cnn(test, network, dataset, device, run_hash, axs, bit=-1)
 
-                    if network.type == 'bitwise':
-                        for i in range(self.adc_bitwidth-1, -1, -1):
-                            self.run_eval_cnn(test, network, dataset, device, f"{run_hash}_{i}", axs, bit=i)
-                    else:
-                        self.run_eval_cnn(test, network, dataset, device, run_hash, axs, bit=-1)
+                    except KeyboardInterrupt as e:
+                        if not(self.args.preview or self.args.nowrite):
+                            fig.savefig(f'{self.args.output}/{run_hash}.png')
+                            plt.close()
+                        print("Keyboard Interrupt detected. Shutting down...")
+                        exit()
 
-                    if not(args.preview) and not(args.nowrite):
-                        fig.savefig(f'{args.output}/{run_hash}.png')
+                    if not(self.args.preview or self.args.nowrite):
+                        fig.savefig(f'{self.args.output}/{run_hash}.png')
                         plt.close()
 
 
@@ -330,7 +414,6 @@ class Regression:
         acc_period  = 100  if device else 10
 
         start_tm = time.monotonic()
-        # if ? or self.overwrite
     
         dataset.builder.build_dataloaders(batch_size=test.batch_size, shuffle=True)
         dataloader  = dataset.builder.dataloader if bit == -1 else dataset.builder.dataloaders[bit]
@@ -339,10 +422,10 @@ class Regression:
         cnn = network.create(dataset.len, dataset.cols)
         bit = "_" if bit == -1 else bit
 
-        if bit == self.adc_bitwidth-1 or bit == -1: print(cnn)
+        #if bit == self.adc_bitwidth-1 or bit == -1: print(cnn)
 
         if (cnn is None): raise RuntimeError("Failed to build CNN")
-        if (args.preview): return
+        if (self.args.preview): return
 
         cnn = cnn.to(device)
     
@@ -357,55 +440,60 @@ class Regression:
         progress = ProgressBar(f_start="Training ", f_end="{model} | Loss {loss:8} | Accuracy {acc:8} | {msg}", max_val=test.max_epochs)
         progress.start(model=run_hash, loss=1.0, acc=0.0, msg="          ")
 
-        for epoch in range(test.max_epochs):
-            correct = 0
+        try:
+            for epoch in range(test.max_epochs):
+                correct = 0
 
-            for inputs, labels in dataloader:
-                if device:
-                    inputs = inputs.cuda()
-                    labels = labels.cuda()
+                for inputs, labels in dataloader:
+                    if device:
+                        inputs = inputs.cuda()
+                        labels = labels.cuda()
 
-                # Forward
+                    # Forward
 
-                optimizer.zero_grad()
-                output = cnn(inputs)
+                    optimizer.zero_grad()
+                    output = cnn(inputs)
 
-                # Backward
+                    # Backward
 
-                loss = criterion(output, labels)
-                loss.backward()
-                optimizer.step()
+                    loss = criterion(output, labels)
+                    loss.backward()
+                    optimizer.step()
 
-                # Calculate Accuracy
+                    # Calculate Accuracy
 
-                if (epoch % acc_period) == 0:
-                    _, predicted = torch.max(output, 1)
-                    correct += (predicted == labels).sum()
+                    if (epoch % acc_period) == 0:
+                        _, predicted = torch.max(output, 1)
+                        correct += (predicted == labels).sum()
 
-            loss_arr[epoch] = loss
+                loss_arr[epoch] = loss
 
-            if epoch % acc_period == 0:
-                accuracy = correct / len(dataset.builder.dataset)
-                acc_indx = epoch//acc_period
-                acc_arr[acc_indx] = accuracy
+                if epoch % acc_period == 0:
+                    accuracy = correct / len(dataset.builder.dataset)
+                    acc_indx = epoch//acc_period
+                    acc_arr[acc_indx] = accuracy
 
-            if epoch % plot_period == 0:
-                #print(f'TRAINING: {run_hash}, Epoch {epoch:5}, Loss:     {loss.item()}')
-                #print(f'TRAINING: {run_hash}, Epoch {epoch:5}, Accuracy: {accuracy}')
-                progress.update(epoch, loss=round(loss.item(), 6), acc=round(float(accuracy),6))
+                if epoch % plot_period == 0:
+                    #print(f'TRAINING: {run_hash}, Epoch {epoch:5}, Loss:     {loss.item()}')
+                    #print(f'TRAINING: {run_hash}, Epoch {epoch:5}, Accuracy: {accuracy}')
+                    progress.update(epoch, loss=round(loss.item(), 6), acc=round(float(accuracy),6))
 
-                if loss_g: loss_g.remove()
-                if acc_g:  acc_g.remove()
-                loss_g = axs[0].plot(loss_arr.detach().cpu()[:epoch], color='gray', linestyle='dotted')[0]
-                acc_g  = axs[1].plot(acc_arr.cpu()[:acc_indx+1],  color='gray', linestyle='dotted')[0]
-                plt.pause(0.01)
+                    if loss_g: loss_g.remove()
+                    if acc_g:  acc_g.remove()
+                    loss_g = axs[0].plot(loss_arr.detach().cpu()[:epoch], color='gray', linestyle='dotted')[0]
+                    acc_g  = axs[1].plot(acc_arr.cpu()[:acc_indx+1],  color='gray', linestyle='dotted')[0]
+                    plt.pause(0.01)
 
-            if accuracy >= test.max_accuracy:
-                progress.update(epoch, msg="Reached target accuracy"); break
+                if accuracy >= test.max_accuracy:
+                    progress.update(epoch, msg="Reached target accuracy"); break
 
-            if loss <= test.max_loss:
-                progress.update(epoch, msg="Reached target loss"); break
-        
+                if loss <= test.max_loss:
+                    progress.update(epoch, msg="Reached target loss"); break
+        except KeyboardInterrupt as e:
+            progress.update(1,msg="Job Interrupted")
+            progress.stop()
+            raise e
+
         progress.stop()
 
         label = f'cnn[{bit}]'
@@ -415,14 +503,14 @@ class Regression:
         axs[1].legend()
         plt.pause(0.01)
 
-        if args.nowrite: return
+        if self.args.nowrite: return
 
         stop_tm = time.monotonic()
         runtime = stop_tm - start_tm
 
-        torch.save(cnn.state_dict(), f'{args.output}/{run_hash}.state')
+        torch.save(cnn.state_dict(), f'{self.args.output}/{run_hash}.state')
 
-        with open(f'{args.output}/run_results.csv', 'a') as file:
+        with open(self.csv, "a") as file:
             file.write(f"{run_hash},{network.name},{network},{dataset.name},{dataset},{test},{bit},{accuracy},{loss},{epoch},{runtime}\n")
 
 # Main ###########################################
@@ -430,12 +518,10 @@ class Regression:
 if __name__  == '__main__':
     args = argparser.parse_args()
 
-    os.makedirs(args.output, exist_ok=True)
-    if not(os.path.isfile(f'{args.output}/run_results.csv')):
-        with open(f'{args.output}/run_results.csv', 'a') as file:
-            file.write(f"Run ID,Network,Network ID,Network Type,Definition,Inputs,Dataset,Datset ID,Type,Path,Dataset Cols,Datset Info,Test ID,Learning Rate,Optimizer,Batch Size,Max Epochs,Target Accuracy,Target Loss,Bit,Accuracy,Loss,Epoch,Runtime\n")
+    if not args.nowrite:
+        os.makedirs(args.output, exist_ok=True)
 
-    regression = Regression(args.json)
+    regression = Regression(args)
     regression.load()
     regression.run_all()
 

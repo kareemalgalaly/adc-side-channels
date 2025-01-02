@@ -4,6 +4,11 @@
             "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:F(100):R:F(100):R:F(2):S",
             "type"       : "bitwise",
             "inputs"     : 1
+        },
+        "paper_sd" : {
+            "definition" : "C(30,3,1):R:F(128):R:F(64):R:F(32):R:F(2):S",
+            "type"       : "bitwise",
+            "inputs"     : 1
         }
     },
     "datasets" : {
@@ -14,7 +19,7 @@
             "columns" : 1,
             "len"     : 3000
         },
-        "sampled" : {
+        "sampled_min" : {
             "path"    : "sky",
             "type"    : "sampled",
             "format"  : "sky_d(\\d+)_.*\\.txt",
@@ -22,24 +27,47 @@
             "sample_mode"     : "MIN",
             "sample_interval" : 0.1e-6,
             "sample_duration" : 300e-6
+        },
+        "sampled_max" : {
+            "path"    : "sky",
+            "type"    : "sampled",
+            "format"  : "sky_d(\\d+)_.*\\.txt",
+            "columns" : 1,
+            "sample_mode"     : "MAX",
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 300e-6
+        },
+        "true_raw" : {
+            "path"    : "sky",
+            "type"    : "timed",
+            "format"  : "sky_d(\\d+)_.*\\.txt",
+            "columns" : 1
         }
     },
     "tests" : [
         {
+            "skip"          : true,
             "networks"      : ["paper"],
             "datasets"      : ["linearized3k"],
             "learning_rate" : [0.0001, 0.0005, 0.0010]
         },
         {
+            "skip"          : true,
             "networks"      : ["paper"],
-            "datasets"      : ["sampled"],
-            "learning_rate" : [0.0001, 0.0005, 0.00001]
+            "datasets"      : ["sampled_min"],
+            "learning_rate" : [1e-11]
+        },
+        {
+            "networks"      : ["paper_sd"],
+            "datasets"      : ["sampled_max"],
+            "optimizer"     : "Adamax",
+            "learning_rate" : [1e-6]
         }
     ],
     "defaults" : {
         "optimizer"     : "Adam",
         "learning_rate" : 0.0005,
-        "max_epochs"    : 10000,
+        "max_epochs"    : 5000,
         "max_accuracy"  : 1.0,
         "max_loss"      : 0.0,
         "batch_size"    : 256
