@@ -49,6 +49,7 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0
         ptim = stim
         wtim = stim + sample_interval
         val_win.append(value)
+        val_arr.append(value)
 
         for line in file.readlines():
             if len(val_arr) == max_samples: break

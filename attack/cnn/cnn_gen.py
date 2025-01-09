@@ -27,7 +27,7 @@ def flatten_shape(shape):
     for i in shape[1:]: ret *= i
     return ret
 
-def build_cnn(definition):
+def build_cnn(definition, debug=False):
     tokens = definition.replace(" ", "").split(":")
     in_shp = tuple(int(s) for s in tokens[0].split(','))
     shapes = [in_shp]
@@ -74,19 +74,25 @@ def build_cnn(definition):
         else:
             raise RuntimeError(f"Could not parse definition entry <{token}>")
 
+    if debug: print(shapes)
     return nn.ModuleList(layers), flatten
 
 class GenericCNN(nn.Module):
-    def __init__(self, definition):
+    def __init__(self, definition, debug=False):
         super(GenericCNN, self).__init__()
-        self.layers, self.flatten = build_cnn(definition)
+        self.layers, self.flatten = build_cnn(definition, debug)
+        self.debug = debug
 
     def forward(self, x):
+        #if self.debug: print(x.shape, "input")
         x = x.unsqueeze(1)
+        #if self.debug: print(x.shape, "unsqueeze")
         for i, layer in enumerate(self.layers):
             if i == self.flatten:
                 x = x.view(x.size(0), -1)
+                #if self.debug: print(x.shape, "flatten")
             x = layer(x)
+            #if self.debug: print(x.shape, layer)
         return x
     
 if __name__ == "__main__":

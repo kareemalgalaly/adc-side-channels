@@ -9,6 +9,23 @@
             "definition" : "C(30,3,1):R:F(128):R:F(64):R:F(32):R:F(2):S",
             "type"       : "bitwise",
             "inputs"     : 1
+        },
+        "deep" : {
+            "definition" : "C(5,5,1):R:C(5,5,1):R:C(5,5,1):R:C(5,5,1):P(5,5):R:C(5,5,1):P(5,5):R:F(256):R:F(256):R:F(256):R:F(128):R:F(64):R:F(2):S",
+            "type"       : "bitwise",
+            "inputs"     : 1
+        },
+        "resnet101pt" : {
+            "definition" : "predef::resnet101",
+            "type"       : "bitwise",
+            "inputs"     : 1,
+            "weights"    : "DEFAULT"
+        },
+        "resnet101" : {
+            "definition" : "predef::resnet101",
+            "type"       : "bitwise",
+            "preprocess" : "x.reshape((x.shape[0], 1, 1, x.shape[1])).repeat(1, 3, 1, 1)",
+            "inputs"     : 1
         }
     },
     "datasets" : {
@@ -58,10 +75,22 @@
             "learning_rate" : [1e-11]
         },
         {
+            "skip"          : true,
             "networks"      : ["paper_sd"],
-            "datasets"      : ["sampled_max"],
+            "datasets"      : ["linearized3k", "sampled_max"],
             "optimizer"     : "Adamax",
-            "learning_rate" : [1e-6]
+            "learning_rate" : [1e-6, 1e-4, 1e-8]
+        },
+        {
+            "skip"          : true,
+            "networks"      : ["deep"],
+            "datasets"      : ["linearized3k", "sampled_max", "sampled_max"],
+            "learning_rate" : [0.1]
+        },
+        {
+            "networks"      : ["resnet101"],
+            "datasets"      : ["linearized3k"],
+            "learning_rate" : [1e-5]
         }
     ],
     "defaults" : {

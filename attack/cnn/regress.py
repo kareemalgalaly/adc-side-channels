@@ -11,6 +11,7 @@ import datetime
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torchvision
 import matplotlib.pyplot as plt
 
 from copy import copy
@@ -24,6 +25,7 @@ argparser.add_argument("-c", "--cpuonly", const=True, default=False, action='sto
 argparser.add_argument("-n", "--nowrite", const=True, default=False, action='store_const', help="Don't write any outputs")
 argparser.add_argument("-f", "--force", const=True, default=False, action='store_const', help="Overwrite output files")
 argparser.add_argument("-p", "--preview", const=True, default=False, action='store_const', help="Don't run anything only list runs that would occur")
+argparser.add_argument("--nndebug", const=True, default=False, action='store_const', help="Print information about cnn creation.")
 
 pwd      = os.path.dirname(os.path.abspath(__file__))
 proj_dir = os.path.dirname(os.path.dirname(pwd))
@@ -148,18 +150,38 @@ class Network(HashableBase):
         self.definition = info['definition']
         self.type       = info['type']
         self.inputs     = info['inputs']
+        self.weights    = info.get('weights', None)
+        self.predef     = self.definition.startswith("predef::")
+        self.preprocess = eval(f"lambda x: {info.get('preprocess', 'x')}")
 
     def get_csv(self):
         return f"{self.type},{self.definition.replace(',',';')},{self.inputs}"
 
     def create(self, input_len, input_ch):
-        desc = f"{input_len},{input_ch}:{self.definition}"
-        try:
-            return GenericCNN(desc)
-        except Exception as e:
-            print("Failed to create:", desc)
-            print(e)
-            return None
+        if self.predef:
+            network_class   = getattr(torchvision.models, self.definition[8:])
+            network = network_class(weights = self.weights)
+
+            #if self.weights:
+            #    #weights, flavor = self.weights.split(".")
+            #    #network_weights = getattr(torchvision.models, weights)
+            #    #network_weights = getattr(network_weights, flavor)
+            #    #self.preprocess = network_weights.transforms()
+            #    network = network_class(weights = self.weights)
+            #else:
+            #    network = network_class(pretrained=False)
+
+            network.eval()
+
+            return network
+        else:
+            desc = f"{input_len},{input_ch}:{self.definition}"
+            try:
+                return GenericCNN(desc, debug=args.nndebug)
+            except Exception as e:
+                print("Failed to create:", desc)
+                print(e)
+                return None
 
 # Dataset ########################################
 
@@ -204,7 +226,7 @@ class RawDataset(Dataset):
 
     def build(self, adc_bitwidth=8, device=None):
         super().build(adc_bitwidth, device)
-        self.builder.add_files(self.path, self.frmt)
+        self.builder.add_files(self.path, self.frmt, max_sample=self.len)
         self.builder.build()
 
 
@@ -410,8 +432,8 @@ class Regression:
 
 
     def run_eval_cnn(self, test, network, dataset, device, run_hash, axs, bit=-1):
-        plot_period = 1000 if device else 10
-        acc_period  = 100  if device else 10
+        plot_period = 1 if network.predef else 1000 if device else 10
+        acc_period  = 1 if network.predef else 100  if device else 10
 
         start_tm = time.monotonic()
     
@@ -448,6 +470,8 @@ class Regression:
                     if device:
                         inputs = inputs.cuda()
                         labels = labels.cuda()
+
+                    inputs = network.preprocess(inputs)
 
                     # Forward
 

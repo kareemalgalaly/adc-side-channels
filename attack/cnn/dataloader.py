@@ -45,7 +45,6 @@ class TraceDataset(Dataset):
         sample_mode, sample_int, max_sample = sample_info
 
         if sample_mode == 'timed':
-            print("timedddd")
             with open(fpath, 'r') as file:
                 header = file.readline()
                 splitf = lambda x: (np.float32(x[0]), np.float32(x[1]))
@@ -53,16 +52,16 @@ class TraceDataset(Dataset):
                 valu_arr = [splitf(line.strip().split()) for line in file.readlines()]
                 time_arr, valu_arr = zip(*valu_arr)
                 trace = (np.array((time_arr, valu_arr), dtype=np.float32)) #, np.array(valu_arr, dtype=np.float32))
-                print(trace.shape)
 
         elif sample_mode:
             valu_arr = sample_file(fpath, sample_int, max_sample, sample_mode=sample_mode)
             trace = np.array(valu_arr, dtype=np.float32)
+
         else:
             with open(fpath, 'r') as file:
                 header = file.readline()
                 valu_arr = [np.float32(line.strip().split()[1]) for line in file.readlines()]
-                trace = np.array(valu_arr, dtype=np.float32)
+                trace = np.array(valu_arr, dtype=np.float32)[:max_sample]
 
         #trace = torch.tensor(valu_arr, dtype=torch.float32, device=self.device)
 
@@ -110,7 +109,7 @@ class TraceDatasetBuilder:
 
         self.trace_cache = {}
 
-    def add_files(self, directory, format, label_group=0, sample_mode=None, sample_int=0.1e-6, sample_time=300e-6):
+    def add_files(self, directory, format, label_group=0, sample_mode=None, sample_int=0.1e-6, sample_time=300e-6, max_sample=None):
         ''' Builds list of powertrace files
         Inputs:
             directory   : folder to search for files
@@ -122,7 +121,7 @@ class TraceDatasetBuilder:
         format = re.compile(format)
         fnames = os.listdir(directory)
 
-        max_sample = sample_time / sample_int if sample_mode else None
+        if sample_mode: max_sample = sample_time / sample_int
         sample_info = (sample_mode, sample_int, max_sample)
 
         i = 0
