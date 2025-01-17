@@ -1,0 +1,16 @@
+* Full ADC 
+
+.subckt ADC_WRAP vin vref clock reset vdda vddd gnd d7 d6 d5 d4 d3 d2 d1 d0
+xanalog vref vin clock reset vdda gnd comp compn ADC_ANALOG ; vinn inn ck reset vdd gnd xout yout
+
+* Digital tie-offs for now
+r1 d1 gnd 10
+r2 d2 gnd 10
+r3 d3 gnd 10
+r4 d4 gnd 10
+r5 d5 gnd 10
+r6 d6 gnd 10
+r7 d7 gnd 10
+
+.ends
+

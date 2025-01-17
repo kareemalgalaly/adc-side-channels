@@ -1,24 +1,20 @@
 * Two Stage Single Slope ADC using skywater 130nm
 
 .lib "models/sky130.lib.spice" $corner
-.inc adc_sky.lib
+.lib "adc_sky.lib"             nops_noprot ;$flavor
+.inc "adc_wrap.cir"
 
-xadc_a vref vin clock reset vdd gnd xout yout RAMP_TWOSTAGE 
-* comparator xout rises with clock when it does rise. and falls with it too
-* comparator yout does the same but is inverted in terms of the comparison
-* both should be read on falling edge
-
-* Input Signals
-
-Vdd vdd GND 1.8
-V5  clock GND PULSE(0 1.8 0 10p 10p .5u 1u)
-Vin vin GND 0.5
-V2  GND vref 1
-V3  reset GND PULSE(0 1.8 0 10p 10p 20n 256.02u)
-
+xadc vin vref clock reset vdda vddd gnd d7 d6 d5 d4 d3 d2 d1 d0 ADC_WRAP 
+        
+Vdda vdda   GND   1.8
+Vddd vddd   GND   1.8
+V5   clock  GND   PULSE(0 1.8 0 10p 10p .5u 1u)
+Vin  vin    GND   0.5
+V2   GND    vref  1
+V3   reset  GND   PULSE(0 1.8 0 10p 10p 20n 256.02u)
 
 .option method=Gear
-.ic v(xadc_a.inp)=0
+.ic v(xadc.xanalog.inp)=0
 
 .control
 set color0=white
@@ -45,17 +41,18 @@ while vact < vstop
     let lin-tstop  = 512u
     let lin-tstep  = 100n
 
-    ${isplot}${islin} plot I(vdd)
-    ${islin}          linearize I(vdd) ; digitized
-    ${isplot}         plot I(vdd)
+    ${isplot}${islin} plot -I(vdda) -I(vddd)
+    ${islin}          linearize I(vdda) I(vddd) ; digitized
+    ${isplot}         plot -I(vdda) -I(vddd)
 
     let cut-tstart = 257u
     let cut-tstop = 512u
     cutout
+    ;plot -I(vdda) -I(vddd)
 
     set wr_singlescale
     set wr_vecnames
-    ${iswrite}wrdata ../outfiles/sky/sky_d$&digit$dlm$&vact$ext -I(vdd) ;digitized
+    ${iswrite}wrdata ../outfiles/sky/sky_d$&digit$dlm$&vact$ext -I(vddd) -I(vdda) ;digitized
 
     let vact = vact + vdelta
     let digit = digit + 1

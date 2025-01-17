@@ -1,9 +1,9 @@
 * Two Stage Single Slope ADC using skywater 130nm
 
 .lib "models/sky130.lib.spice" tt
-.inc adc_sky.lib
+.lib adc_sky.lib nops_noprot
 
-xadc_a vref vin clock reset vdd gnd xout yout RAMP_TWOSTAGE 
+xadc_a vref vin clock reset vdd gnd xout yout ADC_ANALOG
 * comparator xout rises with clock when it does rise. and falls with it too
 * comparator yout does the same but is inverted in terms of the comparison
 * both should be read on falling edge
@@ -25,7 +25,7 @@ set color0=white
 
 let vstart = 0
 let vstop  = 1.0
-let num_sim= 256
+let num_sim= 1
 let vdelta = (vstop-vstart)/num_sim
 let vact   = vstart
 let digit  = 0
@@ -45,7 +45,7 @@ while vact < vstop
     let lin-tstop  = 512u
     let lin-tstep  = 100n
 
-    ; plot I(vdd)
+    plot I(vdd)
     ; linearize I(vdd) ; digitized
     ; plot I(vdd)
 
