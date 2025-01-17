@@ -1,17 +1,9 @@
 `ifndef __TB_LIB__
 `define __TB_LIB__
 
-`define inf(message) \
-    $display($sformatf("INFO : %t: %s", $realtime, message))
-
-`define err(message) \
-    $display($sformatf("ERROR: %t: %s", $realtime, message))
-
 `define check(signal, value, msg="") \
     if (signal !== value) begin \
-        `err($sformatf("ASSERTION FAILED in %m: %s", msg)); \
-        `inf($sformatf("Expected %0d, Got %0d", value, signal)); \
-        $finish; \
+        $error("ASSERTION FAILED in %m: %s\nExpected %0d, Got %0d", msg, value, signal); \
     end
 
 module clock_reset_gen #(

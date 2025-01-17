@@ -12,7 +12,7 @@ yosys read_verilog -sv $::env(SYNTH_VERILOG)
 #hierarchy -check -top control
 
 # synthesize top level module
-yosys synth -top control
+yosys synth -top $::env{SYNTH_MODULE}
 
 # mapping flip-flops to mycells.lib
 yosys dfflibmap -liberty ~/Lib/skywater-pdk/libraries/sky130_fd_sc_hs/latest/timing/sky130_fd_sc_hs__tt_025C_1v50.lib

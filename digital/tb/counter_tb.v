@@ -47,7 +47,7 @@ module counter_tb;
         test_counting();
         test_set();
         test_overflow();
-        $display("Test Complete: PASS");
+        $display("Test Complete");
         $display("==================================================");
         $finish;
     end

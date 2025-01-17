@@ -18,6 +18,9 @@ regression.build_datasets(d_lin, d_min, d_max, d_tru)
 
 fig, axs = plt.subplots(len(args.traces))
 
+if len(args.traces) == 1: 
+    axs = [axs]
+
 for trace, ax in zip(args.traces, axs):
 
     lin_trace = d_lin.get_trace(trace)
