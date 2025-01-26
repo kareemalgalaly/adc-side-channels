@@ -66,8 +66,8 @@ module sampler_tb;
         comp_switched = 1;
 
         repeat (30) begin
-            @(posedge clk) comp_out = 1;
-            @(negedge clk) comp_out = 0;
+            @(posedge clk) #1 comp_out = 1;
+            @(negedge clk) #1 comp_out = 0;
         end
     end
 

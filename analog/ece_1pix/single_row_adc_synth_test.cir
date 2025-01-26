@@ -1,0 +1,57 @@
+Simulation of digital counter circuit synthesized with Yosys
+
+** opencircuitdesign pdks install
+.lib "models/sky130.lib.spice" tt
+.include /mnt/c/Users/Kareem\ Ahmad/Projects/skywater/skywater-pdk-libs-sky130_fd_sc_hs/cells/mux2i/sky130_fd_sc_hs__mux2i_1.spice
+.include /mnt/c/Users/Kareem\ Ahmad/Projects/skywater/skywater-pdk-libs-sky130_fd_sc_hs/cells/dfxtp/sky130_fd_sc_hs__dfxtp_1.spice
+.include /mnt/c/Users/Kareem\ Ahmad/Projects/skywater/skywater-pdk-libs-sky130_fd_sc_hs/cells/nor2b/sky130_fd_sc_hs__nor2b_1.spice
+.include /mnt/c/Users/Kareem\ Ahmad/Projects/skywater/skywater-pdk-libs-sky130_fd_sc_hs/cells/and3/sky130_fd_sc_hs__and3_1.spice
+.include /mnt/c/Users/Kareem\ Ahmad/Projects/skywater/skywater-pdk-libs-sky130_fd_sc_hs/cells/and4/sky130_fd_sc_hs__and4_1.spice
+.include /mnt/c/Users/Kareem\ Ahmad/Projects/skywater/skywater-pdk-libs-sky130_fd_sc_hs/cells/and2/sky130_fd_sc_hs__and2_1.spice
+.include /mnt/c/Users/Kareem\ Ahmad/Projects/skywater/skywater-pdk-libs-sky130_fd_sc_hs/cells/a21oi/sky130_fd_sc_hs__a21oi_1.spice
+.include /mnt/c/Users/Kareem\ Ahmad/Projects/skywater/skywater-pdk-libs-sky130_fd_sc_hs/cells/nor3/sky130_fd_sc_hs__nor3_1.spice
+.include /mnt/c/Users/Kareem\ Ahmad/Projects/skywater/skywater-pdk-libs-sky130_fd_sc_hs/cells/o21bai/sky130_fd_sc_hs__o21bai_1.spice
+.include /mnt/c/Users/Kareem\ Ahmad/Projects/skywater/skywater-pdk-libs-sky130_fd_sc_hs/cells/nor2/sky130_fd_sc_hs__nor2_1.spice
+.include /mnt/c/Users/Kareem\ Ahmad/Projects/skywater/skywater-pdk-libs-sky130_fd_sc_hs/cells/o21a/sky130_fd_sc_hs__o21a_1.spice
+.include /mnt/c/Users/Kareem\ Ahmad/Projects/skywater/skywater-pdk-libs-sky130_fd_sc_hs/cells/dfxtp/sky130_fd_sc_hs__dfxtp_1.spice
+.include counter_synth.model
+.include register_array_synth.model
+.include edge_detector_synth.model
+
+* Instantiate counter module
+XCOUNTER clk reset count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 vss vss vdd vdd counter
+
+* Instantiate edge detector module (detects rising edges of comparator signals)
+XEDGE_DETECTOR clk reset comp.0 enable vss vss vdd vdd edge_detector
+
+* Instantiate registers module (stores values based on edge detector output)
+XREGISTER_ARRAY clk reset enable count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 stored_values.0 stored_values.1 stored_values.2 stored_values.3 stored_values.4 stored_values.5 stored_values.6 stored_values.7 vss vss vdd vdd register_array
+
+* Voltage sources
+.param vdd=1.8
+Vvdd vdd 0 {vdd}
+
+.param vss=0
+Vvss vss 0 {vss}
+
+** Clock and Reset signals (1MHz clock)
+Vrst    reset   0   pulse   {vdd}   {vss}   2u      2n  2n  490u    500u
+Vclk    clk     0   pulse   {vss}   {vdd}   200n    1n  1n  0.5u      1u
+
+* Comparator signal (example: 5 comparators with random outputs)
+* Here, we simulate random '1's and '0's for comparators, adjust as needed
+Vcomp0 comp.0 0 pulse {vdd} {vss} 0 5n 5n 66u 258u
+
+** Simulation settings
+*.control
+.option KLU
+.option skywaterpdk
+.tran 1n 258u130
+.save i(Vvdd)
+
+.plot v(clk) 2+v(reset) 4+v(comp.0)
+.plot v(count.0) 2+v(count.1) 4+v(count.2) 6+v(count.3) 8+v(count.4) 10+v(count.5) 12+v(count.6) 14+v(count.7)
+.plot v(stored_values.0) 2+v(stored_values.1) 4+v(stored_values.2) 6+v(stored_values.3) 8+v(stored_values.4) 10+v(stored_values.5) 12+v(stored_values.6) 14+v(stored_values.7)
+*.endc
+
+.END

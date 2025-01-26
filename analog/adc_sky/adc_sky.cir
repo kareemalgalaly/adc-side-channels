@@ -23,7 +23,7 @@ V3  reset GND PULSE(0 1.8 0 10p 10p 20n 256.02u)
 .control
 set color0=white
 
-let vstart = 0
+let vstart = 0.5
 let vstop  = 1.0
 let num_sim= 1
 let vdelta = (vstop-vstart)/num_sim

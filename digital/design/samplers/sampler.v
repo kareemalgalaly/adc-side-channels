@@ -11,10 +11,6 @@ module negedge_sampler (
     output reg out
 );
 
-    reg test_a;
-    reg test_b;
-    reg test_c;
-
     wire in_1n;
     wire in_1p;
     wire in_2n;
@@ -25,17 +21,9 @@ module negedge_sampler (
     assign in_2n = ~in_1p;
     assign in_2p = ~in_2n;
 
-    always_ff @(negedge clk) begin
+    always @(negedge clk) begin
         out <= in_2p;
-        test_a <= in;
     end
-
-    always_ff @(posedge clk) begin
-        test_b <= in;
-        test_c <= in_2p;
-    end
-
-
 endmodule
 
 module sample_hold (
@@ -83,4 +71,30 @@ module edge_sampler (
     end
 
     assign out = held & ~held_q;
+endmodule
+
+module value_sampler #(
+    parameter WIDTH=8,
+) (
+    input clk,
+    input rst,
+    input [WIDTH-1:0] in,
+    input sample,
+    output reg valid,
+    output reg [WIDTH-1:0] out
+); 
+
+    always @(posedge clk) begin
+        if (rst) begin
+            valid <= 0;
+            out   <= '0;
+        end
+        else begin
+            if (sample) begin
+                valid <= 1;
+                out   <= in;
+            end
+        end
+    end
+
 endmodule
