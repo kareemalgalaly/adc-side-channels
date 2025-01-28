@@ -1,3 +1,9 @@
+//*****************************************************************************
+// File        : digital_ADC.v
+// Author      : kareem
+// Description : Basic Unprotected ADC without FSM
+//*****************************************************************************
+
 module digitalADC #(
     parameter ASYNC = 0,
     parameter NUM_SENSORS = 1,
@@ -16,7 +22,7 @@ module digitalADC #(
     ) counter (
         .clk        (clk        ),
         .rst        (rst        ),
-        .en         (           ),
+        .en         (1          ),
         .set        (0          ),
         .setval     ('0         ),
         .count      (count_value),

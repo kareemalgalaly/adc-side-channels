@@ -1,3 +1,9 @@
+//*****************************************************************************
+// File        : control_v0
+// Author      : kareemahmad
+// Description : Behavioral unprotected Digital ADC with basic FSM
+//*****************************************************************************
+
 module control (
     // dclk drst dcomp dstart_over
     input  clk,

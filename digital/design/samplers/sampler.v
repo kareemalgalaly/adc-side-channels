@@ -2,8 +2,13 @@
 // File        : comparator_sampler.v
 // Author      : kareemahmad
 // Created     : 2025 Jan 08
-// Description : 
+// Description : Collection of modules related to sampling
 //*****************************************************************************
+
+// --------------------------------------------------
+// module: negedge_sampler
+// - Samples a signal on negative edge of the clock
+// --------------------------------------------------
 
 module negedge_sampler (
     input clk,
@@ -26,6 +31,11 @@ module negedge_sampler (
     end
 endmodule
 
+// --------------------------------------------------
+// module: sample_hold
+// - Holds output high when input rises until reset
+// --------------------------------------------------
+
 module sample_hold (
     input clk,
     input rst,
@@ -47,6 +57,11 @@ module sample_hold (
     end
 
 endmodule
+
+// --------------------------------------------------
+// module: edge_sampler
+// - Pulses output for one cycle on rising edge of input
+// --------------------------------------------------
 
 module edge_sampler (
     input clk,
@@ -72,6 +87,11 @@ module edge_sampler (
 
     assign out = held & ~held_q;
 endmodule
+
+// --------------------------------------------------
+// module: value_sampler
+// - Updates output from input when sample is high
+// --------------------------------------------------
 
 module value_sampler #(
     parameter WIDTH=8,
