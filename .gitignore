@@ -1,6 +1,5 @@
-analog/adc_obj_dir
+aalog/adc_obj_dir
 analog/*.h
-analog/outfiles/*
 attack/cnn/outputs
 synth/*
 build
@@ -11,3 +10,4 @@ __pycache__
 .DS_Store
 obj_dir
 trained_models*
+outfiles*

@@ -58,45 +58,52 @@ Vcomp0 comp.0 0 pulse {vss} {vdd} 32u 5n 5n 224u 256u
 .control
 set color0=white
 
-let dstart = 0u
-let dstop  = 256u
+let tdelta = 1u
+let dstart = 0
+let dstop  = 256
 let num_sim= 256
+
+let tstart = dstart*tdelta
+let tstop  = dstop*tdelta
 let ddelta = (dstop-dstart)/num_sim
 let dact   = dstart
-let drem   = dstop-dact
+let tact   = dstart*tdelta
+let trem   = tstart-tact
 let digit  = 0
 
 set ext = "v.txt"
 set dlm = "_"
 
+set wr_singlescale
+set wr_vecnames
+
 while dact < dstop
     echo
     echo Running Sweep $&digit/$&num_sim
     echo
-    alter @Vcomp0[pulse] [ 0 1.8 $&dact 5n 5n $&drem 256u ]
+    alter @Vcomp0[pulse] [ 0 1.8 $&tact 5n 5n $&trem 256u ]
     ;run
     tran 1u 512u uic
+
+    let cut-tstart = 257u
+    let cut-tstop = 512u
+    cutout
+
+    ; plot I(vdd)
+    wrdata outfiles/sky_raw_d$&digit$ext -I(vdd) ;digitized
 
     let lin-tstart = 257u
     let lin-tstop  = 512u
     let lin-tstep  = 100n
+    linearize I(vdd) ; digitized
 
     ; plot I(vdd)
-    ; plot V(comp.0)
-    ; linearize I(vdd) ; digitized
-    ; plot I(vdd)
-
-    *let cut-tstart = 257u
-    *let cut-tstop = 512u
-    *cutout
-
-    set wr_singlescale
-    set wr_vecnames
-    wrdata outfiles/sky_d$&digit$ext -I(vdd) ;digitized
+    wrdata outfiles/sky_lin_d$&digit$ext -I(vdd) ;digitized
 
     let dact = dact + ddelta
-    let drem = dstop-dact
-    let digit = digit + 1
+    let tact = dact * tdelta
+    let trem = tstop - tact
+    let digit = dact / ddelta
 
     destroy all
 end
