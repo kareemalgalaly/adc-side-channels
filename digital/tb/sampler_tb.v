@@ -1,3 +1,9 @@
+//*****************************************************************************
+// File        : sampler_tb.v
+// Author      : kareemahmad
+// Description : Testbench for edge_sampler
+//*****************************************************************************
+
 `include "tb_lib.v"
 
 module sampler_tb;
@@ -17,6 +23,11 @@ module sampler_tb;
         .in         (comp_out   ),
         .out        (comp_pulse )
     );
+
+    // --------------------------------------------------
+    // process: test_main
+    // --------------------------------------------------
+
 
     initial begin
         $timeformat(-9, 2, " ns", 10);
@@ -54,6 +65,10 @@ module sampler_tb;
         $finish;
     end
 
+    // --------------------------------------------------
+    // process: Generate comp_out
+    // --------------------------------------------------
+
     initial begin
         comp_out = 0;
         comp_switched = 0;
@@ -66,8 +81,8 @@ module sampler_tb;
         comp_switched = 1;
 
         repeat (30) begin
-            @(posedge clk) #1 comp_out = 1;
-            @(negedge clk) #1 comp_out = 0;
+            @(posedge clk) #1 comp_out = 1; // NOTE: without #1, nonblocking assignment 
+            @(negedge clk) #1 comp_out = 0; // appears at the same time as the clk
         end
     end
 
