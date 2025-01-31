@@ -19,43 +19,50 @@ V3   reset  GND   PULSE(0 1.8 0 10p 10p 20n 256.02u)
 .control
 set color0=white
 
-let vstart = $vstart
-let vstop  = $vstop
-let num_sim= $vcount
-let vdelta = (vstop-vstart)/num_sim
+let vdelta = 1/256
+let dstart = $start
+let dstop  = $stop
+let num_sim= $count
+
+let vstart = dstart * vdelta
+let vstop  = dstop * vdelta
+let ddelta = (dstop - dstart)/num_sim
+*let vdelta = (vstop-vstart)/num_sim
 let vact   = vstart
-let digit  = 0
+let dact   = dstart
 
 set ext = "v.txt"
 set dlm = "_"
 
+${iswrite}shell mkdir -p ../outfiles/sky
+set wr_singlescale
+set wr_vecnames
+    
 while vact < vstop
     echo
-    echo Running Sweep $&digit/$&num_sim
+    echo Running Sweep $&dact/$&dstop
     echo
     alter vin vact
     ;run
     tran 1u 512u uic
 
-    let lin-tstart = 257u
-    let lin-tstop  = 512u
-    let lin-tstep  = 100n
-
-    ${isplot}${islin} plot -I(vdda) -I(vddd)
-    ${islin}          linearize I(vdda) I(vddd) ; digitized
-    ${isplot}         plot -I(vdda) -I(vddd)
-
-    let cut-tstart = 257u
+    let cut-tstart = 256u
     let cut-tstop = 512u
     cutout
-    ;plot -I(vdda) -I(vddd)
 
-    set wr_singlescale
-    set wr_vecnames
-    ${iswrite}wrdata ../outfiles/sky/sky_d$&digit$dlm$&vact$ext -I(vddd) -I(vdda) ;digitized
+    ${isplot} plot I(vdd)
+    ${iswrite}wrdata outfiles/sky_raw_d$&dact$ext -I(vddd) -I(vdda)
 
-    let vact = vact + vdelta
-    let digit = digit + 1
+    let lin-tstart = 256u
+    let lin-tstop  = 512u
+    let lin-tstep  = 100n
+    linearize I(vdd)
+
+    ${isplot} plot I(vdd)
+    ${iswrite}wrdata outfiles/sky_lin_d$&dact$ext -I(vddd) -I(vdda)
+
+    let dact = dact + ddelta
+    let vact = dact * vdelta
 
     ${isbatch}destroy all
 end

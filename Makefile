@@ -5,9 +5,9 @@ ANALOG_TARGET   ?= adc_sky
 PROCESS_CORNER  ?= tt
 DIGITAL_TARGET  ?= control_v0
 TOP_MODULE	    ?= control
-V_START			?= 0
-V_STOP			?= 1
-V_COUNT			?= 256
+D_START			?= 0
+D_STOP			?= 1
+D_COUNT			?= 256
 
 ROOT 	 		= ${PWD}
 P_SYNTH	 		= ${ROOT}/synth
@@ -37,11 +37,11 @@ spice-sim-old: ${TOP_ANALOG_CIR}
 	cd ${P_ANALOG}/${ANALOG_TARGET} && ngspice ${ANALOG_TARGET}.cir
 
 spice-sim:
-	cd ${P_ANALOG}/${ANALOG_TARGET} && bash -c "ngspice <(python ${P_SCRIPT}/template_engine.py ${ANALOG_TARGET}_temp.cir -t corner=${PROCESS_CORNER} vstart=${V_START} vstop=${V_STOP} vcount=${V_COUNT} isplot=';' islin= 'iswrite=' 'isbatch=')"
+	cd ${P_ANALOG}/${ANALOG_TARGET} && bash -c "ngspice <(python ${P_SCRIPT}/template_engine.py ${ANALOG_TARGET}_temp.cir -t corner=${PROCESS_CORNER} start=${D_START} stop=${D_STOP} count=${D_COUNT} isplot=';' islin= 'iswrite=' 'isbatch=')"
 
 spice-plot:
-	cd ${P_ANALOG}/${ANALOG_TARGET} && bash -c "ngspice <(python ${P_SCRIPT}/template_engine.py ${ANALOG_TARGET}_temp.cir -t corner=${PROCESS_CORNER} vstart=${V_START} vstop=${V_STOP} vcount=1 isplot= islin= 'iswrite=;' 'isbatch=;')"
-	#cd ${P_ANALOG}/${ANALOG_TARGET} && bash -c "vim <(python ${P_SCRIPT}/template_engine.py ${ANALOG_TARGET}_temp.cir -t corner=${PROCESS_CORNER} vstart=${V_START} vstop=${V_STOP} vcount=${V_COUNT} isplot= islin= 'iswrite=;' 'isbatch=;')"
+	#cd ${P_ANALOG}/${ANALOG_TARGET} && bash -c "ngspice <(python ${P_SCRIPT}/template_engine.py ${ANALOG_TARGET}_temp.cir -t corner=${PROCESS_CORNER} start=${D_START} stop=${D_STOP} count=1 isplot= islin= 'iswrite=;' 'isbatch=;')"
+	cd ${P_ANALOG}/${ANALOG_TARGET} && bash -c "vim     <(python ${P_SCRIPT}/template_engine.py ${ANALOG_TARGET}_temp.cir -t corner=${PROCESS_CORNER} start=${D_START} stop=${D_STOP} count=1 isplot= islin= 'iswrite=;' 'isbatch=;')"
 
 ${P_BUILD}/${DIGITAL_TARGET}.so: ${TOP_VERILOG_SRC}.v
 	cd ${P_BUILD} && ngspice vlnggen -- --CFLAGS -DVL_TIME_STAMP64 --CFLAGS -DVL_NO_LEGACY ${TOP_VERILOG_SRC}.v
