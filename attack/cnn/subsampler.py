@@ -40,6 +40,7 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0
     with open(fpath, 'r') as file:
         header = file.readline()
 
+        tim_arr = [] # For debugging
         val_arr = []
         val_win = []
 
@@ -50,6 +51,7 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0
         wtim = stim + sample_interval
         val_win.append(value)
         val_arr.append(value)
+        tim_arr.append(ptim)
 
         for line in file.readlines():
             if len(val_arr) == max_samples: break
@@ -59,11 +61,13 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0
 
             if stim >= wtim:
                 val_arr.append(f(val_win))
+                tim_arr.append(wtim - sample_interval/2)
 
                 # if time is too big a gap:
                 wtim += sample_interval
                 while stim > wtim:
                     val_arr.append(l(ptim, val_arr[-1], stim, value, (len(val_arr)+0.5)*sample_interval))
+                    tim_arr.append(wtim - sample_interval/2)
                     wtim += sample_interval
 
                 val_win = [value]
@@ -72,6 +76,29 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0
                 val_win.append(value)
 
             ptim = stim
+
+        if (len(val_arr) < max_samples) and val_win:
+            val_arr.append(f(val_win))
+            tim_arr.append(ptim)
+
+        if len(val_arr) < max_samples:
+            # val_win is empty, latest wtim is handled
+            x0, x1 = tim_arr[-2:]
+            y0, y1 = val_arr[-2:]
+            m = (y1 - y0)/(x1 - x0)
+
+            wtim = wtim + sample_interval/2
+            for i in range(max_samples - len(val_arr)):
+                val_arr.append(y1:=((wtim - x1)*m+y1))
+                tim_arr.append(x1:=wtim)
+                wtim += sample_interval
+
+        if len(val_arr) < max_samples:
+            for i in range(40):
+                print(i, tim_arr[i], val_arr[i], sep="\t")
+            for i in range(40, 0, -1):
+                print(-i, tim_arr[-i], val_arr[-i], sep="\t")
+            exit()
 
         return val_arr
 
@@ -84,10 +111,10 @@ def do_parse(file_in, file_out, interval=1e-6, samples=1000, time=2.5e-4, index=
     # print(time_index)
 
     # time = np array with even intervals within provided time
-    time = np.linspace(0, time, num=time_index, endpoint=False)
+    time = np.linspace(0, time, num=time_index, endpoint=False, dtype=np.float32)
     # print(time)
     # vals = np array with time_index number of zeroes
-    vals = np.zeros((time_index,))
+    vals = np.zeros((time_index,), dtype=np.float32)
     # print(len(vals))
     # interp = select_func_gen(sample_mode)
 
@@ -176,7 +203,7 @@ if __name__ == "__main__":#
         values = [float(value) for value in line.split(",") if value]
         data.append(values)
 
-    data = np.array(data)
+    data = np.array(data, dtype=np.float32)
     timestamp = data[:, 0]
     # print(timestamp)
     test_v = data[:, 1]

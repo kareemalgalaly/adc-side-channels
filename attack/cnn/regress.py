@@ -12,6 +12,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision
+import matplotlib
 import matplotlib.pyplot as plt
 
 from copy import copy
@@ -25,6 +26,7 @@ argparser.add_argument("-c", "--cpuonly", const=True, default=False, action='sto
 argparser.add_argument("-n", "--nowrite", const=True, default=False, action='store_const', help="Don't write any outputs")
 argparser.add_argument("-f", "--force", const=True, default=False, action='store_const', help="Overwrite output files")
 argparser.add_argument("-p", "--preview", const=True, default=False, action='store_const', help="Don't run anything only list runs that would occur")
+argparser.add_argument("-x", "--headless", const=True, default=False, action='store_const', help="Do not open any gui's")
 argparser.add_argument("--nndebug", const=True, default=False, action='store_const', help="Print information about cnn creation.")
 
 pwd      = os.path.dirname(os.path.abspath(__file__))
@@ -34,13 +36,14 @@ data_dir = os.path.join(proj_dir, 'analog', 'outfiles')
 # Fake Args ######################################
 
 class Args:
-    def __init__(self, json='regression.json', output='outputs', cpuonly=False, nowrite=False, force=False, preview=False):
+    def __init__(self, json='regression.json', output='outputs', cpuonly=False, nowrite=False, force=False, preview=False, headless=False):
         self.json    = json
         self.output  = output
         self.cpuonly = cpuonly
         self.nowrite = nowrite
         self.force   = force
         self.preview = preview
+        self.headless = headless
 
 # Helpers ########################################
 
@@ -213,7 +216,6 @@ class Dataset(HashableBase):
         dataset = self.builder.dataset if bit == -1 else self.builder.datasets[bit]
         return dataset.get_by_label(label, index=index)
 
-
 class RawDataset(Dataset):
     def __init__(self, name, info):
         assert info['type'] == 'raw'
@@ -228,7 +230,6 @@ class RawDataset(Dataset):
         super().build(adc_bitwidth, device)
         self.builder.add_files(self.path, self.frmt, max_sample=self.len)
         self.builder.build()
-
 
 class SampledDataset(Dataset):
     def __init__(self, name, info):
@@ -272,6 +273,8 @@ class Test(HashableBase):
         self.skip          = info.get('skip',           False)
         self.learning_rate = info.get('learning_rate',  defaults['learning_rate'])
         self.optimizer     = info.get('optimizer',      defaults['optimizer'])
+        self.loss          = info.get('loss',           defaults['loss'])
+        self.loss_se       = info.get('loss_se',        defaults['loss_se'])
         self.max_epochs    = info.get('max_epochs',     defaults['max_epochs'])
         self.max_accuracy  = info.get('max_accuracy',   defaults['max_accuracy'])
         self.max_loss      = info.get('max_loss',       defaults['max_loss'])
@@ -287,6 +290,8 @@ class Test(HashableBase):
         that.datasets = self.datasets
         that.learning_rate = self.learning_rate
         that.optimizer     = self.optimizer
+        that.loss          = self.loss
+        that.loss_se       = self.loss_se
         that.max_epochs    = self.max_epochs
         that.max_accuracy  = self.max_accuracy
         that.max_loss      = self.max_loss
@@ -310,6 +315,12 @@ class Test(HashableBase):
             return optim.SGD(cnn.parameters(), lr=self.learning_rate)
 
         raise NotImplementedError("Unsupported optimizer")
+
+    def get_loss(self, network):
+        if network.type == 'bitwise':
+            return getattr(nn, self.loss)()
+        else:
+            return getattr(nn, self.loss_se)()
 
 # Regression #####################################
 
@@ -385,7 +396,7 @@ class Regression:
 
         # Plotter setup
 
-        if not(self.args.preview): plt.ion()
+        if not(self.args.preview or self.args.headless): plt.ion()
 
         # Regression main
 
@@ -407,17 +418,23 @@ class Regression:
                     else:
                         axs = None
     
+                    skip = False
                     try:
                         if network.type == 'bitwise':
                             for i in range(self.adc_bitwidth-1, -1, -1):
                                 run_hash_i = f"{run_hash}_{i}"
                                 if run_hash_i in skip_tests: 
                                     print(f"  SKIPPING {run_hash_i}"); continue
+                                    skip = True
                                 self.run_eval_cnn(test, network, dataset, device, run_hash_i, axs, bit=i)
-                        else:
+                        elif network.type == 'single_ended':
                             if run_hash in skip_tests: 
                                 print(f"  SKIPPING {run_hash}"); continue
+                                skip = True
                             self.run_eval_cnn(test, network, dataset, device, run_hash, axs, bit=-1)
+                        else:
+                            raise RuntimeError(f"Unsupported network type {network.type}")
+
 
                     except KeyboardInterrupt as e:
                         if not(self.args.preview or self.args.nowrite):
@@ -426,7 +443,7 @@ class Regression:
                         print("Keyboard Interrupt detected. Shutting down...")
                         exit()
 
-                    if not(self.args.preview or self.args.nowrite):
+                    if not(self.args.preview or self.args.nowrite or skip):
                         fig.savefig(f'{self.args.output}/{run_hash}.png')
                         plt.close()
 
@@ -444,6 +461,8 @@ class Regression:
         cnn = network.create(dataset.len, dataset.cols)
         bit = "_" if bit == -1 else bit
 
+        single_ended = network.type == 'single_ended'
+
         #if bit == self.adc_bitwidth-1 or bit == -1: print(cnn)
 
         if (cnn is None): raise RuntimeError("Failed to build CNN")
@@ -456,7 +475,7 @@ class Regression:
         loss_g = None
         acc_g  = None
 
-        criterion = nn.CrossEntropyLoss()
+        criterion = test.get_loss(network) #nn.CrossEntropyLoss()
         optimizer = test.get_optimizer(cnn)
     
         progress = ProgressBar(f_start="Training ", f_end="{model} | Loss {loss:8} | Accuracy {acc:8} | {msg}", max_val=test.max_epochs)
@@ -488,7 +507,10 @@ class Regression:
 
                     if (epoch % acc_period) == 0:
                         _, predicted = torch.max(output, 1)
-                        correct += (predicted == labels).sum()
+                        if single_ended:
+                            correct += (predicted.round() == labels.round()).sum()
+                        else:
+                            correct += (predicted == labels).sum()
 
                 loss_arr[epoch] = loss
 
@@ -498,15 +520,14 @@ class Regression:
                     acc_arr[acc_indx] = accuracy
 
                 if epoch % plot_period == 0:
-                    #print(f'TRAINING: {run_hash}, Epoch {epoch:5}, Loss:     {loss.item()}')
-                    #print(f'TRAINING: {run_hash}, Epoch {epoch:5}, Accuracy: {accuracy}')
                     progress.update(epoch, loss=round(loss.item(), 6), acc=round(float(accuracy),6))
 
-                    if loss_g: loss_g.remove()
-                    if acc_g:  acc_g.remove()
-                    loss_g = axs[0].plot(loss_arr.detach().cpu()[:epoch], color='gray', linestyle='dotted')[0]
-                    acc_g  = axs[1].plot(acc_arr.cpu()[:acc_indx+1],  color='gray', linestyle='dotted')[0]
-                    plt.pause(0.01)
+                    if not self.args.headless:
+                        if loss_g: loss_g.remove()
+                        if acc_g:  acc_g.remove()
+                        loss_g = axs[0].plot(loss_arr.detach().cpu()[:epoch], color='gray', linestyle='dotted')[0]
+                        acc_g  = axs[1].plot(acc_arr.cpu()[:acc_indx+1],  color='gray', linestyle='dotted')[0]
+                        plt.pause(0.01)
 
                 if accuracy >= test.max_accuracy:
                     progress.update(epoch, msg="Reached target accuracy"); break
@@ -525,7 +546,8 @@ class Regression:
         axs[1].plot(acc_arr.cpu()[:epoch//acc_period+1], label=label)
         axs[0].legend()
         axs[1].legend()
-        plt.pause(0.01)
+        if not self.args.headless:
+            plt.pause(0.01)
 
         if self.args.nowrite: return
 
@@ -544,6 +566,9 @@ if __name__  == '__main__':
 
     if not args.nowrite:
         os.makedirs(args.output, exist_ok=True)
+
+    if args.headless:
+        matplotlib.use('Agg') # backend for non-GUI rendering
 
     regression = Regression(args)
     regression.load()

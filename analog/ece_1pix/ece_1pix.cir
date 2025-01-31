@@ -85,14 +85,14 @@ while dact < dstop
     ;run
     tran 1u 512u uic
 
-    let cut-tstart = 257u
+    let cut-tstart = 256u
     let cut-tstop = 512u
     cutout
 
     ; plot I(vdd)
     wrdata outfiles/sky_raw_d$&digit$ext -I(vdd) ;digitized
 
-    let lin-tstart = 257u
+    let lin-tstart = 256u
     let lin-tstop  = 512u
     let lin-tstep  = 100n
     linearize I(vdd) ; digitized
