@@ -44,6 +44,9 @@ synth/%: ${P_DESIGN}/%.v
 	mkdir -p $@
 	SYNTH_VERILOG=${P_DESIGN}/$*.v SYNTH_PATH=$@ PDK_LIBERTY=${PDK_LIBERTY} PDK_CELL=${PDK_CELL_LIB} yosys -c ${P_SCRIPT}/synth.tcl
 
+synth-ece_unpro: synth/ece_1px_unprot/counter synth/ece_1px_unprot/negedge_detector synth/ece_1px_unprot/register_array
+	mkdir analog/ece_1px_unprot
+	mv synth/ece_1px_unprot/*/*spice analog/ece_1px_unprot
 # Dynamically Defined Spice Sim -------------------------
 
 #analog/%.log: ;
