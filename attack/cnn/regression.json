@@ -5,14 +5,19 @@
             "type"       : "bitwise",
             "inputs"     : 1
         },
-        "paper_sd" : {
-            "definition" : "C(30,3,1):R:F(128):R:F(64):R:F(32):R:F(2):S",
-            "type"       : "bitwise",
+        "paper_se" : {
+            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:F(100):R:F(100):R:F(1)",
+            "type"       : "single_ended",
             "inputs"     : 1
         },
         "deep" : {
             "definition" : "C(5,5,1):R:C(5,5,1):R:C(5,5,1):R:C(5,5,1):P(5,5):R:C(5,5,1):P(5,5):R:F(256):R:F(256):R:F(256):R:F(128):R:F(64):R:F(2):S",
             "type"       : "bitwise",
+            "inputs"     : 1
+        },
+        "deep_se" : {
+            "definition" : "C(5,5,1):R:C(5,5,1):R:C(5,5,1):R:C(5,5,1):P(5,5):R:C(5,5,1):P(5,5):R:F(512):R:F(256):R:F(256):R:F(256):R:F(128):R:F(64):R:F(1)",
+            "type"       : "single_ended",
             "inputs"     : 1
         },
         "resnet101pt" : {
@@ -29,72 +34,165 @@
         }
     },
     "datasets" : {
-        "linearized3k" : {
-            "path"    : "sky_Dec_18_2151",
+        "a1u_tt_lin" : {
+            "path"    : "analog_1px_unprot_tt_Jan_28_1945",
             "type"    : "raw",
-            "format"  : "sky_d(\\d+)_.*\\.txt",
+            "format"  : "sky_lin_d(\\d+)v.txt",
             "columns" : 1,
-            "len"     : 3000
+            "len"     : 2551
         },
-        "sampled_min" : {
-            "path"    : "sky",
+        "a1u_tt_max" : {
+            "path"    : "analog_1px_unprot_tt_Jan_28_1945",
             "type"    : "sampled",
-            "format"  : "sky_d(\\d+)_.*\\.txt",
-            "columns" : 1,
-            "sample_mode"     : "MIN",
-            "sample_interval" : 0.1e-6,
-            "sample_duration" : 300e-6
-        },
-        "sampled_max" : {
-            "path"    : "sky",
-            "type"    : "sampled",
-            "format"  : "sky_d(\\d+)_.*\\.txt",
+            "format"  : "sky_raw_d(\\d+)v.txt",
             "columns" : 1,
             "sample_mode"     : "MAX",
             "sample_interval" : 0.1e-6,
-            "sample_duration" : 300e-6
+            "sample_duration" : 255e-6
         },
-        "true_raw" : {
-            "path"    : "sky",
+        "a1u_tt_min" : {
+            "path"    : "analog_1px_unprot_tt_Jan_28_1945",
+            "type"    : "sampled",
+            "format"  : "sky_raw_d(\\d+)v.txt",
+            "columns" : 1,
+            "sample_mode"     : "MIN",
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 255e-6
+        },
+        "a1u_tt_raw" : {
+            "path"    : "analog_1px_unprot_tt_Jan_28_1945",
             "type"    : "timed",
-            "format"  : "sky_d(\\d+)_.*\\.txt",
+            "format"  : "sky_raw_d(\\d+)v.txt",
+            "columns" : 1
+        },
+        "a1u_ss_lin" : {
+            "path"    : "analog_1px_unprot_ss_Jan_29_0103",
+            "type"    : "raw",
+            "format"  : "sky_lin_d(\\d+)v.txt",
+            "columns" : 1,
+            "len"     : 2561
+        },
+        "a1u_ss_max" : {
+            "path"    : "analog_1px_unprot_ss_Jan_29_0103",
+            "type"    : "sampled",
+            "format"  : "sky_raw_d(\\d+)v.txt",
+            "columns" : 1,
+            "sample_mode"     : "MAX",
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 256e-6
+        },
+        "a1u_ss_min" : {
+            "path"    : "analog_1px_unprot_ss_Jan_29_0103",
+            "type"    : "sampled",
+            "format"  : "sky_raw_d(\\d+)v.txt",
+            "columns" : 1,
+            "sample_mode"     : "MIN",
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 256e-6
+        },
+        "a1u_ss_raw" : {
+            "path"    : "analog_1px_unprot_ss_Jan_29_0103",
+            "type"    : "timed",
+            "format"  : "sky_raw_d(\\d+)v.txt",
+            "columns" : 1
+        },
+        "a1u_ff_lin" : {
+            "path"    : "analog_1px_unprot_ff_Jan_29_1818",
+            "type"    : "raw",
+            "format"  : "sky_lin_d(\\d+)v.txt",
+            "columns" : 1,
+            "len"     : 2561
+        },
+        "a1u_ff_max" : {
+            "path"    : "analog_1px_unprot_ff_Jan_29_1818",
+            "type"    : "sampled",
+            "format"  : "sky_raw_d(\\d+)v.txt",
+            "columns" : 1,
+            "sample_mode"     : "MAX",
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 256e-6
+        },
+        "a1u_ff_min" : {
+            "path"    : "analog_1px_unprot_ff_Jan_29_1818",
+            "type"    : "sampled",
+            "format"  : "sky_raw_d(\\d+)v.txt",
+            "columns" : 1,
+            "sample_mode"     : "MIN",
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 256e-6
+        },
+        "a1u_ff_raw" : {
+            "path"    : "analog_1px_unprot_ff_Jan_29_1818",
+            "type"    : "timed",
+            "format"  : "sky_raw_d(\\d+)v.txt",
+            "columns" : 1
+        },
+        "e1u_tt_lin" : {
+            "path"    : "ece_1px_unprot_tt_hs_Jan_28_1834",
+            "type"    : "raw",
+            "format"  : "sky_lin_d(\\d+)v.txt",
+            "columns" : 1,
+            "len"     : 2551
+        },
+        "e1u_tt_max" : {
+            "path"    : "ece_1px_unprot_tt_hs_Jan_28_1834",
+            "type"    : "sampled",
+            "format"  : "sky_raw_d(\\d+)v.txt",
+            "columns" : 1,
+            "sample_mode"     : "MAX",
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 255e-6
+        },
+        "e1u_tt_min" : {
+            "path"    : "ece_1px_unprot_tt_hs_Jan_28_1834",
+            "type"    : "sampled",
+            "format"  : "sky_raw_d(\\d+)v.txt",
+            "columns" : 1,
+            "sample_mode"     : "MIN",
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 255e-6
+        },
+        "e1u_tt_raw" : {
+            "path"    : "ece_1px_unprot_tt_hs_Jan_28_1834",
+            "type"    : "timed",
+            "format"  : "sky_raw_d(\\d+)v.txt",
             "columns" : 1
         }
     },
     "tests" : [
         {
+            "desc"          : "Basic paper network on linearized and sampled datasets",
             "skip"          : true,
             "networks"      : ["paper"],
-            "datasets"      : ["linearized3k"],
-            "learning_rate" : [0.0001, 0.0005, 0.0010]
+            "datasets"      : ["a1u_tt_lin", "a1u_tt_min", "a1u_tt_max", "e1u_tt_lin", "e1u_tt_min", "e1u_tt_max"],
+            "learning_rate" : [0.0005, 0.0001, 0.001]
         },
         {
-            "skip"          : true,
-            "networks"      : ["paper"],
-            "datasets"      : ["sampled_min"],
-            "learning_rate" : [1e-11]
+            "desc"          : "Basic paper network with single-output",
+            "skip"          : false,
+            "networks"      : ["deep_se"],
+            "datasets"      : ["a1u_tt_max"],
+            "learning_rate" : [0.00005]
         },
         {
-            "skip"          : true,
-            "networks"      : ["paper_sd"],
-            "datasets"      : ["linearized3k", "sampled_max"],
-            "optimizer"     : "Adamax",
-            "learning_rate" : [1e-6, 1e-4, 1e-8]
-        },
-        {
+            "desc"          : "Basic deepter network on linearized and sampled datasets",
             "skip"          : true,
             "networks"      : ["deep"],
-            "datasets"      : ["linearized3k", "sampled_max", "sampled_max"],
+            "datasets"      : ["a1u_tt_lin", "a1u_tt_min", "a1u_tt_max"],
             "learning_rate" : [0.1]
         },
         {
+            "desc"          : "Trying to get resnet to work",
+            "skip"          : true,
             "networks"      : ["resnet101"],
-            "datasets"      : ["linearized3k"],
+            "datasets"      : ["a1u_tt_lin"],
             "learning_rate" : [1e-5]
         }
     ],
     "defaults" : {
         "optimizer"     : "Adam",
+        "loss"          : "CrossEntropyLoss",
+        "loss_se"       : "MSELoss",
         "learning_rate" : 0.0005,
         "max_epochs"    : 5000,
         "max_accuracy"  : 1.0,

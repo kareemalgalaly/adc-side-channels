@@ -76,7 +76,7 @@ class TraceDataset(Dataset):
 
         return trace
     
-    def process_label(self, label): return label
+    def process_label(self, label): return np.float32(label)
 
     def cache_all(self):
         assert self.cache == True
@@ -121,7 +121,7 @@ class TraceDatasetBuilder:
         format = re.compile(format)
         fnames = os.listdir(directory)
 
-        if sample_mode: max_sample = sample_time / sample_int
+        if sample_mode: max_sample = int(sample_time / sample_int)
         sample_info = (sample_mode, sample_int, max_sample)
 
         i = 0
