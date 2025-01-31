@@ -205,6 +205,7 @@ def gen_spice_ties(tieoffs, pin_lo, pin_hi, file):
 ## Main ---------------------------------------------
 
 if __name__ == '__main__':
+    print("Starting json2spice.py")
     args = argparser.parse_args()
 
     with open(args.input_json, "r") as file:
