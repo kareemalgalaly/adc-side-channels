@@ -9,6 +9,7 @@ argparser.add_argument("input_json", type=str, help="Path to Yosys generated jso
 argparser.add_argument("cell_path", type=str, help="Path to standard cells library folder")
 argparser.add_argument("module", type=str, help="Module name")
 argparser.add_argument("outfile", type=str, help="Output file path")
+argparser.add_argument("-d", "--debug", const=True, default=False, action="store_const", help="Enable debug printing")
 
 ## JSON Parsing Nets --------------------------------
 
@@ -24,8 +25,9 @@ argparser.add_argument("outfile", type=str, help="Output file path")
 # OPTION 3: mix naming between bits and names
 
 def parse_nets(netname_dict):
-    netnames = {}
-    tieoffs  = {}
+    netnames = {} # bit       : netname
+    tieoffs  = {} # netname   : value
+    aliases  = {} # aliasname : netname
 
     for netname in netname_dict:
         net = netname_dict[netname]
@@ -41,26 +43,43 @@ def parse_nets(netname_dict):
             if len(net['bits']) == 1:
                 b = net['bits'][0]
                 if isinstance(b, str):
-                    tieoffs[netname] = int(b)
+                    if netname in tieoffs: 
+                        print(f"WARNING: net {netname} already in tieoffs {tieoffs[netname]}. Ignoring additional tie to {b}")
+                    else:
+                        tieoffs[netname] = int(b)
                 else:
-                    netnames[b] = netname
+                    if b in netnames:
+                        print(f"WARNING: bit {b} already named in netnames as <{netnames[b]}>. Ignoring additional name <{netname}>")
+                        aliases[netname] = netnames[b]
+                        # ALT print(f"WARNING: bit {b} already named in netnames as <{netnames[b]}>. Swapping additional name <{netname}>")
+                        # ALT aliases[netnames[b]] = netname
+                        # ALT netnames[b] = netname
+                    else:
+                        netnames[b] = netname
             else:
                 i = 0
                 for b in net['bits']:
                     bname = f"{netname}.{i}"
                     if isinstance(b, str):
-                        tieoffs[bname] = int(b)
+                        if bname in tieoffs:
+                            print(f"WARNING: net {bname} already in tieoffs {tieoffs[bname]}. Ignoring additional tie to {b}")
+                        else:
+                            tieoffs[bname] = int(b)
                     else:
-                        netnames[b] = bname
+                        if b in netnames:
+                            print(f"WARNING: bit {b} already named in netnames as <{netnames[b]}>. Ignoring additional name <{bname}>")
+                            aliases[bname] = netnames[b]
+                        else:
+                            netnames[b] = bname
                     i += 1
 
-    return netnames, tieoffs
+    return netnames, tieoffs, aliases
 
 ## JSON Parsing Cells -------------------------------
 
 def parse_cells(cell_dict):
-    types = {}
-    cells = {}
+    types = {} # std_cell_type : {}
+    cells = {} # cell_name     : {type:std_cell_type, conn=connections}
 
     i = 0
 
@@ -164,7 +183,7 @@ def gen_spice_mod(celltypes, cells, netnames, ports, file):
 
         file.write(f"x{cellname} {' '.join(pins)} {cell['type']}\n")
 
-def gen_spice_ports(module, modulename, pg_pins, file):
+def gen_spice_ports(module, modulename, pg_pins, aliases, file):
     ports = {}
     mindex = 9999
 
@@ -174,12 +193,15 @@ def gen_spice_ports(module, modulename, pg_pins, file):
         bits = port['bits']
 
         if len(bits) == 1:
+            if portname in aliases: portname = aliases[portname]
             ports[bits[0]] = portname
             mindex = min(bits[0], mindex)
         else:
             i = 0
             for b in bits:
-                ports[b] = f"{portname}.{i}"
+                pname = f"{portname}.{i}"
+                if pname in aliases: pname = aliases[pname]
+                ports[b] = pname
                 mindex = min(b, mindex)
                 i += 1
 
@@ -216,16 +238,22 @@ if __name__ == '__main__':
     except:
         RuntimeError(f"Module {args.module} not found.")
 
-    netnames, tieoffs = parse_nets(module['netnames'])
-    celltypes, cells  = parse_cells(module['cells'])
-    all_pg_pins       = parse_cell_types(celltypes, args.cell_path, data["modules"])
+    netnames, tieoffs, aliases = parse_nets(module['netnames'])
+    celltypes, cells           = parse_cells(module['cells'])
+    all_pg_pins                = parse_cell_types(celltypes, args.cell_path, data["modules"])
+
+    if args.debug: print("netnames",    netnames)
+    if args.debug: print("tieoffs",     tieoffs)
+    if args.debug: print("celltypes",   celltypes)
+    if args.debug: print("cells",       cells)
+    if args.debug: print("all_pg_pins", all_pg_pins)
 
     with open(args.outfile, "w") as file:
         file.write(f"* {args.module}.spice\n")
         file.write("* File autogenerated by json2spice.py\n\n")
 
         gen_spice_inc(celltypes, file)
-        ports = gen_spice_ports(module, args.module, all_pg_pins, file)
+        ports = gen_spice_ports(module, args.module, all_pg_pins, aliases, file)
         gen_spice_mod(celltypes, cells, netnames, ports, file)
         file.write("\n")
         gen_spice_ties(tieoffs, "VGND", "VPWR", file)
