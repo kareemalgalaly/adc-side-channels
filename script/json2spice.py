@@ -9,6 +9,7 @@ argparser.add_argument("input_json", type=str, help="Path to Yosys generated jso
 argparser.add_argument("cell_path", type=str, help="Path to standard cells library folder")
 argparser.add_argument("module", type=str, help="Module name")
 argparser.add_argument("outfile", type=str, help="Output file path")
+argparser.add_argument("-f", "--fullpaths", const=True, default=False, action="store_const", help="Use full paths in synthesis output")
 argparser.add_argument("-d", "--debug", const=True, default=False, action="store_const", help="Enable debug printing")
 
 ## JSON Parsing Nets --------------------------------
@@ -133,6 +134,7 @@ def parse_cell_types(celltypes, cell_path, module_dict):
         else:
             ccatg = ctype.split('_')[-2]
             cpath = os.path.join(cell_path, ccatg, ctype + ".spice")
+            rpath = os.path.join(os.path.basename(cell_path), ccatg, ctype + ".spice")
             with open(cpath, "r") as file:
                 for line in file.readlines():
                     if line.startswith(".subckt"):
@@ -148,7 +150,7 @@ def parse_cell_types(celltypes, cell_path, module_dict):
                 pg.append(0)
 
             celltypes[ctype]['pins'] = list(zip(pins, pg))
-            celltypes[ctype]['path'] = cell_path if unified_spice else cpath
+            celltypes[ctype]['path'] = cell_path if unified_spice else cpath if args.fullpaths else rpath
 
     return all_pg_pins
 
