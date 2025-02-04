@@ -1,0 +1,47 @@
+**.subckt adc_5column
+
+*.lib /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice tt
+.lib "models/sky130.lib.spice" tt
+.inc adc.lib
+
+* Power and Control
+PULSE(V1 V2 delay rise fall width period)
+vrst rst GND PULSE(0 1.8 0 10p 10p 4u 260u)
+vdd  vdd GND 1.8
+vclk clk GND PULSE(0 1.8 0 10p 10p .5u 1u)
+vref gnd vref 1
+
+* Pixel Analog Inputs
+V1 pix_1 GND 0.1
+V2 pix_2 GND 0.3
+V3 pix_3 GND 0.5
+V4 pix_4 GND 0.7
+V5 pix_5 GND 0.9
+
+* Ramp Generator
+xramp_generator vref rst ramp vdd gnd ramp_generator
+
+* Comparators
+xcomp_1 ramp pix_1 clk outp_1 outn_1 vdd gnd comparator_2_wrap;_mismatch mismatch=0.5m
+xcomp_2 ramp pix_2 clk outp_2 outn_2 vdd gnd comparator_2_wrap;_mismatch mismatch=3m
+xcomp_3 ramp pix_3 clk outp_3 outn_3 vdd gnd comparator_2_wrap;_mismatch mismatch=-1m
+xcomp_4 ramp pix_4 clk outp_4 outn_4 vdd gnd comparator_2_wrap;_mismatch mismatch=-1.5m
+xcomp_5 ramp pix_5 clk outp_5 outn_5 vdd gnd comparator_2_wrap;_mismatch mismatch=1m
+
+* Protection
+;xramp_generator vref rst ramp_p vdd gnd ramp_generator r=20Meg
+;xcomp_p1 ramp_p pix_1 clk outp_1 outn_1 vdd gnd comparator_2_wrap;_mismatch mismatch=1.5m
+;xcomp_p2 ramp_p pix_2 clk outp_2 outn_2 vdd gnd comparator_2_wrap;_mismatch mismatch=-2m
+;xcomp_p3 ramp_p pix_3 clk outp_3 outn_3 vdd gnd comparator_2_wrap;_mismatch mismatch=3m
+;xcomp_p4 ramp_p pix_4 clk outp_4 outn_4 vdd gnd comparator_2_wrap;_mismatch mismatch=-0.5m
+;xcomp_p5 ramp_p pix_5 clk outp_5 outn_5 vdd gnd comparator_2_wrap;_mismatch mismatch=0.2m
+
+.option method=Gear
+.ic v(inp)=0
+.control
+tran 0.5u 270u
+plot -i(vdd)
+
+*show all
+.endc
+
