@@ -1,4 +1,4 @@
-Simulation of digital counter circuit synthesized with Yosys
+imulation of digital counter circuit synthesized with Yosys
 
 ** opencircuitdesign pdks install
 *.lib "/foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice" tt
@@ -53,10 +53,12 @@ Vss vss 0 {vss}
 ** Clock and Reset signals (1MHz clock)
 Vrst    reset   0   pulse   {vdd}   {vss}   4u      10n  10n  256u    260u
 Vclk    clk     0   pulse   {vss}   {vdd}   200n    10n  10n  0.5u      1u
+*Vrst    reset   0   pulse   {vdd}   {vss}   2.2u    10n  10n  258u    260u
+*Vclk    clk     0   pulse   {vss}   {vdd}   0u      10n  10n  0.5u      1u
 
 * Comparator signal (example: 1 comparators with random outputs)
 * Here, we simulate random '1's and '0's for comparators, adjust as needed
-Vcomp0 comp.0_ideal 0 pulse {vss} {vdd} 32u 5n 5n 224u 256u
+Vcomp0 comp.0_ideal 0 pulse {vss} {vdd} 32u 5n 5n 224u 260u
 Bcomp0 comp.0_toggl 0 V = V(comp.0_ideal) > {vdd/2} ? V(clk) : {vss}
 
 ** Simulation settings
@@ -73,21 +75,20 @@ Bcomp0 comp.0_toggl 0 V = V(comp.0_ideal) > {vdd/2} ? V(clk) : {vss}
 .option method=Gear
 
 .control
-set color0=white
+;set color0=white
+set color1=rgb:50/50/50
 
-let tdelta = 1u
-let dstart = 30
-let dstop  = 256
-let num_sim= 1
+compose pixelvec_0 values 128
 
-let tstart = dstart*tdelta
-let tstop  = dstop*tdelta
-let ddelta = (dstop-dstart)/num_sim
-let dact   = dstart
-let tact   = dstart*tdelta
-let trem   = 256u-tact
-let trst   = 4u
-let digit  = 0
+*let treset  = 2.2u
+*let tgap    = 1.8u
+let treset  = 4u
+let tgap    = 0u
+let period  = 1u
+let digmax  = 256
+let istart  = 0
+let istop   = length(pixelvec_0)
+let tmax    = digmax * period + treset + tgap
 
 set ext = "v.txt"
 set dlm = "_"
@@ -96,22 +97,26 @@ shell mkdir -p outfiles
 set wr_singlescale
 set wr_vecnames
 
-while dact < dstop
+while istart < istop
     echo
-    echo Running Sweep $&digit/$&num_sim
+    echo Running Sweep $&istart/$&istop
     echo
-    let tdel = trst + tact
-    alter @Vcomp0[pulse] [ 0 1.8 $&tdel 5n 5n $&trem 260u ]
+
+    let dvalue = pixelvec_0[istart]
+    let tstart = treset + dvalue * period
+    let twidth = tmax - tstart - tgap
+
+    alter @Vcomp0[pulse] [ 0 1.8 $&tstart 5n 5n $&twidth $&tmax ]
     ;run
     tran 10n 520u uic
-    plot I(vdd)
+    plot title 'Current Trace: din=$&dvalue' -I(vdd)
 
     ; let cut-tstart = 260u
     ; let cut-tstop = 520u
     ; cutout
 
     ; ; plot I(vdd)
-    ; wrdata outfiles/sky_raw_d$&digit$ext -I(vdd) ;digitized
+    ; wrdata outfiles/sky_raw_d$&dvalue$ext -I(vdd) ;digitized
 
     ; let lin-tstart = 260u
     ; let lin-tstop  = 520u
@@ -119,15 +124,14 @@ while dact < dstop
     ; linearize I(vdd) ; digitized
 
     ; ; plot I(vdd)
-    ; wrdata outfiles/sky_lin_d$&digit$ext -I(vdd) ;digitized
+    ; wrdata outfiles/sky_lin_d$&dvalue$ext -I(vdd) ;digitized
 
     let digit_count = count.0/256 + count.1/128 + count.2/64 + count.3/32 + count.4/16 + count.5/8 + count.6/4 + count.7/2
     let digit_sampl = stored_values.0/256 + stored_values.1/128 + stored_values.2/64 + stored_values.3/32 + stored_values.4/16 + stored_values.5/8 + stored_values.6/4 + stored_values.7/2
 
-    let dact = dact + ddelta
-    let tact = dact * tdelta
-    let trem = 256u - tact
-    let digit = dact / ddelta
+    plot title 'Digital Outputs: din=$&dvalue' digit_count digit_sampl reset comp.0_ideal
+
+    let istart = istart + 1
 
     ;destroy all
 end
