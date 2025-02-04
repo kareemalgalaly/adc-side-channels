@@ -75,10 +75,10 @@ Bcomp0 comp.0_toggl 0 V = V(comp.0_ideal) > {vdd/2} ? V(clk) : {vss}
 .option method=Gear
 
 .control
-;set color0=white
+set color0=rgb:0F/0F/0F
 set color1=rgb:50/50/50
 
-compose pixelvec_0 values 128
+compose pixelvec_0 values 0 128 254 255
 
 *let treset  = 2.2u
 *let tgap    = 1.8u

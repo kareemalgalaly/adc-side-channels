@@ -51,8 +51,8 @@ Vdd vdd 0 {vdd}
 Vss vss 0 {vss}
 
 ** Clock and Reset signals (1MHz clock)
-Vrst    reset   0   pulse   {vdd}   {vss}   4u      10n  10n  256u    260u
-Vclk    clk     0   pulse   {vss}   {vdd}   200n    10n  10n  0.5u      1u
+Vrst    reset   0   pulse   {vss}   {vdd}   0u      10n  10n    3u    260u
+Vclk    clk     0   pulse   {vss}   {vdd}   1u      10n  10n  0.5u      1u
 *Vrst    reset   0   pulse   {vdd}   {vss}   2.2u    10n  10n  258u    260u
 *Vclk    clk     0   pulse   {vss}   {vdd}   0u      10n  10n  0.5u      1u
 
@@ -80,8 +80,8 @@ set color1=rgb:50/50/50
 
 $pixelvec_0
 
-let treset  = 4u
-let tgap    = 0u
+let treset  = 3u
+let tgap    = 1u
 let period  = 1u
 let digmax  = 256
 let istart  = 0
