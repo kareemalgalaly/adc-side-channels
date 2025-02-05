@@ -1,6 +1,7 @@
 Simulation of digital counter circuit synthesized with Yosys
 ; python ../../script/template_engine.py ece_1px_unprot.temp.cir -s halfcounter= plot= -o demo.cir
-; python ../../script/template_engine.py ece_1px_unprot.temp.cir -s halfcounter= "randvec_0=eval:' '.join(str(i) for i in range(256))" -o runme.cir
+; python ../../script/template_engine.py ece_1px_unprot.temp.cir -s halfcounter= "randvec_0=eval:'compose randvec_0 '+' '.join(str(i) for i in range(256))" -o runme_unprot.cir
+; python ../../script/template_engine.py ece_1px_unprot.temp.cir -s halfcounter= "randvec_0=eval:'compose randvec_0 '+' '.join(str(i) for i in range(256))" protected= -o runme_prot.cir
 
 ** opencircuitdesign pdks install
 *.lib "/foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice" tt
@@ -43,15 +44,23 @@ XEDGE_DETECTOR clk reset comp.0_buffered enable vss vss vdd vdd negedge_detector
 * Instantiate registers module (stores values based on edge detector output)
 XREGISTER_ARRAY clk reset enable count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 stored_values.0 stored_values.1 stored_values.2 stored_values.3 stored_values.4 stored_values.5 stored_values.6 stored_values.7 vss vss vdd vdd register_array
 
+{ifdef protected}
+XEDGE_DETECTOR_P clk reset comp.0_buffered_p enable_p vss vss vdd vdd negedge_detector
+XREGISTER_ARRAY_P clk reset enable_p count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 stored_values.0 stored_values.1 stored_values.2 stored_values.3 stored_values.4 stored_values.5 stored_values.6 stored_values.7 vss vss vdd vdd register_array
+{endif}
+
 * ! Synthesizer optimizes the inversion in Verilog input. Inverters added manually for now.
 XINV1 comp.0_toggl  vss vss vdd vdd comp.0_1 sky130_fd_sc_hs__inv_1
 XINV2 comp.0_1      vss vss vdd vdd comp.0_2 sky130_fd_sc_hs__inv_1
 XINV3 comp.0_2      vss vss vdd vdd comp.0_3 sky130_fd_sc_hs__inv_1
-XINV4 comp.0_3      vss vss vdd vdd comp.0_4 sky130_fd_sc_hs__inv_1
-XINV5 comp.0_4      vss vss vdd vdd comp.0_5 sky130_fd_sc_hs__inv_1
-XINV6 comp.0_5      vss vss vdd vdd comp.0_6 sky130_fd_sc_hs__inv_1
-XINV7 comp.0_6      vss vss vdd vdd comp.0_7 sky130_fd_sc_hs__inv_1
-XINV8 comp.0_7      vss vss vdd vdd comp.0_buffered sky130_fd_sc_hs__inv_1
+XINV4 comp.0_3      vss vss vdd vdd comp.0_buffered sky130_fd_sc_hs__inv_1
+
+{ifdef protected}
+XINV1_P comp.0_toggl_p  vss vss vdd vdd comp.0_1_p sky130_fd_sc_hs__inv_1
+XINV2_P comp.0_1_p      vss vss vdd vdd comp.0_2_p sky130_fd_sc_hs__inv_1
+XINV3_P comp.0_2_p      vss vss vdd vdd comp.0_3_p sky130_fd_sc_hs__inv_1
+XINV4_P comp.0_3_p      vss vss vdd vdd comp.0_buffered_p sky130_fd_sc_hs__inv_1
+{endif}
 
 * Voltage sources
 .param vdd=1.8
@@ -70,6 +79,9 @@ Vclk    clk     0   pulse   {vss}   {vdd}   1u      10n  10n  0.5u      1u
 * Here, we simulate random '1's and '0's for comparators, adjust as needed
 Vcomp0 comp.0_ideal 0 pulse {vss} {vdd} 32u 5n 5n 224u 260u
 Bcomp0 comp.0_toggl 0 V = V(comp.0_ideal) > {vdd/2} ? V(clk) : {vss}
+{ifdef protected}
+Bcomp0_p comp.0_toggl_p 0 V = V(comp.0_ideal) > {vdd/2} ? {vss} : V(clk)
+{endif}
 
 ** Simulation settings
 *.control

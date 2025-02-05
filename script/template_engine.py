@@ -28,6 +28,7 @@ class SafeDict(dict):
 
 vdef_re = re.compile(r'^(\w+)\s*=\s*([^}]+)$')
 ifdefre = re.compile(r'^\s*{(ifdef|ifndef)\s+(\w+)}\s*$')
+else_re = re.compile(r'^\s*{else}\s*$')
 endifre = re.compile(r'^\s*{endif}\s*$')
 #rep_re  = re.compile(r'^\s*{repeat\s+(\d+)\s+(\w+)}\s*$')
 #endrpre = re.compile(r'^\s*{endrepeat}\s*$')
@@ -94,6 +95,11 @@ def handle_sformat_special(lines, mapping):
             include = include and ((key in mapping) ^ (iftyp == 'ifndef'))
             ifdepth.append(include)
 
+        elif else_re.match(line):
+            inc_fin = not ifdepth.pop()
+            include = inc_fin and ifdepth[-1] if ifdepth else inc_fin
+            ifdepth.append(include)
+
         elif endifre.match(line):
             ifdepth.pop()
             include = True if len(ifdepth) == 0 else ifdepth[-1]
@@ -157,6 +163,8 @@ def build_mapping(format_list):
         if fmt:
             try:
                 k, v = fmt.split("=")
+                if v.startswith("eval:"):
+                    v = eval(v[5:])
                 mapping[k] = v
             except valueerror as e:
                 print(f"failed to split <{fmt}> into key=value")
