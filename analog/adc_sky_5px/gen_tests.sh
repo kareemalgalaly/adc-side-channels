@@ -1,5 +1,13 @@
 # Build seeds
 
+if [ "$1" = "clean" ]; then
+    echo "Cleaning files"
+    rm seeds_*
+    rm demo_5px_*.cir
+    rm runme_5px_*.cir
+    exit 0
+fi
+
 seeds=(0 128 256 384)
 corners=( tt ) # ss ff sf fs 
 flavors=( xx px xm pm )
