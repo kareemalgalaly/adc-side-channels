@@ -5,7 +5,6 @@
 .inc adc.lib
 
 * Power and Control
-PULSE(V1 V2 delay rise fall width period)
 vrst rst GND PULSE(0 1.8 0 10p 10p 3u 260u)
 vdd  vdd GND 1.8
 vclk clk GND PULSE(0 1.8 0 10p 10p .5u 1u)
@@ -24,23 +23,23 @@ V5 pix_5 GND 0.9
 xramp_generator vref rst ramp vdd gnd ramp_generator
 
 * Comparators
-xcomp_1 ramp pix_1 clk outp_1 outn_1 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=0.5m}
+xcomp_1 ramp pix_1 clk outp_1 outn_1 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=500u}
 {ifndef one_pixel}
 xcomp_2 ramp pix_2 clk outp_2 outn_2 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=3m}
 xcomp_3 ramp pix_3 clk outp_3 outn_3 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=-1m}
-xcomp_4 ramp pix_4 clk outp_4 outn_4 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=-1.5m}
+xcomp_4 ramp pix_4 clk outp_4 outn_4 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=-1500u}
 xcomp_5 ramp pix_5 clk outp_5 outn_5 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=1m}
 {endif}
 
 * Protection
 {ifdef protected}
 xramp_generator vref rst ramp_p vdd gnd ramp_generator r=20Meg
-xcomp_p1 ramp_p pix_1 clk outp_1 outn_1 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=1.5m}
+xcomp_p1 ramp_p pix_1 clk outp_1 outn_1 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=1500u}
 {ifndef one_pixel}
 xcomp_p2 ramp_p pix_2 clk outp_2 outn_2 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=-2m}
 xcomp_p3 ramp_p pix_3 clk outp_3 outn_3 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=3m}
-xcomp_p4 ramp_p pix_4 clk outp_4 outn_4 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=-0.5m}
-xcomp_p5 ramp_p pix_5 clk outp_5 outn_5 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=0.2m}
+xcomp_p4 ramp_p pix_4 clk outp_4 outn_4 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=-500u}
+xcomp_p5 ramp_p pix_5 clk outp_5 outn_5 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=200u}
 {endif}
 {endif}
 
@@ -56,48 +55,56 @@ xcomp_p5 ramp_p pix_5 clk outp_5 outn_5 vdd gnd comparator_2_wrap{ifdef mismatch
 {randvec_4=*randvec_4}
 {randvec_5=*randvec_5}
 
-set ext = "v.txt"
+set ext = ".txt"
 set dlm = "_"
 
-shell mkdir -p outfiles
+{ifndef plot}
+shell mkdir -p {outdir}
 set wr_singlescale
 set wr_vecnames
+{endif}
+
+let istart = 0
+let istop  = length(randvec_1)
 
 while istart < istop
     echo
     echo Running Sweep $&istart/$&istop
     echo
 
-    {ifndef one_pixel {for pixel in range(1,6)}}
-    {ifdef  one_pixel {for pixel in range(1,2)}}
-    let dvalue = pixelvec_{pixel}[istart]
-    let tstart = treset + dvalue * period
-    let twidth = tmax - tstart - tgap
-
-    alter V{pixel} randvec_{pixel}[istart]
+    let iseed = istart + {seed}
+    {for pixel in range(1,6)}
+    let pact_{pixel} = randvec_{pixel}[istart]
+    alter V{pixel} pact_{pixel}
     {endfor}
-    ;run
+
     tran 500n 520u uic
-    plot title 'Current Trace' -I(vdd)
 
-    ; let cut-tstart = 260u
-    ; let cut-tstop = 520u
-    ; cutout
+    {ifdef plot}
+    plot title 'Current Trace $&istart' -I(vdd)
+    plot title 'Comparator Toggles $&istart' outp_1 outp_2+2 outp_3+4 outp_4+6 outp_5+8
+    {endif}
 
-    ; ; plot I(vdd)
-    ; wrdata outfiles/sky_raw_d$&dvalue$ext -I(vdd) ;digitized
+    {ifndef plot}
+    let cut-tstart = 260u
+    let cut-tstop = 520u
+    cutout
 
-    ; let lin-tstart = 260u
-    ; let lin-tstop  = 520u
-    ; let lin-tstep  = 100n
-    ; linearize I(vdd) ; digitized
+    ; plot I(vdd)
+    wrdata {outdir}/raw_s$&iseed$dlm$&pact_1$dlm$&pact_2$dlm$&pact_3$dlm$&pact_4$dlm$&pact_5$ext -I(vdd)
 
-    ; ; plot I(vdd)
-    ; wrdata outfiles/sky_lin_d$&dvalue$ext -I(vdd) ;digitized
+    let lin-tstart = 260u
+    let lin-tstop  = 520u
+    let lin-tstep  = 100n
+    linearize I(vdd) ; digitized
+
+    ; plot I(vdd)
+    wrdata {outdir}/lin_s$&iseed$dlm$&pact_1$dlm$&pact_2$dlm$&pact_3$dlm$&pact_4$dlm$&pact_5$ext -I(vdd)
+    {endif}
 
     let istart = istart + 1
 
-    ;destroy all
+    {ifndef plot destroy all}
 end
 *exit
 .endc

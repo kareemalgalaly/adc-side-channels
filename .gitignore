@@ -11,3 +11,6 @@ __pycache__
 obj_dir
 trained_models*
 outfiles*
+demo*.cir
+runme*.cir
+seeds_*
