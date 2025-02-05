@@ -1,4 +1,6 @@
 Simulation of digital counter circuit synthesized with Yosys
+; python ../../script/template_engine.py ece_1px_unprot.temp.cir -s halfcounter= plot= -o demo.cir
+; python ../../script/template_engine.py ece_1px_unprot.temp.cir -s halfcounter= "randvec_0=eval:' '.join(str(i) for i in range(256))" -o runme.cir
 
 ** opencircuitdesign pdks install
 *.lib "/foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice" tt
@@ -27,7 +29,9 @@ Simulation of digital counter circuit synthesized with Yosys
 {ifdef halfcounter}
 .include counter_half.spice
 ;XCOUNTER clk reset vdd vss vss vss vss vss vss vss vss vss count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 overflow vss vss vdd vdd counter_half 
-XCOUNTER clk reset vdd count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 overflow vss vss vdd vdd counter_half 
+XCOUNTER clk reset cen count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 overflow vss vss vdd vdd counter_half 
+xcen    reset vss vss vdd vdd cen_d sky130_fd_sc_hs__inv_1
+xcen_ff clk cen_d vss vss vdd vdd cen sky130_fd_sc_hs__dfxtp_1
 {else}
 .include counter.spice
 XCOUNTER clk reset count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 vss vss vdd vdd counter
@@ -57,7 +61,7 @@ Vdd vdd 0 {vdd}
 Vss vss 0 {vss}
 
 ** Clock and Reset signals (1MHz clock)
-Vrst    reset   0   pulse   {vss}   {vdd}   0u      10n  10n    3u    260u
+Vrst    reset   0   pulse   {vss}   {vdd}   0u      10n  10n    2u    260u
 Vclk    clk     0   pulse   {vss}   {vdd}   1u      10n  10n  0.5u      1u
 *Vrst    reset   0   pulse   {vdd}   {vss}   2.2u    10n  10n  258u    260u
 *Vclk    clk     0   pulse   {vss}   {vdd}   0u      10n  10n  0.5u      1u
@@ -84,10 +88,10 @@ Bcomp0 comp.0_toggl 0 V = V(comp.0_ideal) > {vdd/2} ? V(clk) : {vss}
 ;set color0=white
 set color1=rgb:50/50/50
 
-{randvec_0=compose randvec_0 values 32 128 255}
+{randvec_0=compose randvec_0 values 0 128 254 255}
 
-let treset  = 3u
-let tgap    = 1u
+let treset  = 2u
+let tgap    = 2u
 let period  = 1u
 let digmax  = 256
 let istart  = 0
