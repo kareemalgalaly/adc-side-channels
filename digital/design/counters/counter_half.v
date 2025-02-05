@@ -27,8 +27,8 @@ module counter_half #(
     input  clk,
     input  rst,
     input  en,
-    input  set,
-    input  [WIDTH-1:0] setval,
+    //input  set,
+    //input  [WIDTH-1:0] setval,
     output reg [WIDTH-1:0] count,
     output reg overflow
 );
@@ -57,10 +57,10 @@ module counter_half #(
             count    <= 0;
             overflow <= 0;
         end 
-        else if (set) begin
-            count    <= setval;
-            overflow <= 0;
-        end
+        //else if (set) begin
+        //    count    <= setval;
+        //    overflow <= 0;
+        //end
         else begin
             count    <= sum;
             overflow <= carry[WIDTH-1];
