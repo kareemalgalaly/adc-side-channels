@@ -6,7 +6,6 @@ import os
 import re
 
 class TraceDataset(Dataset):
-    #cached_traces = {}
     labelled_traces = {}
     trace_list    = []
 
@@ -18,10 +17,6 @@ class TraceDataset(Dataset):
 
         if cache: self.trace_cache = trace_cache
 
-    @classmethod
-    def purge_cache(cls):
-        cls.cached_traces = {}
-
     def __len__(self):
         return len(self.file_list)
 
@@ -30,7 +25,7 @@ class TraceDataset(Dataset):
         label = self.process_label(label)
 
         if self.cache and (fname, fpath) in self.trace_cache:
-            return self.trace_cache[(fname, fpath)], label
+            return self.trace_cache[fpath], label
         else:
             return self.load_trace(fname, fpath, label, sample_info), label
 
@@ -66,7 +61,7 @@ class TraceDataset(Dataset):
         #trace = torch.tensor(valu_arr, dtype=torch.float32, device=self.device)
 
         if self.cache: 
-            self.trace_cache[(fname, fpath)] = trace
+            self.trace_cache[fpath] = trace
             self.trace_list.append(trace)
 
             if label in self.labelled_traces:
