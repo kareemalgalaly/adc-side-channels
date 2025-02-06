@@ -20,6 +20,21 @@ argparser.add_argument("-s", "--sformat",type=str, nargs="+", metavar="KEY=VALUE
 
 ## --------------------------------------------------
 
+_errors = 0
+_warnings = 0
+
+def error(*msg):
+    global _errors
+    _errors += 1
+    print("ERROR  :", *msg, "\n")
+
+def warn(*msg):
+    global _warnings
+    _warnings += 1
+    print("WARNING:", *msg, "\n")
+
+## --------------------------------------------------
+
 class SafeDict(dict):
     def __missing__(self, key):
         return '{' + key + '}'
@@ -28,12 +43,14 @@ class SafeDict(dict):
 
 vdef_re = re.compile(r'^(\w+)\s*=\s*([^}]+)$')
 ifdefre = re.compile(r'^\s*{(ifdef|ifndef)\s+(\w+)}\s*$')
+ifgenre = re.compile(r'^\s*{if\s+([^}]+)}\s*$')
 else_re = re.compile(r'^\s*{else}\s*$')
 endifre = re.compile(r'^\s*{endif}\s*$')
 #rep_re  = re.compile(r'^\s*{repeat\s+(\d+)\s+(\w+)}\s*$')
 #endrpre = re.compile(r'^\s*{endrepeat}\s*$')
 for__re = re.compile(r'^\s*{for\s+(\w+)\s+in\s+([^}]+)}\s*$')
 endfore = re.compile(r'^\s*{endfor}\s*$')
+assrtre = re.compile(r'^\s*{assert\s+([^}]+)}\s*$')
 
 class FancyDict(SafeDict):
     def __missing__(self, key):
@@ -65,14 +82,24 @@ def handle_sformat_repeat(line_iter, mapping, key, for_iter):
     nlines = []
 
     for line in line_iter:
-        if m := endfore.match(line):
+        if endfore.match(line):
             break
         elif m := for__re.match(line):
             _key, _iter = m.groups()
-            _iter = eval(_iter, globals(), mapping)
+            _iter = do_eval(_iter, mapping)
+            if _iter is None:
+                error("for loop expression failed to evaluate")
             nlines.extend(handle_sformat_repeat(line_iter, mapping, _key, _iter))
         else:
             nlines.append(line)
+
+    if for_iter is None:
+        return []
+    try: 
+        for_iter = iter(for_iter)
+    except TypeError as e:
+        error("for loop expression did not produce an iterable")
+        return []
 
     nlines2 = []
     for value in for_iter:
@@ -95,6 +122,12 @@ def handle_sformat_special(lines, mapping):
             include = include and ((key in mapping) ^ (iftyp == 'ifndef'))
             ifdepth.append(include)
 
+        elif m := ifgenre.match(line):
+            exp = m.groups()[0]
+            exp = do_eval(exp, mapping)
+            include = include and exp
+            ifdepth.append(include)
+
         elif else_re.match(line):
             inc_fin = not ifdepth.pop()
             include = inc_fin and ifdepth[-1] if ifdepth else inc_fin
@@ -104,10 +137,15 @@ def handle_sformat_special(lines, mapping):
             ifdepth.pop()
             include = True if len(ifdepth) == 0 else ifdepth[-1]
 
+        elif m := assrtre.match(line):
+            exp = m.groups()[0]
+            exp = do_eval(exp, mapping)
+            if not exp: error(f"Assertion Failed: {line.strip()}")
+
         elif m := for__re.match(line):
             if include:
                 _key, _iter = m.groups()
-                _iter = eval(_iter, globals(), mapping)
+                _iter = do_eval(_iter, mapping)
                 nlines.extend(handle_sformat_special(handle_sformat_repeat(line_iter, mapping, _key, _iter), mapping))
             else:
                 frdepth += 1
@@ -121,6 +159,18 @@ def handle_sformat_special(lines, mapping):
                 nlines.append(line)
 
     return nlines
+
+def do_eval(exp, mapping):
+    try:
+        val = eval(exp, globals(), mapping)
+    except (TypeError, NameError) as e:
+        val = None
+        if isinstance(e, TypeError):
+            error(f"evaluating {{{exp}}} raised TypeError\n         {e}")
+        else:
+            error(f"evaluating {{{exp}}} raised NameError\n         {e}")
+
+    return val
 
 def post_process_sformat(text, mapping):
     lines = handle_sformat_special(text.split("\n"), mapping)
@@ -166,7 +216,7 @@ def build_mapping(format_list):
                 if v.startswith("eval:"):
                     v = eval(v[5:])
                 mapping[k] = v
-            except valueerror as e:
+            except ValueError as e:
                 print(f"failed to split <{fmt}> into key=value")
     return mapping
 
@@ -198,6 +248,13 @@ if __name__ == "__main__":
             exit()
 
         if args.output:
-            with open(args.output, "w") as file: file.write(processe)
+            if not _errors:
+                with open(args.output, "w") as file: file.write(processe)
+            else:
+                with open(args.output + "_err", "w") as file: file.write(processe)
         else:
             print(processe)
+
+    print("-------------------------------------------------")
+    print(f"Job Completed with {_errors} Errors and {_warnings} Warnings")
+

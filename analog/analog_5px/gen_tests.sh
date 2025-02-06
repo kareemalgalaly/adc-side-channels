@@ -16,6 +16,13 @@ for seed in ${seeds[@]}; do
     [ -f seeds_$seed ] || python ../../script/gen_seeds.py -s 0 -p 5 -i 1 -r 1 -n 128 --start $seed > seeds_$seed
 done
 
+if [ -f /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice ]; then
+    foss="foss="
+else
+    foss=""
+fi
+
+
 for flavor in ${flavors[@]}; do
     case flavor in 
         xx ) flv="" ;;
@@ -37,6 +44,7 @@ for flavor in ${flavors[@]}; do
             args+=("outdir=outfiles/analog_5px_${corner}_${flavor}")
             args+=("$flv")
             args+=("seed=$seed")
+            args+=("$foss")
 
             python ../../script/template_engine.py adc_sky_5px.temp.cir -s "${args[@]}" -o runme_5px_${corner}_${flavor}_${seed}.cir
         done

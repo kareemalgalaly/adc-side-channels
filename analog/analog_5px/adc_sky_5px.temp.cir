@@ -1,7 +1,12 @@
 **.subckt adc_5column
 
-*.lib /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice tt
+{assert pixels in (1,5)}
+
+{ifdef foss}
+.lib /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice {corner=tt}
+{else}
 .lib "models/sky130.lib.spice" {corner=tt}
+{endif}
 .inc adc.lib
 
 * Power and Control
@@ -12,7 +17,7 @@ vref gnd vref 1
 
 * Pixel Analog Inputs
 V1 pix_1 GND 0.1
-{ifndef one_pixel}
+{if pixels == 5}
 V2 pix_2 GND 0.3
 V3 pix_3 GND 0.5
 V4 pix_4 GND 0.7
@@ -24,7 +29,7 @@ xramp_generator vref rst ramp vdd gnd ramp_generator
 
 * Comparators
 xcomp_1 ramp pix_1 clk outp_1 outn_1 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=500u}
-{ifndef one_pixel}
+{if pixels==5}
 xcomp_2 ramp pix_2 clk outp_2 outn_2 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=3m}
 xcomp_3 ramp pix_3 clk outp_3 outn_3 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=-1m}
 xcomp_4 ramp pix_4 clk outp_4 outn_4 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=-1500u}
@@ -35,7 +40,7 @@ xcomp_5 ramp pix_5 clk outp_5 outn_5 vdd gnd comparator_2_wrap{ifdef mismatch _m
 {ifdef protected}
 xramp_generator vref rst ramp_p vdd gnd ramp_generator r=20Meg
 xcomp_p1 ramp_p pix_1 clk outp_1 outn_1 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=1500u}
-{ifndef one_pixel}
+{if pixels == 5}
 xcomp_p2 ramp_p pix_2 clk outp_2 outn_2 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=-2m}
 xcomp_p3 ramp_p pix_3 clk outp_3 outn_3 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=3m}
 xcomp_p4 ramp_p pix_4 clk outp_4 outn_4 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=-500u}
@@ -73,7 +78,7 @@ while istart < istop
     echo
 
     let iseed = istart + {seed}
-    {for pixel in range(1,6)}
+    {for pixel in range(1,pixels+1)}
     let pact_{pixel} = randvec_{pixel}[istart]
     alter V{pixel} pact_{pixel}
     {endfor}

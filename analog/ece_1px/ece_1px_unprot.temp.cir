@@ -1,11 +1,10 @@
 Simulation of digital counter circuit synthesized with Yosys
-; python ../../script/template_engine.py ece_1px_unprot.temp.cir -s halfcounter= plot= -o demo.cir
-; python ../../script/template_engine.py ece_1px_unprot.temp.cir -s halfcounter= "randvec_0=eval:'compose randvec_0 '+' '.join(str(i) for i in range(256))" -o runme_unprot.cir
-; python ../../script/template_engine.py ece_1px_unprot.temp.cir -s halfcounter= "randvec_0=eval:'compose randvec_0 '+' '.join(str(i) for i in range(256))" protected= -o runme_prot.cir
 
 ** opencircuitdesign pdks install
-*.lib "/foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice" tt
-*.include "/foss/pdk/sky130A/libs.ref/sky130_fd_sc_hs/spice/sky130_fd_sc_hs.spice"
+{ifdef foss}
+.lib "/foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice" {corner=tt}
+.include "/foss/pdk/sky130A/libs.ref/sky130_fd_sc_hs/spice/sky130_fd_sc_hs.spice"
+{else}
 .lib "models/sky130.lib.spice" {corner=tt}
 .include cells/a21oi/sky130_fd_sc_hs__a21oi_1.spice
 .include cells/and2/sky130_fd_sc_hs__and2_1.spice
@@ -21,20 +20,21 @@ Simulation of digital counter circuit synthesized with Yosys
 .include cells/o21a/sky130_fd_sc_hs__o21a_1.spice
 .include cells/o21bai/sky130_fd_sc_hs__o21bai_1.spice
 .include cells/o21ba/sky130_fd_sc_hs__o21ba_1.spice
+{endif}
 
 ** local libraries
-.include register_array.spice
-.include negedge_detector.spice
+.include lib/register_array.spice
+.include lib/negedge_detector.spice
 
 * Instantiate counter module
 {ifdef halfcounter}
-.include counter_half.spice
+.include lib/counter_half.spice
 ;XCOUNTER clk reset vdd vss vss vss vss vss vss vss vss vss count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 overflow vss vss vdd vdd counter_half 
 XCOUNTER clk reset cen count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 overflow vss vss vdd vdd counter_half 
 xcen    reset vss vss vdd vdd cen_d sky130_fd_sc_hs__inv_1
 xcen_ff clk cen_d vss vss vdd vdd cen sky130_fd_sc_hs__dfxtp_1
 {else}
-.include counter.spice
+.include lib/counter.spice
 XCOUNTER clk reset count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 vss vss vdd vdd counter
 {endif}
 
