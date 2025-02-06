@@ -1,9 +1,10 @@
-import torch
 from torch.utils.data import Dataset, DataLoader
 from subsampler import sample_file
 import numpy as np
 import os
 import re
+
+DTYPE = np.float32
 
 class TraceDataset(Dataset):
     labelled_traces = {}
@@ -24,7 +25,7 @@ class TraceDataset(Dataset):
         fname, fpath, label, sample_info = self.file_list[index]
         label = self.process_label(label)
 
-        if self.cache and (fname, fpath) in self.trace_cache:
+        if self.cache and fpath in self.trace_cache:
             return self.trace_cache[fpath], label
         else:
             return self.load_trace(fname, fpath, label, sample_info), label
@@ -42,23 +43,21 @@ class TraceDataset(Dataset):
         if sample_mode == 'timed':
             with open(fpath, 'r') as file:
                 header = file.readline()
-                splitf = lambda x: (np.float32(x[0]), np.float32(x[1]))
+                splitf = lambda x: (DTYPE(x[0]), DTYPE(x[1]))
 
                 valu_arr = [splitf(line.strip().split()) for line in file.readlines()]
                 time_arr, valu_arr = zip(*valu_arr)
-                trace = (np.array((time_arr, valu_arr), dtype=np.float32)) #, np.array(valu_arr, dtype=np.float32))
+                trace = (np.array((time_arr, valu_arr), dtype=DTYPE)) #, np.array(valu_arr, dtype=DTYPE))
 
         elif sample_mode:
             valu_arr = sample_file(fpath, sample_int, max_sample, sample_mode=sample_mode)
-            trace = np.array(valu_arr, dtype=np.float32)
+            trace = np.array(valu_arr, dtype=DTYPE)
 
         else:
             with open(fpath, 'r') as file:
                 header = file.readline()
-                valu_arr = [np.float32(line.strip().split()[1]) for line in file.readlines()]
-                trace = np.array(valu_arr, dtype=np.float32)[:max_sample]
-
-        #trace = torch.tensor(valu_arr, dtype=torch.float32, device=self.device)
+                valu_arr = [DTYPE(line.strip().split()[1]) for line in file.readlines()]
+                trace = np.array(valu_arr, dtype=DTYPE)[:max_sample]
 
         if self.cache: 
             self.trace_cache[fpath] = trace
@@ -71,7 +70,7 @@ class TraceDataset(Dataset):
 
         return trace
     
-    def process_label(self, label): return np.float32(label)
+    def process_label(self, label): return DTYPE(label)
 
     def cache_all(self):
         assert self.cache == True

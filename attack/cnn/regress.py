@@ -80,7 +80,6 @@ class ProgressBar:
 
     def stop(self, value=-1):
         if not(self.running): return
-
         if value == -1: value = self.max_val
 
         print(f"{self.f_start.format(**self.kwargs)}[{self.bar_chr*self.bar_len}] {value:{self.val_len}}/{self.max_val} {self.f_end.format(**self.kwargs)}", end='\n', file=self.out, flush=True)
@@ -384,7 +383,7 @@ class Regression:
                     file.write("Run ID,Network,Network ID,Network Type,Definition,Inputs,")
                     file.write("Dataset,Datset ID,Type,Path,Dataset Cols,Datset Info,Test ID,")
                     file.write("Learning Rate,Optimizer,Batch Size,Max Epochs,Target Accuracy,")
-                    file.write("Target Loss,Bit,Accuracy,Test Accuracy,Loss,Epoch,Runtime\n")
+                    file.write("Target Loss,Bit,Accuracy,Peak Accuracy,Test Accuracy,Loss,Epoch,Runtime\n")
 
         # Skipped tests
 
@@ -490,8 +489,10 @@ class Regression:
         criterion = test.get_loss(network) #nn.CrossEntropyLoss()
         optimizer = test.get_optimizer(cnn)
     
-        progress = ProgressBar(f_start="Training ", f_end="{model} | Loss {loss:8} | Accuracy {acc:8} | {msg}", max_val=test.max_epochs)
-        progress.start(model=run_hash, loss=1.0, acc=0.0, msg="          ")
+        progress = ProgressBar(f_start="Training ", f_end="{model} | Loss {loss:8} | Accuracy {acc:6}:{pacc:6} | Test {tst:8} | {msg}", max_val=test.max_epochs)
+        progress.start(model=run_hash, loss=1.0, acc=0.0, pacc=0.0, tst=0.0, msg="")
+
+        pacc = 0 # peak_accuracy
 
         try:
             for epoch in range(test.max_epochs):
@@ -530,10 +531,11 @@ class Regression:
                     accuracy = correct / len(dataset.builder.dataset)
                     acc_indx = epoch//acc_period
                     acc_arr[acc_indx] = accuracy
+                    facc = float(accuracy)
+                    pacc = max(facc, pacc)
+                    progress.update(epoch, loss=round(loss.item(), 6), acc=round(facc,4), pacc=round(pacc,4))
 
                 if epoch % plot_period == 0:
-                    progress.update(epoch, loss=round(loss.item(), 6), acc=round(float(accuracy),6))
-
                     if not self.args.headless:
                         if loss_g: loss_g.remove()
                         if acc_g:  acc_g.remove()
@@ -550,8 +552,6 @@ class Regression:
             progress.update(epoch, msg="Job Interrupted")
             progress.stop(epoch)
             raise e
-
-        progress.stop()
 
         label = f'cnn[{bit}]'
         axs[0].plot(loss_arr.detach().cpu()[:epoch], label=label)
@@ -570,8 +570,7 @@ class Regression:
 
         # Find final accuracy on test dataset
 
-        print("Calculating final accuracy")
-        dataloader = test.test_dataset.builder.dataloader if bit == "_" else dataset.builder.dataloaders[bit]
+        dataloader = test.test_dataset.builder.dataloader if bit == "_" else test.test_dataset.builder.dataloaders[bit]
         correct = 0
         for inputs, labels in dataloader:
             if device:
@@ -593,7 +592,9 @@ class Regression:
                 _, predicted = torch.max(output, 1)
                 correct += (predicted == labels).sum()
         test_accuracy = correct / len(test.test_dataset.builder.dataset)
-        print(f"Testing Accuracy: {test_accuracy}")
+        progress.update(epoch, tst=round(float(test_accuracy), 6))
+        progress.stop(epoch+1)
+
 
         with open(self.csv, "a") as file:
             file.write(f"{run_hash},{network.name},{network},{dataset.name},{dataset},{test},{bit},{accuracy},{test_accuracy},{loss},{epoch},{runtime}\n")
