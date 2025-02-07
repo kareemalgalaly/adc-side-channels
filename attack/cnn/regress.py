@@ -78,10 +78,11 @@ class ProgressBar:
 
         print(f"{self.f_start.format(**self.kwargs)}[{self.bar_chr*done}{('-'*(remn))}] {value:{self.val_len}}/{self.max_val} {self.f_end.format(**self.kwargs)}", end='\r', file=self.out, flush=True)
 
-    def stop(self):
+    def stop(self, value=-1):
         if not(self.running): return
+        if value == -1: value = self.max_val
 
-        print(f"{self.f_start.format(**self.kwargs)}[{self.bar_chr*self.bar_len}] {self.max_val}/{self.max_val} {self.f_end.format(**self.kwargs)}", end='\n', file=self.out, flush=True)
+        print(f"{self.f_start.format(**self.kwargs)}[{self.bar_chr*self.bar_len}] {value:{self.val_len}}/{self.max_val} {self.f_end.format(**self.kwargs)}", end='\n', file=self.out, flush=True)
 
         self.kwargs = {}
         self.running = False
@@ -191,10 +192,12 @@ class Network(HashableBase):
 class Dataset(HashableBase):
     def __init__(self, name, info):
         self.name = name
-        self.path = os.path.join(data_dir, info['path'])
         self.type = info['type']
         self.frmt = info['format']
         self.cols = info['columns']
+        self.paths = [os.path.join(data_dir, path) for path in info.get('paths', [])]
+        if path := info.get('path', None):
+            self.paths.append(os.path.join(data_dir, path))
 
     @classmethod
     def from_info(cls, name, info):
@@ -206,7 +209,7 @@ class Dataset(HashableBase):
             return SampledDataset(name, info)
 
     def get_csv(self):
-        return f"{self.type},{self.path},{self.cols}"
+        return f"{self.type},{';'.join(self.paths)},{self.cols}"
 
     def build(self, adc_bitwidth=8, device=None):
         self.builder = TraceDatasetBuilder(adc_bitwidth=adc_bitwidth, cache=True, device=device)
@@ -228,7 +231,8 @@ class RawDataset(Dataset):
 
     def build(self, adc_bitwidth=8, device=None):
         super().build(adc_bitwidth, device)
-        self.builder.add_files(self.path, self.frmt, max_sample=self.len)
+        for path in self.paths:
+            self.builder.add_files(path, self.frmt, max_sample=self.len)
         self.builder.build()
 
 class SampledDataset(Dataset):
@@ -246,7 +250,8 @@ class SampledDataset(Dataset):
 
     def build(self, adc_bitwidth=8, device=None):
         super().build(adc_bitwidth, device)
-        self.builder.add_files(self.path, self.frmt, sample_mode=self.mode, sample_int=self.interval, sample_time=self.duration)
+        for path in self.paths:
+            self.builder.add_files(path, self.frmt, sample_mode=self.mode, sample_int=self.interval, sample_time=self.duration)
         self.builder.build()
 
 class TimedDataset(Dataset):
@@ -259,7 +264,8 @@ class TimedDataset(Dataset):
 
     def build(self, adc_bitwidth=8, device=None):
         super().build(adc_bitwidth, device)
-        self.builder.add_files(self.path, self.frmt, sample_mode="timed")
+        for path in self.paths:
+            self.builder.add_files(path, self.frmt, sample_mode="timed")
         self.builder.build()
 
 
@@ -270,6 +276,7 @@ class Test(HashableBase):
         self.networks = [networks[n] for n in info['networks']]
         self.datasets = [datasets[d] for d in info['datasets']]
 
+        self.test_dataset  = datasets[info['test_dataset']] if 'test_dataset' in info else self.datasets[0]
         self.skip          = info.get('skip',           False)
         self.learning_rate = info.get('learning_rate',  defaults['learning_rate'])
         self.optimizer     = info.get('optimizer',      defaults['optimizer'])
@@ -288,6 +295,7 @@ class Test(HashableBase):
         that = cls.__new__(cls)
         that.networks = self.networks
         that.datasets = self.datasets
+        that.test_dataset  = self.test_dataset
         that.learning_rate = self.learning_rate
         that.optimizer     = self.optimizer
         that.loss          = self.loss
@@ -375,7 +383,7 @@ class Regression:
                     file.write("Run ID,Network,Network ID,Network Type,Definition,Inputs,")
                     file.write("Dataset,Datset ID,Type,Path,Dataset Cols,Datset Info,Test ID,")
                     file.write("Learning Rate,Optimizer,Batch Size,Max Epochs,Target Accuracy,")
-                    file.write("Target Loss,Bit,Accuracy,Loss,Epoch,Runtime\n")
+                    file.write("Target Loss,Bit,Accuracy,Peak Accuracy,Test Accuracy,Loss,Epoch,Runtime\n")
 
         # Skipped tests
 
@@ -401,6 +409,10 @@ class Regression:
         # Regression main
 
         for test in self.tests:
+            if test.test_dataset is not test.datasets[0]:
+                self.build_datasets(test.test_dataset, device=device)
+                test.test_dataset.builder.build_dataloaders(batch_size=test.batch_size, shuffle=True)
+
             for dataset in test.datasets:
                 self.build_datasets(dataset, device=device)
 
@@ -447,7 +459,6 @@ class Regression:
                         fig.savefig(f'{self.args.output}/{run_hash}.png')
                         plt.close()
 
-
     def run_eval_cnn(self, test, network, dataset, device, run_hash, axs, bit=-1):
         plot_period = 1 if network.predef else 1000 if device else 10
         acc_period  = 1 if network.predef else 100  if device else 10
@@ -478,8 +489,10 @@ class Regression:
         criterion = test.get_loss(network) #nn.CrossEntropyLoss()
         optimizer = test.get_optimizer(cnn)
     
-        progress = ProgressBar(f_start="Training ", f_end="{model} | Loss {loss:8} | Accuracy {acc:8} | {msg}", max_val=test.max_epochs)
-        progress.start(model=run_hash, loss=1.0, acc=0.0, msg="          ")
+        progress = ProgressBar(f_start="Training ", f_end="{model} | Loss {loss:8} | Accuracy {acc:6}:{pacc:6} | Test {tst:8} | {msg}", max_val=test.max_epochs)
+        progress.start(model=run_hash, loss=1.0, acc=0.0, pacc=0.0, tst=0.0, msg="")
+
+        pacc = 0 # peak_accuracy
 
         try:
             for epoch in range(test.max_epochs):
@@ -506,10 +519,10 @@ class Regression:
                     # Calculate Accuracy
 
                     if (epoch % acc_period) == 0:
-                        _, predicted = torch.max(output, 1)
                         if single_ended:
-                            correct += (predicted.round() == labels.round()).sum()
+                            correct += (output.round() == labels.round()).sum()
                         else:
+                            _, predicted = torch.max(output, 1)
                             correct += (predicted == labels).sum()
 
                 loss_arr[epoch] = loss
@@ -518,10 +531,11 @@ class Regression:
                     accuracy = correct / len(dataset.builder.dataset)
                     acc_indx = epoch//acc_period
                     acc_arr[acc_indx] = accuracy
+                    facc = float(accuracy)
+                    pacc = max(facc, pacc)
+                    progress.update(epoch, loss=round(loss.item(), 6), acc=round(facc,4), pacc=round(pacc,4))
 
                 if epoch % plot_period == 0:
-                    progress.update(epoch, loss=round(loss.item(), 6), acc=round(float(accuracy),6))
-
                     if not self.args.headless:
                         if loss_g: loss_g.remove()
                         if acc_g:  acc_g.remove()
@@ -530,16 +544,14 @@ class Regression:
                         plt.pause(0.01)
 
                 if accuracy >= test.max_accuracy:
-                    progress.update(epoch, msg="Reached target accuracy"); break
+                    progress.update(epoch, msg=f"Reached target accuracy {accuracy} >= {test.max_accuracy} at epoch {epoch}"); break
 
                 if loss <= test.max_loss:
-                    progress.update(epoch, msg="Reached target loss"); break
+                    progress.update(epoch, msg=f"Reached target loss {loss} <= {test.max_loss} at epoch {epoch}"); break
         except KeyboardInterrupt as e:
-            progress.update(1,msg="Job Interrupted")
-            progress.stop()
+            progress.update(epoch, msg="Job Interrupted")
+            progress.stop(epoch)
             raise e
-
-        progress.stop()
 
         label = f'cnn[{bit}]'
         axs[0].plot(loss_arr.detach().cpu()[:epoch], label=label)
@@ -556,8 +568,36 @@ class Regression:
 
         torch.save(cnn.state_dict(), f'{self.args.output}/{run_hash}.state')
 
+        # Find final accuracy on test dataset
+
+        dataloader = test.test_dataset.builder.dataloader if bit == "_" else test.test_dataset.builder.dataloaders[bit]
+        correct = 0
+        for inputs, labels in dataloader:
+            if device:
+                inputs = inputs.cuda()
+                labels = labels.cuda()
+
+            inputs = network.preprocess(inputs)
+
+            # Forward
+
+            optimizer.zero_grad()
+            output = cnn(inputs)
+
+            if single_ended:
+                print(output)
+                print(labels)
+                correct += (output.round() == labels.round()).sum()
+            else:
+                _, predicted = torch.max(output, 1)
+                correct += (predicted == labels).sum()
+        test_accuracy = correct / len(test.test_dataset.builder.dataset)
+        progress.update(epoch, tst=round(float(test_accuracy), 6))
+        progress.stop(epoch+1)
+
+
         with open(self.csv, "a") as file:
-            file.write(f"{run_hash},{network.name},{network},{dataset.name},{dataset},{test},{bit},{accuracy},{loss},{epoch},{runtime}\n")
+            file.write(f"{run_hash},{network.name},{network},{dataset.name},{dataset},{test},{bit},{accuracy},{test_accuracy},{loss},{epoch},{runtime}\n")
 
 # Main ###########################################
 

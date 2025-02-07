@@ -34,6 +34,13 @@
         }
     },
     "datasets" : {
+        "linearized3k" : {
+            "path"    : "sky_Dec_18_2151",
+            "type"    : "raw",
+            "format"  : "sky_d(\\d+)_.*\\.txt",
+            "columns" : 1,
+            "len"     : 3000
+        },
         "a1u_tt_lin" : {
             "path"    : "analog_1px_unprot_tt_Jan_28_1945",
             "type"    : "raw",
@@ -74,6 +81,15 @@
         },
         "a1u_ss_max" : {
             "path"    : "analog_1px_unprot_ss_Jan_29_0103",
+            "type"    : "sampled",
+            "format"  : "sky_raw_d(\\d+)v.txt",
+            "columns" : 1,
+            "sample_mode"     : "MAX",
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 256e-6
+        },
+        "a1u_max" : {
+            "paths"   : ["analog_1px_unprot_ss_Jan_29_0103", "analog_1px_unprot_ff_Jan_29_1818"],
             "type"    : "sampled",
             "format"  : "sky_raw_d(\\d+)v.txt",
             "columns" : 1,
@@ -161,6 +177,13 @@
     },
     "tests" : [
         {
+            "desc"          : "Original testcase, based on paper network with linearized datasets",
+            "skip"          : true,
+            "networks"      : ["paper"],
+            "datasets"      : ["linearized3k"],
+            "learning_rate" : [0.0005]
+        },
+        {
             "desc"          : "Basic paper network on linearized and sampled datasets",
             "skip"          : true,
             "networks"      : ["paper"],
@@ -170,16 +193,17 @@
         {
             "desc"          : "Basic paper network with single-output",
             "skip"          : false,
-            "networks"      : ["deep_se"],
-            "datasets"      : ["a1u_tt_max"],
-            "learning_rate" : [0.00005]
+            "networks"      : ["paper"],
+            "datasets"      : ["a1u_max"],
+            "test_datasets" : ["a1u_ff_max"],
+            "learning_rate" : [0.0005]
         },
         {
-            "desc"          : "Basic deepter network on linearized and sampled datasets",
+            "desc"          : "Basic deeper network on linearized and sampled datasets",
             "skip"          : true,
             "networks"      : ["deep"],
-            "datasets"      : ["a1u_tt_lin", "a1u_tt_min", "a1u_tt_max"],
-            "learning_rate" : [0.1]
+            "datasets"      : ["a1u_max"],
+            "learning_rate" : [0.005]
         },
         {
             "desc"          : "Trying to get resnet to work",
@@ -195,7 +219,7 @@
         "loss_se"       : "MSELoss",
         "learning_rate" : 0.0005,
         "max_epochs"    : 5000,
-        "max_accuracy"  : 1.0,
+        "max_accuracy"  : 2.0,
         "max_loss"      : 0.0,
         "batch_size"    : 256
     }
