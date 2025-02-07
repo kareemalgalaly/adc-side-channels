@@ -12,7 +12,7 @@ if [ "$1" = "1px" ]; then
     args="pixels=eval:1"
 else
     pixels="5x"
-    corners=( tt )
+    corners=( sf ss ff fs )
     seeds=(0 128 256 384)
     args="pixels=eval:5"
 fi
