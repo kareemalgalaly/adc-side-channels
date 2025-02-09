@@ -11,7 +11,7 @@ if [ "$1" = "1px" ]; then
     seeds=(0)
     args="pixels=eval:1"
 else
-    pixels="5x"
+    pixels="5px"
     corners=( sf ss ff fs )
     seeds=(0 128 256 384)
     args="pixels=eval:5"
@@ -28,15 +28,18 @@ python ../../script/template_engine.py digital.temp.cir -s $args plot= seed=0 pr
 
 if [ "$pixels" = "1px" ]; then
     values=("randvec_1=eval:'compose randvec_1 values '+' '.join(str(i) for i in range(256))")
+else
     for seed in ${seeds[@]}; do
         [ -f seeds_$seed ] || python ../../script/gen_seeds.py -s 0 -p 5 -i 1 -r 256 -n 128 --start $seed > seeds_$seed
     done
 fi
+
 outdir=outfiles/digital_5px_${corner}_x
 for seed in ${seeds[@]}; do
     if [ "$pixels" = "5px" ]; then
         values=()
         while read -r i ; do 
+            echo $i
             values+=("$i")
         done < seeds_$seed
     fi
