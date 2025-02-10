@@ -1,10 +1,14 @@
 from torch.utils.data import Dataset, DataLoader
+from collections import namedtuple
 from subsampler import sample_file
 import numpy as np
 import os
 import re
 
+TraceInfo = namedtuple("TraceInfo", ["trace", "start", "stop"])
+
 DTYPE = np.float32
+VMULT = 1e4
 
 class TraceDataset(Dataset):
     labelled_traces = {}
@@ -22,6 +26,10 @@ class TraceDataset(Dataset):
         return len(self.file_list)
 
     def __getitem__(self, index):
+        traceinfo, label = self.get_item(index)
+        return traceinfo.trace, label
+
+    def get_item(self, index):
         fname, fpath, label, sample_info = self.file_list[index]
         label = self.process_label(label)
 
@@ -35,7 +43,7 @@ class TraceDataset(Dataset):
 
     def get_by_label(self, label, index=0):
         index = self.label_dict[label][index]
-        return self[index][0]
+        return self.get_item(index)[0]
 
     def load_trace(self, fname, fpath, label, sample_info):
         sample_mode, sample_int, max_sample = sample_info
@@ -43,24 +51,33 @@ class TraceDataset(Dataset):
         if sample_mode == 'timed':
             with open(fpath, 'r') as file:
                 header = file.readline()
-                splitf = lambda x: (DTYPE(x[0]), DTYPE(x[1]))
+                splitf = lambda x: (DTYPE(x[0]), DTYPE(x[1])*VMULT)
 
                 valu_arr = [splitf(line.strip().split()) for line in file.readlines()]
                 time_arr, valu_arr = zip(*valu_arr)
-                trace = (np.array((time_arr, valu_arr), dtype=DTYPE)) #, np.array(valu_arr, dtype=DTYPE))
+                trace = np.array((time_arr, valu_arr), dtype=DTYPE)
+                tstart = time_arr[0]
+                tstop  = time_arr[-1]
 
         elif sample_mode:
-            valu_arr = sample_file(fpath, sample_int, max_sample, sample_mode=sample_mode)
-            trace = np.array(valu_arr, dtype=DTYPE)
+            valu_arr, tstart, tstop = sample_file(fpath, sample_int, max_sample, sample_mode=sample_mode)
+            trace = np.array(valu_arr, dtype=DTYPE)*VMULT
 
         else:
             with open(fpath, 'r') as file:
                 header = file.readline()
-                valu_arr = [DTYPE(line.strip().split()[1]) for line in file.readlines()]
-                trace = np.array(valu_arr, dtype=DTYPE)[:max_sample]
+                tstart, val = file.readline().strip().split()
+                valu_arr = [DTYPE(val)]
+                for line in file.readlines():
+                    tcurr, val = line.strip().split()
+                    valu_arr.append(DTYPE(val))
+                tstop = DTYPE(tcurr)
+                trace = np.array(valu_arr, dtype=DTYPE)[:max_sample]*VMULT
+
+        trace_info = TraceInfo(trace, tstart, tstop)
 
         if self.cache: 
-            self.trace_cache[fpath] = trace
+            self.trace_cache[fpath] = trace_info
             self.trace_list.append(trace)
 
             if label in self.labelled_traces:
@@ -68,7 +85,7 @@ class TraceDataset(Dataset):
             else:
                 self.labelled_traces[label] = [trace]
 
-        return trace
+        return trace_info
     
     def process_label(self, label): return DTYPE(label)
 

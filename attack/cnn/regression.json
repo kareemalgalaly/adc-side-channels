@@ -41,138 +41,80 @@
             "columns" : 1,
             "len"     : 3000
         },
-        "a1u_tt_lin" : {
+        "a1u_tt:lin" : {
             "path"    : "analog_1px_unprot_tt_Jan_28_1945",
             "type"    : "raw",
             "format"  : "sky_lin_d(\\d+)v.txt",
             "columns" : 1,
             "len"     : 2551
         },
-        "a1u_tt_max" : {
+        "a1u_tt" : {
             "path"    : "analog_1px_unprot_tt_Jan_28_1945",
             "type"    : "sampled",
             "format"  : "sky_raw_d(\\d+)v.txt",
             "columns" : 1,
-            "sample_mode"     : "MAX",
+            "sample_mode"     : ["MAX","MIN"],
             "sample_interval" : 0.1e-6,
             "sample_duration" : 255e-6
         },
-        "a1u_tt_min" : {
-            "path"    : "analog_1px_unprot_tt_Jan_28_1945",
-            "type"    : "sampled",
-            "format"  : "sky_raw_d(\\d+)v.txt",
-            "columns" : 1,
-            "sample_mode"     : "MIN",
-            "sample_interval" : 0.1e-6,
-            "sample_duration" : 255e-6
-        },
-        "a1u_tt_raw" : {
-            "path"    : "analog_1px_unprot_tt_Jan_28_1945",
-            "type"    : "timed",
-            "format"  : "sky_raw_d(\\d+)v.txt",
-            "columns" : 1
-        },
-        "a1u_ss_lin" : {
+        "a1u_ss:lin" : {
             "path"    : "analog_1px_unprot_ss_Jan_29_0103",
             "type"    : "raw",
             "format"  : "sky_lin_d(\\d+)v.txt",
             "columns" : 1,
             "len"     : 2561
         },
-        "a1u_ss_max" : {
+        "a1u_ss" : {
             "path"    : "analog_1px_unprot_ss_Jan_29_0103",
             "type"    : "sampled",
             "format"  : "sky_raw_d(\\d+)v.txt",
             "columns" : 1,
-            "sample_mode"     : "MAX",
+            "sample_mode"     : ["MAX", "MIN"],
             "sample_interval" : 0.1e-6,
             "sample_duration" : 256e-6
         },
-        "a1u_max" : {
-            "paths"   : ["analog_1px_unprot_ss_Jan_29_0103", "analog_1px_unprot_ff_Jan_29_1818"],
-            "type"    : "sampled",
-            "format"  : "sky_raw_d(\\d+)v.txt",
-            "columns" : 1,
-            "sample_mode"     : "MAX",
-            "sample_interval" : 0.1e-6,
-            "sample_duration" : 256e-6
-        },
-        "a1u_ss_min" : {
-            "path"    : "analog_1px_unprot_ss_Jan_29_0103",
-            "type"    : "sampled",
-            "format"  : "sky_raw_d(\\d+)v.txt",
-            "columns" : 1,
-            "sample_mode"     : "MIN",
-            "sample_interval" : 0.1e-6,
-            "sample_duration" : 256e-6
-        },
-        "a1u_ss_raw" : {
-            "path"    : "analog_1px_unprot_ss_Jan_29_0103",
-            "type"    : "timed",
-            "format"  : "sky_raw_d(\\d+)v.txt",
-            "columns" : 1
-        },
-        "a1u_ff_lin" : {
+        "a1u_ff:lin" : {
             "path"    : "analog_1px_unprot_ff_Jan_29_1818",
             "type"    : "raw",
             "format"  : "sky_lin_d(\\d+)v.txt",
             "columns" : 1,
             "len"     : 2561
         },
-        "a1u_ff_max" : {
+        "a1u_ff" : {
             "path"    : "analog_1px_unprot_ff_Jan_29_1818",
             "type"    : "sampled",
             "format"  : "sky_raw_d(\\d+)v.txt",
             "columns" : 1,
-            "sample_mode"     : "MAX",
+            "sample_mode"     : ["MAX", "MIN"],
             "sample_interval" : 0.1e-6,
             "sample_duration" : 256e-6
         },
-        "a1u_ff_min" : {
-            "path"    : "analog_1px_unprot_ff_Jan_29_1818",
-            "type"    : "sampled",
-            "format"  : "sky_raw_d(\\d+)v.txt",
+        "digital_1px_ff_p" : {
+            "path" : "digital_1px_ff_p",
+            "type" : "sampled",
+            "format"  : "sky_raw_s\\d+_(\\d+).txt",
             "columns" : 1,
-            "sample_mode"     : "MIN",
+            "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
             "sample_duration" : 256e-6
         },
-        "a1u_ff_raw" : {
-            "path"    : "analog_1px_unprot_ff_Jan_29_1818",
-            "type"    : "timed",
-            "format"  : "sky_raw_d(\\d+)v.txt",
-            "columns" : 1
-        },
-        "e1u_tt_lin" : {
-            "path"    : "ece_1px_unprot_tt_hs_Jan_28_1834",
-            "type"    : "raw",
-            "format"  : "sky_lin_d(\\d+)v.txt",
+        "digital_1px_ff_x" : {
+            "path" : "digital_1px_ff_x",
+            "type" : "sampled",
+            "format"  : "sky_raw_s\\d+_(\\d+).txt",
             "columns" : 1,
-            "len"     : 2551
-        },
-        "e1u_tt_max" : {
-            "path"    : "ece_1px_unprot_tt_hs_Jan_28_1834",
-            "type"    : "sampled",
-            "format"  : "sky_raw_d(\\d+)v.txt",
-            "columns" : 1,
-            "sample_mode"     : "MAX",
+            "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
-            "sample_duration" : 255e-6
+            "sample_duration" : 256e-6
         },
-        "e1u_tt_min" : {
-            "path"    : "ece_1px_unprot_tt_hs_Jan_28_1834",
-            "type"    : "sampled",
-            "format"  : "sky_raw_d(\\d+)v.txt",
+        "digital_1px_ss_p" : {
+            "path" : "digital_1px_ss_p",
+            "type" : "sampled",
+            "format"  : "sky_raw_s\\d+_(\\d+).txt",
             "columns" : 1,
-            "sample_mode"     : "MIN",
+            "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
-            "sample_duration" : 255e-6
-        },
-        "e1u_tt_raw" : {
-            "path"    : "ece_1px_unprot_tt_hs_Jan_28_1834",
-            "type"    : "timed",
-            "format"  : "sky_raw_d(\\d+)v.txt",
-            "columns" : 1
+            "sample_duration" : 256e-6
         }
     },
     "tests" : [
@@ -187,29 +129,48 @@
             "desc"          : "Basic paper network on linearized and sampled datasets",
             "skip"          : true,
             "networks"      : ["paper"],
-            "datasets"      : ["a1u_tt_lin", "a1u_tt_min", "a1u_tt_max", "e1u_tt_lin", "e1u_tt_min", "e1u_tt_max"],
+            "datasets"      : ["a1u_tt:lin", "a1u_tt:min", "a1u_tt:max"],
             "learning_rate" : [0.0005, 0.0001, 0.001]
         },
         {
-            "desc"          : "Basic paper network with single-output",
-            "skip"          : false,
+            "desc"          : "Basic paper network with train/test",
+            "skip"          : true,
             "networks"      : ["paper"],
-            "datasets"      : ["a1u_max"],
-            "test_datasets" : ["a1u_ff_max"],
+            "datasets"      : ["a1u_ss:max"],
+            "test_datasets" : ["a1u_ff:max"],
             "learning_rate" : [0.0005]
         },
         {
-            "desc"          : "Basic deeper network on linearized and sampled datasets",
+            "desc"          : "Single-ended paper network ",
             "skip"          : true,
-            "networks"      : ["deep"],
-            "datasets"      : ["a1u_max"],
-            "learning_rate" : [0.005]
+            "networks"      : ["paper_se"],
+            "datasets"      : ["a1u_ss:max"],
+            "test_datasets" :  "a1u_ff:max",
+            "learning_rate" : [0.005],
+            "max_epochs"    : 20000
+        },
+        {
+            "desc"          : "Basic paper network with train/test",
+            "skip"          : false,
+            "networks"      : ["paper"],
+            "datasets"      : ["digital_1px_ff_p:min"],
+            "test_datasets" : "digital_1px_ss_p:min",
+            "learning_rate" : [0.0005]
+        },
+        {
+            "desc"          : "Single-ended paper network ",
+            "skip"          : false,
+            "networks"      : ["paper_se"],
+            "datasets"      : ["digital_1px_ff_p:min"],
+            "test_datasets" : "digital_1px_ss_p:min",
+            "learning_rate" : [0.005],
+            "max_epochs"    : 20000
         },
         {
             "desc"          : "Trying to get resnet to work",
             "skip"          : true,
             "networks"      : ["resnet101"],
-            "datasets"      : ["a1u_tt_lin"],
+            "datasets"      : ["a1u_tt:lin"],
             "learning_rate" : [1e-5]
         }
     ],
@@ -218,8 +179,9 @@
         "loss"          : "CrossEntropyLoss",
         "loss_se"       : "MSELoss",
         "learning_rate" : 0.0005,
+        "max_learn_rate": 0.05,
         "max_epochs"    : 5000,
-        "max_accuracy"  : 2.0,
+        "max_accuracy"  : 1.0,
         "max_loss"      : 0.0,
         "batch_size"    : 256
     }

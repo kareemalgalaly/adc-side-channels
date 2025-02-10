@@ -8,6 +8,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+DTYPE = np.float32
+
 def select_func_gen(mode):
     def bmin(t1, v1, t2, v2, t): return v1
     def bmax(t1, v1, t2, v2, t): return v2
@@ -37,6 +39,9 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0
     f = sample_func_gen(sample_mode)
     l = select_func_gen('LINEAR')
 
+    tstart = 0
+    tstop  = 1
+
     with open(fpath, 'r') as file:
         header = file.readline()
 
@@ -45,8 +50,9 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0
         val_win = []
 
         stim, value = file.readline().strip().split()
-        stim = float(stim)
-        value = float(value)
+        stim = DTYPE(stim)
+        tstart = stim
+        value = DTYPE(value)
         ptim = stim
         wtim = stim + sample_interval
         val_win.append(value)
@@ -56,8 +62,8 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0
         for line in file.readlines():
             if len(val_arr) == max_samples: break
             stim, value = line.strip().split()
-            stim = float(stim)
-            value = float(value)
+            stim  = DTYPE(stim)
+            value = DTYPE(value)
 
             if stim >= wtim:
                 val_arr.append(f(val_win))
@@ -100,7 +106,9 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0
                 print(-i, tim_arr[-i], val_arr[-i], sep="\t")
             exit()
 
-        return val_arr
+        tstop = wtim
+
+        return val_arr, tstart, tstop
 
 def do_parse(file_in, file_out, interval=1e-6, samples=1000, time=2.5e-4, index=0, sample_mode="LINEAR"):
     col_t = index << 1
@@ -111,10 +119,10 @@ def do_parse(file_in, file_out, interval=1e-6, samples=1000, time=2.5e-4, index=
     # print(time_index)
 
     # time = np array with even intervals within provided time
-    time = np.linspace(0, time, num=time_index, endpoint=False, dtype=np.float32)
+    time = np.linspace(0, time, num=time_index, endpoint=False, dtype=DTYPE)
     # print(time)
     # vals = np array with time_index number of zeroes
-    vals = np.zeros((time_index,), dtype=np.float32)
+    vals = np.zeros((time_index,), dtype=DTYPE)
     # print(len(vals))
     # interp = select_func_gen(sample_mode)
 
@@ -126,8 +134,8 @@ def do_parse(file_in, file_out, interval=1e-6, samples=1000, time=2.5e-4, index=
 
         # initialize time and val with value of first output line
         # it should be zero, zero
-        tp = float(l[col_t])
-        vp = float(l[col_v])
+        tp = DTYPE(l[col_t])
+        vp = DTYPE(l[col_v])
         time[curr_index] = tp
         vals[curr_index] = vp
 
@@ -138,8 +146,8 @@ def do_parse(file_in, file_out, interval=1e-6, samples=1000, time=2.5e-4, index=
             
             # tp, vp = time and val from line
             l = line.strip().split(",")
-            tp = float(l[col_t])
-            vp = float(l[col_v])
+            tp = DTYPE(l[col_t])
+            vp = DTYPE(l[col_v])
 
             # First, check if the next time value is smaller than tp
             # No need for approximation, just add
@@ -200,10 +208,10 @@ if __name__ == "__main__":#
 
     data = []
     for line in lines:
-        values = [float(value) for value in line.split(",") if value]
+        values = [DTYPE(value) for value in line.split(",") if value]
         data.append(values)
 
-    data = np.array(data, dtype=np.float32)
+    data = np.array(data, dtype=DTYPE)
     timestamp = data[:, 0]
     # print(timestamp)
     test_v = data[:, 1]
