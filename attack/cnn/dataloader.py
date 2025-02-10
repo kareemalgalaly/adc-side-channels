@@ -120,7 +120,7 @@ class TraceDatasetBuilder:
 
         self.trace_cache = {}
 
-    def add_files(self, directory, format, label_group=0, sample_mode=None, sample_int=0.1e-6, sample_time=300e-6, max_sample=None):
+    def add_files(self, directory, format, label_func=lambda gs: int(gs[0]), sample_mode=None, sample_int=0.1e-6, sample_time=300e-6, max_sample=None):
         ''' Builds list of powertrace files
         Inputs:
             directory   : folder to search for files
@@ -139,7 +139,7 @@ class TraceDatasetBuilder:
         for fname in fnames:
             if match := format.match(fname):
                 fpath = os.path.join(directory, fname)
-                dvalue = int(match.groups()[label_group])
+                dvalue = label_func(match.groups())
 
                 self.file_list.append((fname, fpath, dvalue, sample_info))
 
@@ -167,7 +167,7 @@ if __name__ == '__main__':
     pwd = "/Users/kareemahmad/Projects/SideChannels/SingleSlopeADC_Mixed/analog/outfiles/sky"
 
     bld = TraceDatasetBuilder(8, cache=False)
-    bld.add_files(pwd, format="sky_d(\\d+)_.*\\.txt", label_group=0)
+    bld.add_files(pwd, format="sky_d(\\d+)_.*\\.txt")
     bld.build()
 
     print(bld.dataset.get_info(0))

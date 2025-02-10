@@ -83,7 +83,7 @@ class ProgressBar:
         if not(self.running): return
         if value == -1: value = self.max_val
 
-        print(f"{self.f_start.format(**self.kwargs)}[{self.bar_chr*self.bar_len}] {value:{self.val_len}}/{self.max_val} {self.f_end.format(**self.kwargs)}", end='\n', file=self.out, flush=True)
+        print(f"{self.f_start.format(**self.kwargs)}[{self.bar_chr*self.bar_len}] {value:{self.val_len}}/{self.max_val} {self.f_end.format(**self.kwargs)}", file=self.out, flush=True)
 
         self.kwargs = {}
         self.running = False
@@ -196,6 +196,7 @@ class Dataset(HashableBase):
         self.type = info['type']
         self.frmt = info['format']
         self.cols = info['columns']
+        self.lblf = eval(info.get("label", "lambda gs: int(gs[0])"), globals(), {})
         self.paths = [os.path.join(data_dir, path) for path in info.get('paths', [])]
         if path := info.get('path', None):
             self.paths.append(os.path.join(data_dir, path))
@@ -233,7 +234,7 @@ class RawDataset(Dataset):
     def build(self, adc_bitwidth=8, device=None):
         super().build(adc_bitwidth, device)
         for path in self.paths:
-            self.builder.add_files(path, self.frmt, max_sample=self.len)
+            self.builder.add_files(path, self.frmt, label_func=self.lblf, max_sample=self.len)
         self.builder.build()
 
 class SampledDataset(Dataset):
@@ -252,7 +253,7 @@ class SampledDataset(Dataset):
     def build(self, adc_bitwidth=8, device=None):
         super().build(adc_bitwidth, device)
         for path in self.paths:
-            self.builder.add_files(path, self.frmt, sample_mode=self.mode, sample_int=self.interval, sample_time=self.duration)
+            self.builder.add_files(path, self.frmt, label_func=self.lblf, sample_mode=self.mode, sample_int=self.interval, sample_time=self.duration)
         self.builder.build()
 
 class TimedDataset(Dataset):
@@ -266,7 +267,7 @@ class TimedDataset(Dataset):
     def build(self, adc_bitwidth=8, device=None):
         super().build(adc_bitwidth, device)
         for path in self.paths:
-            self.builder.add_files(path, self.frmt, sample_mode="timed")
+            self.builder.add_files(path, self.frmt, label_func=self.lblf, sample_mode="timed")
         self.builder.build()
 
 
@@ -446,7 +447,7 @@ class Regression:
                     print(f"{run_hash},{network.name},{dataset.name},{test}")
 
                     if not(self.args.preview):
-                        fig, axs = plt.subplots(2, figsize=(8,8))
+                        fig, axs = plt.subplots(2, figsize=(4,4))
                         fig.suptitle(f"{run_hash}\n{network.name}  -  {dataset.name}  -  {test.optimizer}({test.learning_rate})\n")
                         axs[0].set_title("Loss")
                         axs[1].set_title("Accuracy")

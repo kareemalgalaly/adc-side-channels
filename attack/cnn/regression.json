@@ -115,6 +115,46 @@
             "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
             "sample_duration" : 256e-6
+        },
+        "analog_1px_tt_pm" : {
+            "path" : "analog_1px_tt_pm",
+            "type" : "sampled",
+            "format"  : "raw_s\\d+_(0\\.\\d+).txt",
+            "columns" : 1,
+            "label"   : "lambda gs: int(float(gs[0])*256)",
+            "sample_mode"     : ["MIN", "MAX"],
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 256e-6
+        },
+        "analog_1px_tt_px" : {
+            "path" : "analog_1px_tt_px",
+            "type" : "sampled",
+            "format"  : "raw_s\\d+_(0\\.\\d+).txt",
+            "columns" : 1,
+            "label"   : "lambda gs: int(float(gs[0])*256)",
+            "sample_mode"     : ["MIN", "MAX"],
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 256e-6
+        },
+        "analog_1px_tt_xm" : {
+            "path" : "analog_1px_tt_xm",
+            "type" : "sampled",
+            "format"  : "raw_s\\d+_(0\\.\\d+).txt",
+            "columns" : 1,
+            "label"   : "lambda gs: int(float(gs[0])*256)",
+            "sample_mode"     : ["MIN", "MAX"],
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 256e-6
+        },
+        "analog_1px_tt_xx" : {
+            "path" : "analog_1px_tt_xx",
+            "type" : "sampled",
+            "format"  : "raw_s\\d+_(0\\.\\d+).txt",
+            "columns" : 1,
+            "label"   : "lambda gs: int(float(gs[0])*256)",
+            "sample_mode"     : ["MIN", "MAX"],
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 256e-6
         }
     },
     "tests" : [
@@ -150,19 +190,34 @@
             "max_epochs"    : 20000
         },
         {
-            "desc"          : "Basic paper network with train/test",
-            "skip"          : false,
+            "desc"          : "Digital: Basic paper network with train/test",
+            "skip"          : true,
             "networks"      : ["paper"],
-            "datasets"      : ["digital_1px_ff_p:min"],
-            "test_datasets" : "digital_1px_ss_p:min",
+            "datasets"      : ["digital_1px_ff_p:max"],
+            "test_datasets" : "digital_1px_ss_p:max",
             "learning_rate" : [0.0005]
         },
         {
-            "desc"          : "Single-ended paper network ",
+            "desc"          : "Digital: Single-ended paper network (note :max performs better)",
+            "skip"          : true,
+            "networks"      : ["paper_se"],
+            "datasets"      : ["digital_1px_ff_p:max"],
+            "test_datasets" : "digital_1px_ss_p:max",
+            "learning_rate" : [0.005],
+            "max_epochs"    : 20000
+        },
+        {
+            "desc"          : "Analog: Basic paper network with train/test",
+            "skip"          : false,
+            "networks"      : ["paper"],
+            "datasets"      : ["analog_1px_tt_pm:max"],
+            "learning_rate" : [0.0005]
+        },
+        {
+            "desc"          : "Analog: Single-ended paper network (note :max performs better)",
             "skip"          : false,
             "networks"      : ["paper_se"],
-            "datasets"      : ["digital_1px_ff_p:min"],
-            "test_datasets" : "digital_1px_ss_p:min",
+            "datasets"      : ["analog_1px_tt_pm:max"],
             "learning_rate" : [0.005],
             "max_epochs"    : 20000
         },
