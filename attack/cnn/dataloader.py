@@ -87,7 +87,7 @@ class TraceDataset(Dataset):
 
         return trace_info
     
-    def process_label(self, label): return DTYPE(label)
+    def process_label(self, label): return DTYPE(label) if not isinstance(label, tuple) else label # DTYPE(label)
 
     def cache_all(self):
         assert self.cache == True
@@ -103,6 +103,8 @@ class TraceDatasetBW(TraceDataset):
         super().__init__(file_list, label_dict, cache=cache, trace_cache=trace_cache, device=device)
 
     def process_label(self, label):
+        if isinstance(label, tuple):
+            return tuple(1 if l & self.bit_mask else 0 for l in label)
         return 1 if label & self.bit_mask else 0
 
 class TraceDatasetBuilder:
@@ -120,7 +122,7 @@ class TraceDatasetBuilder:
 
         self.trace_cache = {}
 
-    def add_files(self, directory, format, label_group=0, sample_mode=None, sample_int=0.1e-6, sample_time=300e-6, max_sample=None):
+    def add_files(self, directory, format, label_func=lambda gs:int(gs[0]), sample_mode=None, sample_int=0.1e-6, sample_time=300e-6, max_sample=None):
         ''' Builds list of powertrace files
         Inputs:
             directory   : folder to search for files
@@ -139,12 +141,12 @@ class TraceDatasetBuilder:
         for fname in fnames:
             if match := format.match(fname):
                 fpath = os.path.join(directory, fname)
-                dvalue = int(match.groups()[label_group])
+                label = label_func(match.groups())
 
-                self.file_list.append((fname, fpath, dvalue, sample_info))
+                self.file_list.append((fname, fpath, label, sample_info))
 
-                if dvalue in self.label_dict: self.label_dict[dvalue].append(i)
-                else:                         self.label_dict[dvalue] = [i]
+                if label in self.label_dict: self.label_dict[label].append(i)
+                else:                        self.label_dict[label] = [i]
                 i += 1
 
     def build(self):
@@ -167,7 +169,7 @@ if __name__ == '__main__':
     pwd = "/Users/kareemahmad/Projects/SideChannels/SingleSlopeADC_Mixed/analog/outfiles/sky"
 
     bld = TraceDatasetBuilder(8, cache=False)
-    bld.add_files(pwd, format="sky_d(\\d+)_.*\\.txt", label_group=0)
+    bld.add_files(pwd, format="sky_d(\\d+)_.*\\.txt")
     bld.build()
 
     print(bld.dataset.get_info(0))

@@ -15,10 +15,13 @@ import torch.optim as optim
 import torchvision
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
 
 from copy import copy
 
 import argparse
+
+DTYPE = np.float32
 
 argparser = argparse.ArgumentParser(prog="regress.py", description="Run cnn regressions")
 argparser.add_argument("-i", "--json",   type=str, default='regression.json', help="JSON description of CNNs")
@@ -155,6 +158,7 @@ class Network(HashableBase):
         self.definition = info['definition']
         self.type       = info['type']
         self.inputs     = info['inputs']
+        self.outputs    = info['outputs']
         self.weights    = info.get('weights', None)
         self.predef     = self.definition.startswith("predef::")
         self.preprocess = eval(f"lambda x: {info.get('preprocess', 'x')}")
@@ -196,6 +200,8 @@ class Dataset(HashableBase):
         self.type = info['type']
         self.frmt = info['format']
         self.cols = info['columns']
+        self.lbls = info.get('labels', 1)
+        self.lblf = eval(info.get('label', 'lambda gs:int(gs[0])'), globals(), {})
         self.paths = [os.path.join(data_dir, path) for path in info.get('paths', [])]
         if path := info.get('path', None):
             self.paths.append(os.path.join(data_dir, path))
@@ -233,7 +239,7 @@ class RawDataset(Dataset):
     def build(self, adc_bitwidth=8, device=None):
         super().build(adc_bitwidth, device)
         for path in self.paths:
-            self.builder.add_files(path, self.frmt, max_sample=self.len)
+            self.builder.add_files(path, self.frmt, label_func=self.lblf, max_sample=self.len)
         self.builder.build()
 
 class SampledDataset(Dataset):
@@ -252,7 +258,7 @@ class SampledDataset(Dataset):
     def build(self, adc_bitwidth=8, device=None):
         super().build(adc_bitwidth, device)
         for path in self.paths:
-            self.builder.add_files(path, self.frmt, sample_mode=self.mode, sample_int=self.interval, sample_time=self.duration)
+            self.builder.add_files(path, self.frmt, label_func=self.lblf, sample_mode=self.mode, sample_int=self.interval, sample_time=self.duration)
         self.builder.build()
 
 class TimedDataset(Dataset):
@@ -266,7 +272,7 @@ class TimedDataset(Dataset):
     def build(self, adc_bitwidth=8, device=None):
         super().build(adc_bitwidth, device)
         for path in self.paths:
-            self.builder.add_files(path, self.frmt, sample_mode="timed")
+            self.builder.add_files(path, self.frmt, label_func=self.lblf, sample_mode="timed")
         self.builder.build()
 
 
@@ -440,7 +446,8 @@ class Regression:
                 self.build_datasets(dataset, device=device)
 
                 for network in test.networks:
-                    assert network.inputs == dataset.cols
+                    assert network.inputs  == dataset.cols, f"network.inputs {network.inputs} != dataset.cols {dataset.cols}"
+                    assert network.outputs == dataset.lbls, f"network.outputs {network.outputs} != dataset.lbls {dataset.lbls}"
 
                     run_hash = base36hash(network.get_csv() + dataset.get_csv() + test.get_csv())
                     print(f"{run_hash},{network.name},{dataset.name},{test}")
@@ -538,6 +545,8 @@ class Regression:
                     # Backward
 
                     if single_ended: labels = labels.reshape(output.shape)
+                    #print(output)
+                    #print(labels)
                     loss = criterion(output, labels)
                     loss.backward()
                     optimizer.step()

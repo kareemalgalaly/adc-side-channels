@@ -3,34 +3,46 @@
         "paper" : {
             "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:F(100):R:F(100):R:F(2):S",
             "type"       : "bitwise",
-            "inputs"     : 1
+            "inputs"     : 1,
+            "outputs"    : 1
         },
         "paper_se" : {
             "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:F(100):R:F(100):R:F(1)",
             "type"       : "single_ended",
-            "inputs"     : 1
+            "inputs"     : 1,
+            "outputs"    : 1
+        },
+        "paper_se_5" : {
+            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:F(100):R:F(100):R:F(5)",
+            "type"       : "single_ended",
+            "inputs"     : 1,
+            "outputs"    : 5
         },
         "deep" : {
             "definition" : "C(5,5,1):R:C(5,5,1):R:C(5,5,1):R:C(5,5,1):P(5,5):R:C(5,5,1):P(5,5):R:F(256):R:F(256):R:F(256):R:F(128):R:F(64):R:F(2):S",
             "type"       : "bitwise",
-            "inputs"     : 1
+            "inputs"     : 1,
+            "outputs"    : 1
         },
         "deep_se" : {
             "definition" : "C(5,5,1):R:C(5,5,1):R:C(5,5,1):R:C(5,5,1):P(5,5):R:C(5,5,1):P(5,5):R:F(512):R:F(256):R:F(256):R:F(256):R:F(128):R:F(64):R:F(1)",
             "type"       : "single_ended",
-            "inputs"     : 1
+            "inputs"     : 1,
+            "outputs"    : 1
         },
         "resnet101pt" : {
             "definition" : "predef::resnet101",
             "type"       : "bitwise",
+            "weights"    : "DEFAULT",
             "inputs"     : 1,
-            "weights"    : "DEFAULT"
+            "outputs"    : 1
         },
         "resnet101" : {
             "definition" : "predef::resnet101",
             "type"       : "bitwise",
             "preprocess" : "x.reshape((x.shape[0], 1, 1, x.shape[1])).repeat(1, 3, 1, 1)",
-            "inputs"     : 1
+            "inputs"     : 1,
+            "outputs"    : 1
         }
     },
     "datasets" : {
@@ -115,6 +127,26 @@
             "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
             "sample_duration" : 256e-6
+        },
+        "digital_1px_ss_x" : {
+            "path" : "digital_1px_ss_x",
+            "type" : "sampled",
+            "format"  : "sky_raw_s\\d+_(\\d+).txt",
+            "columns" : 1,
+            "sample_mode"     : ["MIN", "MAX"],
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 256e-6
+        },
+        "analog_5px_tt_pm" : {
+            "path" : "analog_5px_tt_pm",
+            "type" : "sampled",
+            "format"  : "sky_raw_s\\d+_(0\\.\\d+)_(0\\.\\d+)_(0\\.\\d+)_(0\\.\\d+)_(0\\.\\d+).txt",
+            "columns" : 1,
+            "labels"  : 5,
+            "label"   : "lambda gs: (int(float(i)*256) for i in gs)",
+            "sample_mode"     : ["MIN", "MAX"],
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 256e-6
         }
     },
     "tests" : [
@@ -151,7 +183,7 @@
         },
         {
             "desc"          : "Basic paper network with train/test",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["paper"],
             "datasets"      : ["digital_1px_ff_p:min"],
             "test_datasets" : "digital_1px_ss_p:min",
