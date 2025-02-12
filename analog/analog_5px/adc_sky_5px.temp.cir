@@ -96,7 +96,11 @@ while istart < istop
     cutout
 
     ; plot I(vdd)
+    {if pixels == 5}
     wrdata {outdir}/raw_s$&iseed$dlm$&pact_1$dlm$&pact_2$dlm$&pact_3$dlm$&pact_4$dlm$&pact_5$ext -I(vdd)
+    {else}
+    wrdata {outdir}/raw_s$&iseed$dlm$&pact_1$ext -I(vdd)
+    {endif}
 
     let lin-tstart = 260u
     let lin-tstop  = 520u
@@ -104,13 +108,17 @@ while istart < istop
     linearize I(vdd) ; digitized
 
     ; plot I(vdd)
+    {if pixels == 5}
     wrdata {outdir}/lin_s$&iseed$dlm$&pact_1$dlm$&pact_2$dlm$&pact_3$dlm$&pact_4$dlm$&pact_5$ext -I(vdd)
+    {else}
+    wrdata {outdir}/lin_s$&iseed$dlm$&pact_1$ext -I(vdd)
+    {endif}
     {endif}
 
     let istart = istart + 1
 
     {ifndef plot destroy all}
 end
-*exit
+exit
 .endc
 
