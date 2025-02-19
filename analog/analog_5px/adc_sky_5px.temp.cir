@@ -23,6 +23,13 @@ V3 pix_3 GND 0.5
 V4 pix_4 GND 0.7
 V5 pix_5 GND 0.9
 {endif}
+{ifdef randramp}
+VRRC0 vc0 GND 1.8
+VRRC1 vc1 GND 1.8
+VRRC2 vc2 GND 1.8
+VRRC3 vc3 GND 1.8
+VRRC4 vc4 GND 1.8
+{endif}
 
 * Ramp Generator
 xramp_generator vref rst ramp vdd gnd ramp_generator
@@ -38,13 +45,17 @@ xcomp_5 ramp pix_5 clk outp_5 outn_5 vdd gnd comparator_2_wrap{ifdef mismatch _m
 
 * Protection
 {ifdef protected}
-xramp_generator vref rst ramp_p vdd gnd ramp_generator r=20Meg
-xcomp_p1 ramp_p pix_1 clk outp_1 outn_1 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=1500u}
+{ifdef randramp}
+xramp_generator_p vref rst ramp_p vc4 vc3 vc2 vc1 vc0 vdd gnd ramp_generator_rand
+{else}
+xramp_generator_p vref rst ramp_p vdd gnd ramp_generator r=20Meg
+{endif}
+xcomp_p1 ramp_p pix_1 clk outpp_1 outpn_1 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=1500u}
 {if pixels == 5}
-xcomp_p2 ramp_p pix_2 clk outp_2 outn_2 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=-2m}
-xcomp_p3 ramp_p pix_3 clk outp_3 outn_3 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=3m}
-xcomp_p4 ramp_p pix_4 clk outp_4 outn_4 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=-500u}
-xcomp_p5 ramp_p pix_5 clk outp_5 outn_5 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=200u}
+xcomp_p2 ramp_p pix_2 clk outpp_2 outpn_2 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=-2m}
+xcomp_p3 ramp_p pix_3 clk outpp_3 outpn_3 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=3m}
+xcomp_p4 ramp_p pix_4 clk outpp_4 outpn_4 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=-500u}
+xcomp_p5 ramp_p pix_5 clk outpp_5 outpn_5 vdd gnd comparator_2_wrap{ifdef mismatch _mismatch mismatch=200u}
 {endif}
 {endif}
 
@@ -59,6 +70,11 @@ xcomp_p5 ramp_p pix_5 clk outp_5 outn_5 vdd gnd comparator_2_wrap{ifdef mismatch
 {randvec_3=*randvec_3}
 {randvec_4=*randvec_4}
 {randvec_5=*randvec_5}
+{randvc0=*randvc0}
+{randvc1=*randvc1}
+{randvc2=*randvc2}
+{randvc3=*randvc3}
+{randvc4=*randvc4}
 
 set ext = ".txt"
 set dlm = "_"
@@ -82,12 +98,22 @@ while istart < istop
     let pact_{pixel} = randvec_{pixel}[istart]
     alter V{pixel} pact_{pixel}
     {endfor}
+    {ifdef randramp}
+    {for vci in range(5)}
+    let vc{vci} = randvc{vci}[istart]
+    alter VRRC{vci} vc{vci}
+    {endfor}
+    {endif}
 
     tran 500n 520u uic
 
     {ifdef plot}
     plot title 'Current Trace $&istart' -I(vdd)
+    {if pixels == 5}
     plot title 'Comparator Toggles $&istart' outp_1 outp_2+2 outp_3+4 outp_4+6 outp_5+8
+    {else}
+    plot title 'Comparator Toggles $&istart' outp_1
+    {endif}
     {endif}
 
     {ifndef plot}
@@ -119,6 +145,8 @@ while istart < istop
 
     {ifndef plot destroy all}
 end
+{ifndef plot}
 exit
+{endif}
 .endc
 
