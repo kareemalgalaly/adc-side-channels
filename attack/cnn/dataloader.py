@@ -21,13 +21,27 @@ class TraceDataset(Dataset):
         self.device     = device
 
         if cache: self.trace_cache = trace_cache
+        self.set_prop_range(0, 1)
 
     def __len__(self):
-        return len(self.file_list)
+        #return len(self.file_list)
+        return self.stop - self.start
 
     def __getitem__(self, index):
-        traceinfo, label = self.get_item(index)
+        traceinfo, label = self.get_item(self.start + index)
         return traceinfo.trace, label
+
+    def set_range(self, start, stop):
+        self.start = start
+        self.stop  = stop
+        return self
+
+    def set_prop_range(self, test, proportion):
+        width = int(len(self.file_list) * proportion)
+        start = len(self.file_list) - width if test else 0
+        stop  = start + width
+        self.set_range(start, stop)
+        return self
 
     def get_item(self, index):
         fname, fpath, label, sample_info = self.file_list[index]
@@ -156,11 +170,11 @@ class TraceDatasetBuilder:
         assert self.cache
         self.dataset.cache_all()
 
-    def build_dataloaders(self, **kwargs): # batch_size=256, shuffle=True
+    def build_dataloaders(self, test=0, proportion=1, **kwargs): # batch_size=256, shuffle=True
         if self.device and 'pin_memory' not in kwargs: kwargs['pin_memory'] = True
 
-        self.dataloader = DataLoader(self.dataset, **kwargs)
-        self.dataloaders = [DataLoader(dataset, **kwargs) for dataset in self.datasets]
+        self.dataloader = DataLoader(self.dataset.set_prop_range(test, proportion), **kwargs)
+        self.dataloaders = [DataLoader(dataset.set_prop_range(test, proportion), **kwargs) for dataset in self.datasets]
 
 if __name__ == '__main__':
     #pwd = os.path.dirname(os.path.abspath(__file__))
@@ -170,6 +184,6 @@ if __name__ == '__main__':
     bld.add_files(pwd, format="sky_d(\\d+)_.*\\.txt")
     bld.build()
 
-    print(bld.dataset.get_info(0))
+    print(bld.d0ataset.get_info(0))
     print(bld.dataset[0])
 

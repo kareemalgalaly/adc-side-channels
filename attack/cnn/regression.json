@@ -159,66 +159,89 @@
     },
     "tests" : [
         {
-            "desc"          : "Original testcase, based on paper network with linearized datasets",
+            "desc"          : "Test 0A: Original testcase, based on paper network with linearized datasets",
             "skip"          : true,
             "networks"      : ["paper"],
             "datasets"      : ["linearized3k"],
             "learning_rate" : [0.0005]
         },
         {
-            "desc"          : "Basic paper network on linearized and sampled datasets",
+            "desc"          : "Test 1A: Basic paper network on linearized and sampled datasets",
             "skip"          : true,
             "networks"      : ["paper"],
             "datasets"      : ["a1u_tt:lin", "a1u_tt:min", "a1u_tt:max"],
             "learning_rate" : [0.0005, 0.0001, 0.001]
         },
         {
-            "desc"          : "Basic paper network with train/test",
+            "desc"          : "Test 1B: Analog 1px, Bitwise paper network with train/test",
             "skip"          : true,
             "networks"      : ["paper"],
             "datasets"      : ["a1u_ss:max"],
-            "test_datasets" : ["a1u_ff:max"],
+            "test_dataset"  : "a1u_ff:max",
             "learning_rate" : [0.0005]
         },
         {
-            "desc"          : "Single-ended paper network ",
+            "desc"          : "Test 1C: Analog 1px, Single-ended paper network with train/test",
             "skip"          : true,
             "networks"      : ["paper_se"],
             "datasets"      : ["a1u_ss:max"],
-            "test_datasets" :  "a1u_ff:max",
+            "test_dataset"  :  "a1u_ff:max",
+            "learning_rate" : [0.005, 0.001, 0.0005],
+            "max_epochs"    : 20000
+        },
+        {
+            "desc"          : "Test 2A: Digital 1px, Bitwise paper network with train/test",
+            "skip"          : false,
+            "networks"      : ["paper"],
+            "datasets"      : ["digital_1px_ff_p:max"],
+            "test_dataset"  : "digital_1px_ss_p:max",
+            "learning_rate" : [0.0005]
+        },
+        {
+            "desc"          : "Test 2B: Digital 1px, Single-ended paper network with train/test",
+            "skip"          : false,
+            "networks"      : ["paper_se"],
+            "datasets"      : ["digital_1px_ff_p:max"],
+            "test_dataset"  : "digital_1px_ss_p:max",
             "learning_rate" : [0.005],
             "max_epochs"    : 20000
         },
         {
-            "desc"          : "Digital: Basic paper network with train/test",
-            "skip"          : true,
-            "networks"      : ["paper"],
-            "datasets"      : ["digital_1px_ff_p:max"],
-            "test_datasets" : "digital_1px_ss_p:max",
-            "learning_rate" : [0.0005]
-        },
-        {
-            "desc"          : "Digital: Single-ended paper network (note :max performs better)",
+            "desc"          : "Test 3A: Analog 1px: Single-ended, paper",
             "skip"          : true,
             "networks"      : ["paper_se"],
-            "datasets"      : ["digital_1px_ff_p:max"],
-            "test_datasets" : "digital_1px_ss_p:max",
+            "datasets"      : ["analog_1px_tt_pm:max"],
             "learning_rate" : [0.005],
             "max_epochs"    : 20000
         },
         {
-            "desc"          : "Analog: Basic paper network with train/test",
-            "skip"          : false,
+            "desc"          : "Test 3B: Analog 1px, Bitwise, paper",
+            "skip"          : true,
             "networks"      : ["paper"],
             "datasets"      : ["analog_1px_tt_pm:max"],
-            "learning_rate" : [0.0005]
+            "test_dataset"  : "analog_1px_tt_px:max",
+            "learning_rate" : [0.005],
+            "learning_decay": 0.005,
+            "max_epochs"    : 5000
         },
         {
-            "desc"          : "Analog: Single-ended paper network (note :max performs better)",
-            "skip"          : false,
+            "desc"          : "Test 3C: Analog 1px: Bitwise, paper, unprotect attack protected",
+            "skip"          : true,
+            "networks"      : ["paper"],
+            "datasets"      : ["analog_1px_tt_xx:max"],
+            "test_dataset"  : "analog_1px_tt_px:max",
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.005,
+            "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "Test training diff test split se",
+            "skip"          : true,
             "networks"      : ["paper_se"],
-            "datasets"      : ["analog_1px_tt_pm:max"],
-            "learning_rate" : [0.005],
+            "datasets"      : ["analog_1px_tt_xx:max"],
+            "test_dataset"  : "analog_1px_tt_px:max",
+            "learning_rate" : [0.001],
+            "learning_decay": 0.0005,
             "max_epochs"    : 20000
         },
         {
@@ -234,10 +257,13 @@
         "loss"          : "CrossEntropyLoss",
         "loss_se"       : "MSELoss",
         "learning_rate" : 0.0005,
+        "learning_decay": 0,
         "max_learn_rate": 0.05,
         "max_epochs"    : 5000,
-        "max_accuracy"  : 1.0,
+        "max_accuracy"  : 0.99,
         "max_loss"      : 0.0,
-        "batch_size"    : 256
+        "batch_size"    : 256,
+        "train_split"   : 1,
+        "trace_scale"   : 1e4
     }
 }
