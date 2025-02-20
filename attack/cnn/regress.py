@@ -53,7 +53,7 @@ class Args:
 # Helpers ########################################
 
 class ProgressBar:
-    def __init__(self, f_start="", f_end="", bar_len=30, bar_chr='X', max_val=1, out=sys.stdout):
+    def __init__(self, f_start="", f_end="", bar_len=20, bar_chr='X', max_val=1, out=sys.stdout):
         self.out     = out
         self.f_start = f_start
         self.f_end   = f_end
@@ -195,32 +195,35 @@ class Network(HashableBase):
 # Dataset ########################################
 
 class Dataset(HashableBase):
-    def __init__(self, name, info):
+    def __init__(self, name, info, defaults):
         self.name = name
         self.type = info['type']
         self.frmt = info['format']
         self.cols = info['columns']
         self.lblf = eval(info.get("label", "lambda gs: int(gs[0])"), globals(), {})
         self.paths = [os.path.join(data_dir, path) for path in info.get('paths', [])]
+
+        self.trace_scale = info.get("trace_scale", defaults["trace_scale"])
+
         if path := info.get('path', None):
             self.paths.append(os.path.join(data_dir, path))
         self.builder = None
 
     @classmethod
-    def from_info(cls, name, info):
+    def from_info(cls, name, info, defaults):
         if info['type'] == 'raw':
-            return RawDataset(name, info)
+            return RawDataset(name, info, defaults)
         elif info['type'] == 'timed':
-            return TimedDataset(name, info)
+            return TimedDataset(name, info, defaults)
         else:
-            return SampledDataset(name, info)
+            return SampledDataset(name, info, defaults)
 
     def get_csv(self):
         return f"{self.type},{';'.join(os.path.basename(path) for path in self.paths)},{self.cols}"
 
     def build(self, adc_bitwidth=8, device=None):
         if self.builder: return self.builder
-        self.builder = TraceDatasetBuilder(adc_bitwidth=adc_bitwidth, cache=True, device=device)
+        self.builder = TraceDatasetBuilder(adc_bitwidth=adc_bitwidth, mult=self.trace_scale, cache=True, device=device)
         return self.builder
     
     def get_trace(self, label, index=0, bit=-1):
@@ -228,9 +231,9 @@ class Dataset(HashableBase):
         return dataset.get_by_label(label, index=index)
 
 class RawDataset(Dataset):
-    def __init__(self, name, info):
+    def __init__(self, name, info, defaults):
         assert info['type'] == 'raw'
-        super().__init__(name, info)
+        super().__init__(name, info, defaults)
 
         self.len  = info['len']
 
@@ -246,9 +249,9 @@ class RawDataset(Dataset):
         return self.builder
 
 class SampledDataset(Dataset):
-    def __init__(self, name, info):
+    def __init__(self, name, info, defaults):
         assert info['type'] == 'sampled'
-        super().__init__(name, info)
+        super().__init__(name, info, defaults)
 
         self.mode     =  info['sample_mode']
         self.interval =  info['sample_interval']
@@ -267,9 +270,9 @@ class SampledDataset(Dataset):
         return self.builder
 
 class TimedDataset(Dataset):
-    def __init__(self, name, info):
+    def __init__(self, name, info, defaults):
         assert info['type'] == 'timed'
-        super().__init__(name, info)
+        super().__init__(name, info, defaults)
 
     def get_csv(self):
         return f"{super().get_csv()},{self.mode};{self.interval};{self.duration}"
@@ -384,13 +387,13 @@ class Regression:
                     inf = info.copy()
                     inf['sample_mode'] = mode
                     nam=f"{name}:{mode.lower()}"
-                    self.datasets[nam] = Dataset.from_info(nam, inf)
+                    self.datasets[nam] = Dataset.from_info(nam, inf, self.defaults)
                 inf = info.copy()
                 inf['type'] = 'timed'
                 nam=f"{name}:tru"
-                self.datasets[nam] = Dataset.from_info(nam, inf)
+                self.datasets[nam] = Dataset.from_info(nam, inf, self.defaults)
             else:
-                self.datasets[name] = Dataset.from_info(name, info)
+                self.datasets[name] = Dataset.from_info(name, info, self.defaults)
 
         #pprint.pprint(self.datasets)
 
@@ -530,8 +533,8 @@ class Regression:
         #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=100, factor=0.7)
         scheduler = None
     
-        progress = ProgressBar(f_start="Training ", f_end="{model} | Loss {loss:8} | Accuracy {acc:6}:{pacc:6} | Test {tst:8} | {msg}", max_val=test.max_epochs)
-        progress.start(model=run_hash, loss=1.0, acc=0.0, pacc=0.0, tst=0.0, msg="")
+        progress = ProgressBar(f_start="Training ", f_end="{model} | Loss {loss:8} | Accuracy {acc:6}:{pacc:6} | Test {tst:6} | {msg}", max_val=test.max_epochs)
+        progress.start(model=run_hash, loss=1.0, acc=0.0, pacc=0.0, tst="    --", msg="")
 
         pacc = 0 # peak_accuracy
 
@@ -587,12 +590,12 @@ class Regression:
                         plt.pause(0.01)
 
                 if accuracy >= test.max_accuracy:
-                    progress.update(epoch, msg=f"Target acc reached {test.max_accuracy}"); break
+                    progress.update(epoch, msg=f"Hit Acc {test.max_accuracy}"); break
 
                 if loss <= test.max_loss:
-                    progress.update(epoch, msg=f"Target loss reached {test.max_loss}"); break
+                    progress.update(epoch, msg=f"Hit Loss {test.max_loss}"); break
         except KeyboardInterrupt as e:
-            progress.update(epoch, msg="Job Interrupted")
+            progress.update(epoch, msg="Interrupted  ")
             progress.stop(epoch)
             raise e
 
@@ -637,7 +640,7 @@ class Regression:
                 _, predicted = torch.max(output, 1)
                 correct += (predicted == labels).sum()
         test_accuracy = correct / len(test.test_dataset.builder.dataset)
-        progress.update(epoch, tst=round(float(test_accuracy), 6))
+        progress.update(epoch, tst=round(float(test_accuracy), 4))
         progress.stop(epoch+1)
 
         with open(self.csv, "a") as file:

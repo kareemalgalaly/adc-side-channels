@@ -96,7 +96,8 @@
             "columns" : 1,
             "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
-            "sample_duration" : 256e-6
+            "sample_duration" : 256e-6,
+            "trace_scale"     : 1e3
         },
         "digital_1px_ff_x" : {
             "path" : "digital_1px_ff_x",
@@ -105,7 +106,8 @@
             "columns" : 1,
             "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
-            "sample_duration" : 256e-6
+            "sample_duration" : 256e-6,
+            "trace_scale"     : 1e3
         },
         "digital_1px_ss_p" : {
             "path" : "digital_1px_ss_p",
@@ -114,20 +116,21 @@
             "columns" : 1,
             "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
-            "sample_duration" : 256e-6
+            "sample_duration" : 256e-6,
+            "trace_scale"     : 1e3
         },
-        "analog_1px_tt_pm" : {
-            "path" : "analog_1px_tt_pm",
+        "digital_1px_ss_x" : {
+            "path" : "digital_1px_ss_x",
             "type" : "sampled",
-            "format"  : "raw_s\\d+_(0\\.\\d+).txt",
+            "format"  : "sky_raw_s\\d+_(\\d+).txt",
             "columns" : 1,
-            "label"   : "lambda gs: int(float(gs[0])*256)",
             "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
-            "sample_duration" : 256e-6
+            "sample_duration" : 256e-6,
+            "trace_scale"     : 1e3
         },
-        "analog_1px_tt_px" : {
-            "path" : "analog_1px_tt_px",
+        "analog_1px_tt_xx" : {
+            "path" : "analog_1px_tt_xx",
             "type" : "sampled",
             "format"  : "raw_s\\d+_(0\\.\\d+).txt",
             "columns" : 1,
@@ -146,8 +149,28 @@
             "sample_interval" : 0.1e-6,
             "sample_duration" : 256e-6
         },
-        "analog_1px_tt_xx" : {
-            "path" : "analog_1px_tt_xx",
+        "analog_1px_tt_px" : {
+            "path" : "analog_1px_tt_px",
+            "type" : "sampled",
+            "format"  : "raw_s\\d+_(0\\.\\d+).txt",
+            "columns" : 1,
+            "label"   : "lambda gs: int(float(gs[0])*256)",
+            "sample_mode"     : ["MIN", "MAX"],
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 256e-6
+        },
+        "analog_1px_tt_pm" : {
+            "path" : "analog_1px_tt_pm",
+            "type" : "sampled",
+            "format"  : "raw_s\\d+_(0\\.\\d+).txt",
+            "columns" : 1,
+            "label"   : "lambda gs: int(float(gs[0])*256)",
+            "sample_mode"     : ["MIN", "MAX"],
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 256e-6
+        },
+        "analog_1px_tt_qx" : {
+            "path" : "analog_1px_tt_qx",
             "type" : "sampled",
             "format"  : "raw_s\\d+_(0\\.\\d+).txt",
             "columns" : 1,
@@ -166,14 +189,14 @@
             "learning_rate" : [0.0005]
         },
         {
-            "desc"          : "Test 1A: Basic paper network on linearized and sampled datasets",
+            "desc"          : "Test 0B: Basic paper network on linearized and sampled datasets",
             "skip"          : true,
             "networks"      : ["paper"],
             "datasets"      : ["a1u_tt:lin", "a1u_tt:min", "a1u_tt:max"],
             "learning_rate" : [0.0005, 0.0001, 0.001]
         },
         {
-            "desc"          : "Test 1B: Analog 1px, Bitwise paper network with train/test",
+            "desc"          : "Test 0C: Analog 1px, Bitwise paper network with train/test",
             "skip"          : true,
             "networks"      : ["paper"],
             "datasets"      : ["a1u_ss:max"],
@@ -181,7 +204,7 @@
             "learning_rate" : [0.0005]
         },
         {
-            "desc"          : "Test 1C: Analog 1px, Single-ended paper network with train/test",
+            "desc"          : "Test 0D: Analog 1px, Single-ended paper network with train/test",
             "skip"          : true,
             "networks"      : ["paper_se"],
             "datasets"      : ["a1u_ss:max"],
@@ -190,32 +213,46 @@
             "max_epochs"    : 20000
         },
         {
-            "desc"          : "Test 2A: Digital 1px, Bitwise paper network with train/test",
-            "skip"          : false,
+            "desc"          : "Test 1A: D1B paper : unprotected",
+            "skip"          : true,
+            "networks"      : ["paper"],
+            "datasets"      : ["digital_1px_ff_x:max"],
+            "test_dataset"  : "digital_1px_ss_x:max",
+            "learning_rate" : [0.0001],
+            "learning_decay": 0.000005,
+            "optimizer"     : "Amsgrad"
+        },
+        {
+            "desc"          : "Test 1B: D1S paper : unprotected",
+            "skip"          : true,
+            "networks"      : ["paper_se"],
+            "datasets"      : ["digital_1px_ff_x:max"],
+            "test_dataset"  : "digital_1px_ss_x:max",
+            "learning_rate" : [0.0001],
+            "learning_decay": 0.000005,
+            "max_epochs"    : 20000
+        },
+        {
+            "desc"          : "Test 2A: D1B paper : protected",
+            "skip"          : true,
             "networks"      : ["paper"],
             "datasets"      : ["digital_1px_ff_p:max"],
             "test_dataset"  : "digital_1px_ss_p:max",
-            "learning_rate" : [0.0005]
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.000005
         },
         {
-            "desc"          : "Test 2B: Digital 1px, Single-ended paper network with train/test",
-            "skip"          : false,
+            "desc"          : "Test 2B: D1S paper : protected",
+            "skip"          : true,
             "networks"      : ["paper_se"],
             "datasets"      : ["digital_1px_ff_p:max"],
             "test_dataset"  : "digital_1px_ss_p:max",
             "learning_rate" : [0.005],
+            "learning_decay": 0.000005,
             "max_epochs"    : 20000
         },
         {
-            "desc"          : "Test 3A: Analog 1px: Single-ended, paper",
-            "skip"          : true,
-            "networks"      : ["paper_se"],
-            "datasets"      : ["analog_1px_tt_pm:max"],
-            "learning_rate" : [0.005],
-            "max_epochs"    : 20000
-        },
-        {
-            "desc"          : "Test 3B: Analog 1px, Bitwise, paper",
+            "desc"          : "Test 2C: A1B paper : protected",
             "skip"          : true,
             "networks"      : ["paper"],
             "datasets"      : ["analog_1px_tt_pm:max"],
@@ -225,7 +262,7 @@
             "max_epochs"    : 5000
         },
         {
-            "desc"          : "Test 3C: Analog 1px: Bitwise, paper, unprotect attack protected",
+            "desc"          : "Test 3A: A1B paper : unprotected attack protect",
             "skip"          : true,
             "networks"      : ["paper"],
             "datasets"      : ["analog_1px_tt_xx:max"],
@@ -235,7 +272,7 @@
             "max_epochs"    : 5000
         },
         {
-            "desc"          : "Test training diff test split se",
+            "desc"          : "Test 3B: A1S paper : unprotected attack protect",
             "skip"          : true,
             "networks"      : ["paper_se"],
             "datasets"      : ["analog_1px_tt_xx:max"],
@@ -245,7 +282,18 @@
             "max_epochs"    : 20000
         },
         {
-            "desc"          : "Trying to get resnet to work",
+            "desc"          : "Test 4A: A1B paper : random ramp",
+            "skip"          : true,
+            "networks"      : ["paper"],
+            "datasets"      : ["analog_1px_tt_qx:max"],
+            "test_dataset"  : "analog_1px_tt_qx:max",
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.005,
+            "max_epochs"    : 5000,
+            "train_split"   : 0.5
+        },
+        {
+            "desc"          : "Test ??: Trying to get resnet to work",
             "skip"          : true,
             "networks"      : ["resnet101"],
             "datasets"      : ["a1u_tt:lin"],

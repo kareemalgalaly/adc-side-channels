@@ -8,17 +8,17 @@ import re
 TraceInfo = namedtuple("TraceInfo", ["trace", "start", "stop"])
 
 DTYPE = np.float32
-VMULT = 1e4
 
 class TraceDataset(Dataset):
     labelled_traces = {}
     trace_list    = []
 
-    def __init__(self, file_list, label_dict, cache=True, trace_cache={}, device=None):
+    def __init__(self, file_list, label_dict, mult=1e4, cache=True, trace_cache={}, device=None):
         self.file_list  = file_list
         self.label_dict = label_dict
         self.cache      = cache
         self.device     = device
+        self.mult       = mult
 
         if cache: self.trace_cache = trace_cache
         self.set_prop_range(0, 1)
@@ -65,7 +65,7 @@ class TraceDataset(Dataset):
         if sample_mode == 'timed':
             with open(fpath, 'r') as file:
                 header = file.readline()
-                splitf = lambda x: (DTYPE(x[0]), DTYPE(x[1])*VMULT)
+                splitf = lambda x: (DTYPE(x[0]), DTYPE(x[1])*self.mult)
 
                 valu_arr = [splitf(line.strip().split()) for line in file.readlines()]
                 time_arr, valu_arr = zip(*valu_arr)
@@ -75,7 +75,7 @@ class TraceDataset(Dataset):
 
         elif sample_mode:
             valu_arr, tstart, tstop = sample_file(fpath, sample_int, max_sample, sample_mode=sample_mode)
-            trace = np.array(valu_arr, dtype=DTYPE)*VMULT
+            trace = np.array(valu_arr, dtype=DTYPE)*self.mult
 
         else:
             with open(fpath, 'r') as file:
@@ -86,7 +86,7 @@ class TraceDataset(Dataset):
                     tcurr, val = line.strip().split()
                     valu_arr.append(DTYPE(val))
                 tstop = DTYPE(tcurr)
-                trace = np.array(valu_arr, dtype=DTYPE)[:max_sample]*VMULT
+                trace = np.array(valu_arr, dtype=DTYPE)[:max_sample]*self.mult
 
         trace_info = TraceInfo(trace, tstart, tstop)
 
@@ -112,17 +112,18 @@ class TraceDataset(Dataset):
         print("DONE Caching all traces")
 
 class TraceDatasetBW(TraceDataset):
-    def __init__(self, file_list, label_dict, bit_select, cache=True, trace_cache={}, device=None):
+    def __init__(self, file_list, label_dict, bit_select, mult=1e4, cache=True, trace_cache={}, device=None):
         self.bit_mask = 1 << bit_select
-        super().__init__(file_list, label_dict, cache=cache, trace_cache=trace_cache, device=device)
+        super().__init__(file_list, label_dict, mult=mult, cache=cache, trace_cache=trace_cache, device=device)
 
     def process_label(self, label):
         return 1 if label & self.bit_mask else 0
 
 class TraceDatasetBuilder:
-    def __init__(self, adc_bitwidth=8, cache=True, device=None):
+    def __init__(self, adc_bitwidth=8, mult=1e4, cache=True, device=None):
         self.file_list  = []
         self.label_dict = {}
+        self.mult       = mult
         self.cache      = cache
         self.adc_bits   = adc_bitwidth
         self.device     = device
@@ -162,9 +163,9 @@ class TraceDatasetBuilder:
                 i += 1
 
     def build(self):
-        self.dataset = TraceDataset(self.file_list, self.label_dict, cache=self.cache, trace_cache=self.trace_cache, device=self.device)
+        self.dataset = TraceDataset(self.file_list, self.label_dict, mult=self.mult, cache=self.cache, trace_cache=self.trace_cache, device=self.device)
         for b in range(self.adc_bits):
-            self.datasets.append(TraceDatasetBW(self.file_list, self.label_dict, b, cache=self.cache, trace_cache=self.trace_cache, device=self.device))
+            self.datasets.append(TraceDatasetBW(self.file_list, self.label_dict, b, mult=self.mult, cache=self.cache, trace_cache=self.trace_cache, device=self.device))
 
     def cache_all(self):
         assert self.cache
