@@ -238,8 +238,9 @@
             "networks"      : ["paper"],
             "datasets"      : ["digital_1px_ff_p:max"],
             "test_dataset"  : "digital_1px_ss_p:max",
-            "learning_rate" : [0.0003],
-            "learning_decay": 0.000005
+            "learning_rate" : [0.00015],
+            "learning_decay": 0.000015,
+            "optimizer"     : "Amsgrad"
         },
         {
             "desc"          : "Test 2B: D1S paper : protected",
@@ -247,7 +248,7 @@
             "networks"      : ["paper_se"],
             "datasets"      : ["digital_1px_ff_p:max"],
             "test_dataset"  : "digital_1px_ss_p:max",
-            "learning_rate" : [0.005],
+            "learning_rate" : [0.003],
             "learning_decay": 0.000005,
             "max_epochs"    : 20000
         },
@@ -263,10 +264,10 @@
         },
         {
             "desc"          : "Test 3A: A1B paper : unprotected attack protect",
-            "skip"          : true,
+            "skip"          : false,
             "networks"      : ["paper"],
             "datasets"      : ["analog_1px_tt_xx:max"],
-            "test_dataset"  : "analog_1px_tt_px:max",
+            "test_dataset"  : "analog_1px_tt_qx:max",
             "learning_rate" : [0.0003],
             "learning_decay": 0.005,
             "max_epochs"    : 5000
@@ -290,6 +291,17 @@
             "learning_rate" : [0.0003],
             "learning_decay": 0.005,
             "max_epochs"    : 5000,
+            "train_split"   : 0.5
+        },
+        {
+            "desc"          : "Test 4B: A1S paper : random ramp",
+            "skip"          : true,
+            "networks"      : ["paper_se"],
+            "datasets"      : ["analog_1px_tt_qx:max"],
+            "test_dataset"  : "analog_1px_tt_qx:max",
+            "learning_rate" : [0.001],
+            "learning_decay": 0.0005,
+            "max_epochs"    : 20000,
             "train_split"   : 0.5
         },
         {
