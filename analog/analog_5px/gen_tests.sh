@@ -1,4 +1,4 @@
-# Build seeds
+#!/usr/bin/env bash
 
 if [ "$1" = "clean" ]; then
     echo "Cleaning files"
@@ -13,13 +13,19 @@ fi
 if [ "$1" = "1px" ]; then
     pixels="1px"
     corners=( tt ) # ss ff sf fs 
-    flavors=( xx px xm pm )
+    flavors=( xl pl ) # xx px xm pm 
     seeds=(0)
     parg="pixels=eval:1"
 elif [ "$1" = "1qx" ]; then
     pixels="1px"
     corners=( tt ) # ss ff sf fs 
     flavors=( qx )
+    seeds=(0 256)
+    parg="pixels=eval:1"
+elif [ "$1" = "1dx" ]; then
+    pixels="1px"
+    corners=( tt ) # ss ff sf fs 
+    flavors=( dx )
     seeds=(0 256)
     parg="pixels=eval:1"
 elif [ "$1" = "5px" ]; then
@@ -39,7 +45,7 @@ shift 1
 
 for seed in ${seeds[@]}; do
     [ -f seeds_$seed ]    || python ../../script/gen_seeds.py -s 0 -p 5 -i 1 -r 1           -n 128                 --start $seed > seeds_$seed
-    [ -f seeds_rr_$seed ] || python ../../script/gen_seeds.py -s 0 -p 5 -i 0 -r 1.8 -t 2 -d -n 256 --prefix randvc --start $seed > seeds_rr_$seed
+    [ -f seeds_rr_$seed ] || python ../../script/gen_seeds.py -s 0 -p 5 -i 0 -r 1.8 -t 2 -d -n 512 --prefix randvc --start $seed > seeds_rr_$seed
 done
 
 if [ -f /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice ]; then
@@ -52,11 +58,14 @@ fi
 for flavor in ${flavors[@]}; do
     case $flavor in 
         xx ) flv=""                               ;;
-        px ) flv="protected="                     ;;
         xm ) flv="mismatch="                      ;;
+        xl ) flv="layout="                        ;;
+        px ) flv="protected="                     ;;
         pm ) flv="protected= mismatch="           ;;
+        pl ) flv="protected= layout="             ;;
         qx ) flv="protected= randramp="           ;;
         qm ) flv="protected= randramp= mismatch=" ;;
+        dx ) flv="protected= randramp2="          ;;
         *  ) echo "nomatch <$flavor>"
     esac
 
