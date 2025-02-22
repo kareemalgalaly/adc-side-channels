@@ -52,7 +52,12 @@ XREGISTER_ARRAY_{p} clk reset enable count.0 count.1 count.2 count.3 count.4 cou
 
 {ifdef protected}
 XEDGE_DETECTOR_P_{p} clk reset comp.{p}_buffered_p enable_p vss vss vdd vdd negedge_detector
+{if protected == "V2"}
+XINV_EN_{p}_p enable vss vss vdd vdd enable_p_act sky130_fd_sc_hs__inv_1
+XREGISTER_ARRAY_P_{p} clk reset enable_p_act count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 digfls_{p}.0 digfls_{p}.1 digfls_{p}.2 digfls_{p}.3 digfls_{p}.4 digfls_{p}.5 digfls_{p}.6 digfls_{p}.7 vss vss vdd vdd register_array
+{else}
 XREGISTER_ARRAY_P_{p} clk reset enable_p count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 digfls_{p}.0 digfls_{p}.1 digfls_{p}.2 digfls_{p}.3 digfls_{p}.4 digfls_{p}.5 digfls_{p}.6 digfls_{p}.7 vss vss vdd vdd register_array
+{endif}
 
 {endif}
 * ! Synthesizer optimizes the inversion in Verilog input. Inverters added manually for now.

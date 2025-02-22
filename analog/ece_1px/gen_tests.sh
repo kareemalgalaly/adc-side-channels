@@ -34,7 +34,6 @@ else
     done
 fi
 
-outdir=outfiles/digital_5px_${corner}_x
 for seed in ${seeds[@]}; do
     if [ "$pixels" = "5px" ]; then
         values=()
@@ -45,8 +44,9 @@ for seed in ${seeds[@]}; do
     fi
 
     for corner in ${corners[@]}; do
-        python ../../script/template_engine.py digital.temp.cir -s $args "${values[@]}" seed=$seed outdir=outfiles/digital_${pixels}_${corner}_x            -o runme_${pixels}_${corner}_x_${seed}.cir
-        python ../../script/template_engine.py digital.temp.cir -s $args "${values[@]}" seed=$seed outdir=outfiles/digital_${pixels}_${corner}_p protected= -o runme_${pixels}_${corner}_p_${seed}.cir
+        python ../../script/template_engine.py digital.temp.cir -s $args "${values[@]}" seed=$seed outdir=outfiles/digital_${pixels}_${corner}_x              -o runme_${pixels}_${corner}_x_${seed}.cir
+        python ../../script/template_engine.py digital.temp.cir -s $args "${values[@]}" seed=$seed outdir=outfiles/digital_${pixels}_${corner}_p protected=   -o runme_${pixels}_${corner}_p_${seed}.cir
+        python ../../script/template_engine.py digital.temp.cir -s $args "${values[@]}" seed=$seed outdir=outfiles/digital_${pixels}_${corner}_q protected=V2 -o runme_${pixels}_${corner}_q_${seed}.cir
     done
 done
 

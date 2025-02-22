@@ -31,7 +31,7 @@ for flavor in ${flavors[@]}; do
         pm ) flv="protected= mismatch=" ;;
     esac
 
-    args=("randvec_1=compose randvec_1 values 0.1 1.0 0.6" "randvec_2=compose randvec_2 values 0.3 0.0 0.6" "randvec_3=compose randvec_3 values 0.5 0.2 0.6" "randvec_4=compose randvec_4 values 0.7 0.8 0.6" "randvec_5=compose randvec_5 values 0.9 0.4 0.6")
+    args=("randvec_1=compose randvec_1 values 0.1 1.0 0.6" "randvec_2=compose randvec_2 values 0.3 0.0 0.6" "randvec_3=compose randvec_3 values 0.5 0.2 0.6" "randvec_4=compose randvec_4 values 0.7 0.8 0.6" "randvec_5=compose randvec_5 values 0.9 0.4 0.6" "pixels=eval:5")
     python ../../script/template_engine.py adc_sky_5px.temp.cir -s plot= "${args[@]}" -o demo_5px_${corners[0]}_${flavor}_${seeds[0]}.cir
 
     for corner in ${corners[@]}; do
@@ -45,6 +45,7 @@ for flavor in ${flavors[@]}; do
             args+=("$flv")
             args+=("seed=$seed")
             args+=("$foss")
+            args+=("pixels=eval:5")
 
             python ../../script/template_engine.py adc_sky_5px.temp.cir -s "${args[@]}" -o runme_5px_${corner}_${flavor}_${seed}.cir
         done
