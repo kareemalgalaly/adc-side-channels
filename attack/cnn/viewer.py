@@ -3,6 +3,9 @@ import numpy as np
 
 from regress import argparser, Regression
 
+FIGX = 8
+FIGY = 6
+
 ## Args + DB Info -----------------------------------
 
 argparser.add_argument("-t", "--traces", type=int, default=[1], nargs="+", help="Trace to plot")
@@ -19,7 +22,7 @@ for dname in args.datasets:
     datasets[dname] = regression.datasets[dname]
 regression.build_datasets(*list(datasets.values()))
 
-fig, axs = plt.subplots(len(args.traces))
+fig, axs = plt.subplots(len(args.traces), figsize=(FIGX, FIGY))
 if len(args.traces) == 1: 
     axs = [axs]
 

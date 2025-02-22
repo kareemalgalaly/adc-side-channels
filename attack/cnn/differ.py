@@ -3,6 +3,9 @@ import numpy as np
 
 from regress import argparser, Regression
 
+FIGX = 8
+FIGY = 6
+
 ## Args + DB Info -----------------------------------
 
 argparser.add_argument("dataset1", type=str, help="First Trace Dataset")
@@ -23,7 +26,7 @@ regression.build_datasets(dataset1, dataset2)
 #print(dataset1.builder.dataset.label_dict)
 #exit()
 
-fig, ax = plt.subplots(1)
+fig, ax = plt.subplots(1, figsize=(FIGX, FIGY))
 
 ## Main ---------------------------------------------
 

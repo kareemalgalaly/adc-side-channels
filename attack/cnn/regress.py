@@ -16,6 +16,10 @@ import torchvision
 import matplotlib
 import matplotlib.pyplot as plt
 
+plt.rcParams.update({'font.size': 10})
+FIGX = 8
+FIGY = 8
+
 from copy import copy
 
 import argparse
@@ -49,7 +53,7 @@ class Args:
 # Helpers ########################################
 
 class ProgressBar:
-    def __init__(self, f_start="", f_end="", bar_len=30, bar_chr='X', max_val=1, out=sys.stdout):
+    def __init__(self, f_start="", f_end="", bar_len=20, bar_chr='X', max_val=1, out=sys.stdout):
         self.out     = out
         self.f_start = f_start
         self.f_end   = f_end
@@ -191,30 +195,35 @@ class Network(HashableBase):
 # Dataset ########################################
 
 class Dataset(HashableBase):
-    def __init__(self, name, info):
+    def __init__(self, name, info, defaults):
         self.name = name
         self.type = info['type']
         self.frmt = info['format']
         self.cols = info['columns']
         self.lblf = eval(info.get("label", "lambda gs: int(gs[0])"), globals(), {})
         self.paths = [os.path.join(data_dir, path) for path in info.get('paths', [])]
+
+        self.trace_scale = info.get("trace_scale", defaults["trace_scale"])
+
         if path := info.get('path', None):
             self.paths.append(os.path.join(data_dir, path))
+        self.builder = None
 
     @classmethod
-    def from_info(cls, name, info):
+    def from_info(cls, name, info, defaults):
         if info['type'] == 'raw':
-            return RawDataset(name, info)
+            return RawDataset(name, info, defaults)
         elif info['type'] == 'timed':
-            return TimedDataset(name, info)
+            return TimedDataset(name, info, defaults)
         else:
-            return SampledDataset(name, info)
+            return SampledDataset(name, info, defaults)
 
     def get_csv(self):
-        return f"{self.type},{';'.join(self.paths)},{self.cols}"
+        return f"{self.type},{';'.join(os.path.basename(path) for path in self.paths)},{self.cols}"
 
     def build(self, adc_bitwidth=8, device=None):
-        self.builder = TraceDatasetBuilder(adc_bitwidth=adc_bitwidth, cache=True, device=device)
+        if self.builder: return self.builder
+        self.builder = TraceDatasetBuilder(adc_bitwidth=adc_bitwidth, mult=self.trace_scale, cache=True, device=device)
         return self.builder
     
     def get_trace(self, label, index=0, bit=-1):
@@ -222,9 +231,9 @@ class Dataset(HashableBase):
         return dataset.get_by_label(label, index=index)
 
 class RawDataset(Dataset):
-    def __init__(self, name, info):
+    def __init__(self, name, info, defaults):
         assert info['type'] == 'raw'
-        super().__init__(name, info)
+        super().__init__(name, info, defaults)
 
         self.len  = info['len']
 
@@ -232,15 +241,17 @@ class RawDataset(Dataset):
         return f"{super().get_csv()},{self.len}"
 
     def build(self, adc_bitwidth=8, device=None):
+        if self.builder: return self.builder
         super().build(adc_bitwidth, device)
         for path in self.paths:
             self.builder.add_files(path, self.frmt, label_func=self.lblf, max_sample=self.len)
         self.builder.build()
+        return self.builder
 
 class SampledDataset(Dataset):
-    def __init__(self, name, info):
+    def __init__(self, name, info, defaults):
         assert info['type'] == 'sampled'
-        super().__init__(name, info)
+        super().__init__(name, info, defaults)
 
         self.mode     =  info['sample_mode']
         self.interval =  info['sample_interval']
@@ -251,24 +262,28 @@ class SampledDataset(Dataset):
         return f"{super().get_csv()},{self.mode};{self.interval};{self.duration}"
 
     def build(self, adc_bitwidth=8, device=None):
+        if self.builder: return self.builder
         super().build(adc_bitwidth, device)
         for path in self.paths:
             self.builder.add_files(path, self.frmt, label_func=self.lblf, sample_mode=self.mode, sample_int=self.interval, sample_time=self.duration)
         self.builder.build()
+        return self.builder
 
 class TimedDataset(Dataset):
-    def __init__(self, name, info):
+    def __init__(self, name, info, defaults):
         assert info['type'] == 'timed'
-        super().__init__(name, info)
+        super().__init__(name, info, defaults)
 
     def get_csv(self):
         return f"{super().get_csv()},{self.mode};{self.interval};{self.duration}"
 
     def build(self, adc_bitwidth=8, device=None):
+        if self.builder: return self.builder
         super().build(adc_bitwidth, device)
         for path in self.paths:
             self.builder.add_files(path, self.frmt, label_func=self.lblf, sample_mode="timed")
         self.builder.build()
+        return self.builder
 
 
 # Test ###########################################
@@ -281,6 +296,7 @@ class Test(HashableBase):
         self.test_dataset  = datasets[info['test_dataset']] if 'test_dataset' in info else self.datasets[0]
         self.skip          = info.get('skip',           False)
         self.learning_rate = info.get('learning_rate',  defaults['learning_rate'])
+        self.learning_decay= info.get('learning_decay', defaults['learning_decay'])
         self.max_learn_rate= info.get('max_learn_rate', defaults['max_learn_rate'])
         self.optimizer     = info.get('optimizer',      defaults['optimizer'])
         self.loss          = info.get('loss',           defaults['loss'])
@@ -289,6 +305,8 @@ class Test(HashableBase):
         self.max_accuracy  = info.get('max_accuracy',   defaults['max_accuracy'])
         self.max_loss      = info.get('max_loss',       defaults['max_loss'])
         self.batch_size    = info.get('batch_size',     defaults['batch_size'])
+        self.train_split   = info.get('train_split',    defaults['train_split'])
+        self.test_split    = 1 - self.train_split if self.train_split != 1 else 1
 
         #if not isinstance(self.learning_rate, list): self.learning_rate = [self.learning_rate]
         #if not isinstance(self.optimizer,     list): self.optimizer     = [self.optimizer]
@@ -300,6 +318,7 @@ class Test(HashableBase):
         that.datasets = self.datasets
         that.test_dataset  = self.test_dataset
         that.learning_rate = self.learning_rate
+        that.learning_decay= self.learning_decay
         that.max_learn_rate= self.max_learn_rate
         that.optimizer     = self.optimizer
         that.loss          = self.loss
@@ -308,17 +327,19 @@ class Test(HashableBase):
         that.max_accuracy  = self.max_accuracy
         that.max_loss      = self.max_loss
         that.batch_size    = self.batch_size
+        that.train_split   = self.train_split
+        that.test_split    = self.test_split
         return that
 
     def get_csv(self):
-        return f"{self.learning_rate},{self.max_learn_rate},{self.optimizer},{self.batch_size},{self.max_epochs},{self.max_accuracy},{self.max_loss}"
+        return f"{self.learning_rate},{self.learning_decay},{self.max_learn_rate},{self.optimizer},{self.batch_size},{self.max_epochs},{self.max_accuracy},{self.max_loss}"
 
     def get_optimizer(self, cnn):
         if self.optimizer == 'Adam':
-            return optim.Adam(cnn.parameters(), lr=self.learning_rate)
+            return optim.Adam(cnn.parameters(), lr=self.learning_rate, weight_decay=self.learning_decay)
 
         if self.optimizer == 'Amsgrad':
-            return optim.Adam(cnn.parameters(), lr=self.learning_rate, amsgrad=True)
+            return optim.Adam(cnn.parameters(), lr=self.learning_rate, weight_decay=self.learning_decay, amsgrad=True)
 
         if self.optimizer == 'Adamax':
             return optim.Adam(cnn.parameters(), lr=self.learning_rate)
@@ -366,13 +387,13 @@ class Regression:
                     inf = info.copy()
                     inf['sample_mode'] = mode
                     nam=f"{name}:{mode.lower()}"
-                    self.datasets[nam] = Dataset.from_info(nam, inf)
+                    self.datasets[nam] = Dataset.from_info(nam, inf, self.defaults)
                 inf = info.copy()
                 inf['type'] = 'timed'
                 nam=f"{name}:tru"
-                self.datasets[nam] = Dataset.from_info(nam, inf)
+                self.datasets[nam] = Dataset.from_info(nam, inf, self.defaults)
             else:
-                self.datasets[name] = Dataset.from_info(name, info)
+                self.datasets[name] = Dataset.from_info(name, info, self.defaults)
 
         #pprint.pprint(self.datasets)
 
@@ -392,11 +413,8 @@ class Regression:
                 self.tests.append(test)
 
     def build_datasets(self, *datasets, device=None):
-        seen = set()
         for d in datasets:
-            if d not in seen:
-                seen.add(d)
-                d.build(adc_bitwidth=self.adc_bitwidth, device=device)
+            d.build(adc_bitwidth=self.adc_bitwidth, device=device)
 
     def run_all(self):
         # Header
@@ -406,7 +424,7 @@ class Regression:
                 with open(self.csv, "w") as file:
                     file.write("Run ID,Network,Network ID,Network Type,Definition,Inputs,")
                     file.write("Dataset,Datset ID,Type,Path,Dataset Cols,Datset Info,Test ID,")
-                    file.write("Learning Rate,Max LR,Optimizer,Batch Size,Max Epochs,Target Accuracy,")
+                    file.write("Learning Rate,LR Decay,Max LR,Optimizer,Batch Size,Max Epochs,Target Accuracy,")
                     file.write("Target Loss,Bit,Accuracy,Peak Accuracy,Test Accuracy,Loss,Epoch,Runtime\n")
 
         # Skipped tests
@@ -433,9 +451,9 @@ class Regression:
         # Regression main
 
         for test in self.tests:
-            if test.test_dataset is not test.datasets[0]:
+            if test.test_dataset not in test.datasets:
                 self.build_datasets(test.test_dataset, device=device)
-                test.test_dataset.builder.build_dataloaders(batch_size=test.batch_size, shuffle=True)
+                test.test_dataset.builder.build_dataloaders(test=1, proportion=test.test_split, batch_size=test.batch_size, shuffle=True)
 
             for dataset in test.datasets:
                 self.build_datasets(dataset, device=device)
@@ -447,7 +465,7 @@ class Regression:
                     print(f"{run_hash},{network.name},{dataset.name},{test}")
 
                     if not(self.args.preview):
-                        fig, axs = plt.subplots(2, figsize=(4,4))
+                        fig, axs = plt.subplots(2, figsize=(FIGX,FIGY))
                         fig.suptitle(f"{run_hash}\n{network.name}  -  {dataset.name}  -  {test.optimizer}({test.learning_rate})\n")
                         axs[0].set_title("Loss")
                         axs[1].set_title("Accuracy")
@@ -489,7 +507,7 @@ class Regression:
 
         start_tm = time.monotonic()
     
-        dataset.builder.build_dataloaders(batch_size=test.batch_size, shuffle=True)
+        dataset.builder.build_dataloaders(test=0, proportion=test.train_split, batch_size=test.batch_size, shuffle=True)
         dataloader  = dataset.builder.dataloader if bit == -1 else dataset.builder.dataloaders[bit]
         batch_count = -(len(dataset.builder.dataset) // -test.batch_size)
     
@@ -515,8 +533,8 @@ class Regression:
         #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=100, factor=0.7)
         scheduler = None
     
-        progress = ProgressBar(f_start="Training ", f_end="{model} | Loss {loss:8} | Accuracy {acc:6}:{pacc:6} | Test {tst:8} | {msg}", max_val=test.max_epochs)
-        progress.start(model=run_hash, loss=1.0, acc=0.0, pacc=0.0, tst=0.0, msg="")
+        progress = ProgressBar(f_start="Training ", f_end="{model} | Loss {loss:8} | Accuracy {acc:6}:{pacc:6} | Test {tst:6} | {msg}", max_val=test.max_epochs)
+        progress.start(model=run_hash, loss=1.0, acc=0.0, pacc=0.0, tst="    --", msg="")
 
         pacc = 0 # peak_accuracy
 
@@ -572,12 +590,12 @@ class Regression:
                         plt.pause(0.01)
 
                 if accuracy >= test.max_accuracy:
-                    progress.update(epoch, msg=f"Target acc reached {test.max_accuracy}"); break
+                    progress.update(epoch, msg=f"Hit Acc {test.max_accuracy}"); break
 
                 if loss <= test.max_loss:
-                    progress.update(epoch, msg=f"Target loss reached {test.max_loss}"); break
+                    progress.update(epoch, msg=f"Hit Loss {test.max_loss}"); break
         except KeyboardInterrupt as e:
-            progress.update(epoch, msg="Job Interrupted")
+            progress.update(epoch, msg="Interrupted  ")
             progress.stop(epoch)
             raise e
 
@@ -597,6 +615,9 @@ class Regression:
         torch.save(cnn.state_dict(), f'{self.args.output}/{run_hash}.state')
 
         # Find final accuracy on test dataset
+
+        if test.test_dataset in test.datasets:
+            test.test_dataset.builder.build_dataloaders(test=1, proportion=test.test_split, batch_size=test.batch_size, shuffle=True)
 
         dataloader = test.test_dataset.builder.dataloader if bit == "_" else test.test_dataset.builder.dataloaders[bit]
         correct = 0
@@ -619,11 +640,11 @@ class Regression:
                 _, predicted = torch.max(output, 1)
                 correct += (predicted == labels).sum()
         test_accuracy = correct / len(test.test_dataset.builder.dataset)
-        progress.update(epoch, tst=round(float(test_accuracy), 6))
+        progress.update(epoch, tst=round(float(test_accuracy), 4))
         progress.stop(epoch+1)
 
         with open(self.csv, "a") as file:
-            file.write(f"{run_hash},{network.name},{network},{dataset.name},{dataset},{test},{bit},{accuracy},{test_accuracy},{loss},{epoch},{runtime}\n")
+            file.write(f"{run_hash},{network.name},{network},{dataset.name},{dataset},{test},{bit},{facc},{pacc},{test_accuracy},{loss},{epoch},{runtime}\n")
 
 # Main ###########################################
 

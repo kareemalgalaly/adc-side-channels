@@ -17,6 +17,7 @@ argparser.add_argument("-o", "--output", type=str, default=None, help="Output fi
 argparser.add_argument("-t", "--tmpfmt", type=str, nargs="+", metavar="KEY=VALUE", help="key=value pairs for $key PEP292 formatting")
 argparser.add_argument("-f", "--format", type=str, nargs="+", metavar="KEY=VALUE", help="key=value pairs for {key} PEP3101 formatting")
 argparser.add_argument("-s", "--sformat",type=str, nargs="+", metavar="KEY=VALUE", help="key=value pairs for PEP3101-based formatting. Special options including ifdef/else/ifndef added.")
+argparser.add_argument("-d", "--debug", default=0, const=1, action="store_const",  help="Enable debug printing")
 
 ## --------------------------------------------------
 
@@ -166,9 +167,9 @@ def do_eval(exp, mapping):
     except (TypeError, NameError) as e:
         val = None
         if isinstance(e, TypeError):
-            error(f"evaluating {{{exp}}} raised TypeError\n         {e}")
+            error(f"evaluating {{{exp}}} raised TypeError\nmapping: {mapping}\n         {e}")
         else:
-            error(f"evaluating {{{exp}}} raised NameError\n         {e}")
+            error(f"evaluating {{{exp}}} raised NameError\nmapping: {mapping}\n         {e}")
 
     return val
 
@@ -228,16 +229,19 @@ if __name__ == "__main__":
     with open(args.template, "r") as file:
         if args.tmpfmt:
             mapping  = build_mapping(args.tmpfmt)
+            if args.debug: print(mapping)
             template = Template(file.read())
             processe = template.safe_substitute(mapping)
 
         elif args.format:
             mapping  = build_mapping(args.format)
+            if args.debug: print(mapping)
             template = file.read()
             processe = template.format_map(SafeDict(mapping))
 
         elif args.sformat:
             mapping  = build_mapping(args.sformat)
+            if args.debug: print(mapping)
             template = file.read()
             processe = template.format_map(FancyDict(mapping))
             processe = post_process_sformat(processe, mapping)
@@ -255,6 +259,5 @@ if __name__ == "__main__":
         else:
             print(processe)
 
-    print("-------------------------------------------------")
     print(f"Job Completed with {_errors} Errors and {_warnings} Warnings")
 
