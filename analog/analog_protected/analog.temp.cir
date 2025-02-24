@@ -5,7 +5,7 @@
 *{ifdef foss}
 *.lib /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice {corner=tt}
 *{else}
-.lib "models/sky130.lib.spice" tt
+.lib "models/sky130.lib.spice" tt ;{corner=tt}
 *{endif}
 .lib adc.lib design ;{ifdef layout layout else design}
 
@@ -57,9 +57,10 @@ while istart < istop
     alter vc3 ctrl3[istart]
     alter vc4 ctrl4[istart]
 
-    tran 50n 520u uic
-    ;plot outpp outnp
+    tran 500n 520u uic
+    plot outpp outnp
     plot rampp rampn pix
+    plot i(vdda)
     ;plot i(v.xrmpp.vim) i(v.xrmpn.vim)
     ;plot (-i(vrfp)) (-i(vrfn))
 

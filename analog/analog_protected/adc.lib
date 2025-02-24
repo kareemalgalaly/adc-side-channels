@@ -134,12 +134,12 @@
 
 .subckt comparator_wrap inp inn clk outp outn vdd gnd
     iref  irf gnd 10u
-    xcomp vdd inp clk outp inn outn irf gnd comparator_2
+    xcomp vdd inp clk outp inn outn irf gnd comparator
 .ends
 
 .subckt comparator vdd inp ck outp inn outn iref vss
     x1 vdd ck outp outn net1 net2 vss latch
-    x2 vdd inp inn iref net1 net2 vss preamp
+    x2 vdd inp inn net1 net2 iref vss preamp
 .ends
 
 .subckt latch vdd ck outp outn in1 in2 vss
