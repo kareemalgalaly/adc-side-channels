@@ -1,0 +1,70 @@
+* Protected Analog ADC with Dual Mirrored Ramp Generators
+
+* Libraries
+
+*{ifdef foss}
+*.lib /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice {corner=tt}
+*{else}
+.lib "models/sky130.lib.spice" tt
+*{endif}
+.lib adc.lib design ;{ifdef layout layout else design}
+
+* Inputs
+
+vrst  rst   gnd PULSE(0   1.8 0 10p 10p 3u 260u)
+vrstn rstn  gnd PULSE(1.8 0.0 0 10p 10p 3u 260u)
+vclk  clk   gnd PULSE(0   1.8 0 10p 10p .5u 1u)
+vdda  vdd   gnd 1.8
+vrfp  gnd   vrefp 1
+vrfn  vrefn gnd   1
+;vini vini  gnd   1.5
+
+vpix pix GND 0.3
+
+vc0  vc0 gnd 0
+vc1  vc1 gnd 0
+vc2  vc2 gnd 0
+vc3  vc3 gnd 0
+vc4  vc4 gnd 0
+
+* Analog ADC
+
+xrmpp vrefp      vc0 vc1 vc2 vc3 vc4 rampp vdd gnd rst  ramp_generator
+xrmpn vrefn vdd  vc0 vc1 vc2 vc3 vc4 rampn vdd gnd rst  ramp_generator_init_k
+
+xcmpp rampp pix clk outpp outnp vdd gnd comparator_wrap
+xcmpn rampn pix clk outpn outnn vdd gnd comparator_wrap
+
+.control
+
+compose ctrl0 values 0 1.8  1.8   0 
+compose ctrl1 values 0 1.8    0   0 
+compose ctrl2 values 0 1.8    0   0 
+compose ctrl3 values 0 1.8    0   0 
+compose ctrl4 values 0 1.8    0 1.8 
+
+let istart = 0
+let istop  = length(ctrl0)
+
+while istart < istop
+    echo
+    echo Running Sweep $&istart/$&istop
+    echo
+
+    alter vc0 ctrl0[istart]
+    alter vc1 ctrl1[istart]
+    alter vc2 ctrl2[istart]
+    alter vc3 ctrl3[istart]
+    alter vc4 ctrl4[istart]
+
+    tran 50n 520u uic
+    ;plot outpp outnp
+    plot rampp rampn pix
+    ;plot i(v.xrmpp.vim) i(v.xrmpn.vim)
+    ;plot (-i(vrfp)) (-i(vrfn))
+
+    let istart = istart + 1
+end
+
+.endc
+.end
