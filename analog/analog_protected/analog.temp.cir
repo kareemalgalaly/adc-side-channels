@@ -2,12 +2,12 @@
 
 * Libraries
 
-*{ifdef foss}
-*.lib /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice {corner=tt}
-*{else}
-.lib "models/sky130.lib.spice" tt ;{corner=tt}
-*{endif}
-.lib adc.lib design ;{ifdef layout layout else design}
+{ifdef foss}
+.lib /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice {corner=tt}
+{else}
+.lib "models/sky130.lib.spice" {corner=tt}
+{endif}
+.lib adc.lib {ifdef layout layout else design}
 
 * Inputs
 
@@ -21,11 +21,17 @@ vrfn  vrefn gnd   1
 
 vpix pix GND 0.3
 
-vc0  vc0 gnd 0
-vc1  vc1 gnd 0
-vc2  vc2 gnd 0
-vc3  vc3 gnd 0
-vc4  vc4 gnd 0
+*vc0  vc0 gnd 0
+*vc1  vc1 gnd 0
+*vc2  vc2 gnd 0
+*vc3  vc3 gnd 0
+*vc4  vc4 gnd 0
+
+vc0  vc0 GND PWL(0 0 67u 0 67.1u 0 131u 0 131.1u 0 195u 0 195.1u 0 259u 0 260u 0) r=0
+vc1  vc1 GND PWL(0 0 67u 0 67.1u 0 131u 0 131.1u 0 195u 0 195.1u 0 259u 0 260u 0) r=0
+vc2  vc2 GND PWL(0 0 67u 0 67.1u 0 131u 0 131.1u 0 195u 0 195.1u 0 259u 0 260u 0) r=0
+vc3  vc3 GND PWL(0 0 67u 0 67.1u 0 131u 0 131.1u 0 195u 0 195.1u 0 259u 0 260u 0) r=0
+vc4  vc4 GND PWL(0 0 67u 0 67.1u 0 131u 0 131.1u 0 195u 0 195.1u 0 259u 0 260u 0) r=0
 
 * Analog ADC
 
@@ -36,36 +42,70 @@ xcmpp rampp pix clk outpp outnp vdd gnd comparator_wrap
 xcmpn rampn pix clk outpn outnn vdd gnd comparator_wrap
 
 .control
-
-compose ctrl0 values 0 1.8  1.8   0 
-compose ctrl1 values 0 1.8    0   0 
-compose ctrl2 values 0 1.8    0   0 
-compose ctrl3 values 0 1.8    0   0 
-compose ctrl4 values 0 1.8    0 1.8 
+{randpx0=compose randpx0 values 3e-1 7e-1} ;  0.5 0.8
+{randvc0=compose randvc0 values 0   18e-1 18e-1     0  18e-1     0 0 18e-1 }
+{randvc1=compose randvc1 values 0   18e-1     0     0    0       0 0 18e-1 }
+{randvc2=compose randvc2 values 0   18e-1     0     0    0       0 0 18e-1 }
+{randvc3=compose randvc3 values 0   18e-1     0     0    0       0 0 18e-1 }
+{randvc4=compose randvc4 values 0   18e-1     0 18e-1    0   18e-1 0 18e-1 }
 
 let istart = 0
-let istop  = length(ctrl0)
+let istop  = length(randpx0)
+
+set ext = ".txt"
+set dlm = "_"
+
+{ifndef plot}
+shell mkdir -p {outdir=outfiles/analog}
+{endif}
 
 while istart < istop
     echo
     echo Running Sweep $&istart/$&istop
     echo
 
-    alter vc0 ctrl0[istart]
-    alter vc1 ctrl1[istart]
-    alter vc2 ctrl2[istart]
-    alter vc3 ctrl3[istart]
-    alter vc4 ctrl4[istart]
+    let iseed = istart + {seed}
+
+    alter vpix randpx0[istart]
+    let vact  = randpx0[istart]
+    let index = istart*4 % length(randvc0)
+    {for i in range(4)}
+    let V1 = randvc{i}[index]
+    let V2 = randvc{i}[index+1]
+    let V3 = randvc{i}[index+2]
+    let V4 = randvc{i}[index+3]
+    alter @vc{i}[pwl] = [ 0 $&V1 67u $&V1 67.1u $&V2 131u $&V2 131.1u $&V3 195u $&V3 195.1u $&V4 259u $&V4 260u $&V1 ]
+    {endfor}
 
     tran 500n 520u uic
+    
+    let cut-tstart = 260u
+    let cut-tstop = 520u
+    cutout
+
+    {ifndef plot}
+    wrdata {outdir=outfiles/analog}/raw_s$&iseed$dlm$&vact$ext -I(vdda)
+    {else}
     plot outpp outnp
     plot rampp rampn pix
     plot i(vdda)
+    plot vc0 vc1+2 vc2+4 vc3+6 vc4+8
+    {endif}
+
+    let lin-tstart = 260u
+    let lin-tstop  = 520u
+    let lin-tstep  = 100n
+    linearize I(vdda) ; digitized
+
+    {ifndef plot}
+    wrdata {outdir=outfiles/analog}/lin_s$&iseed$dlm$&vact$ext -I(vdda)
+    {else}
     ;plot i(v.xrmpp.vim) i(v.xrmpn.vim)
     ;plot (-i(vrfp)) (-i(vrfn))
+    {endif}
 
     let istart = istart + 1
 end
-
 .endc
+
 .end
