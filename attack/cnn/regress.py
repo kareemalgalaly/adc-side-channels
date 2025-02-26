@@ -3,6 +3,7 @@ from cnn_gen import GenericCNN
 import json
 #import pprint
 
+import re
 import os
 import sys
 import time
@@ -24,6 +25,9 @@ from copy import copy
 
 import argparse
 
+#job_launch_time = time.ctime()
+job_launch_time = time.strftime("%y%m%d_%H%M")
+
 argparser = argparse.ArgumentParser(prog="regress.py", description="Run cnn regressions")
 argparser.add_argument("-i", "--json",   type=str, default='regression.json', help="JSON description of CNNs")
 argparser.add_argument("-o", "--output", type=str, default='outputs', help="Directory for output files")
@@ -32,6 +36,7 @@ argparser.add_argument("-n", "--nowrite", const=True, default=False, action='sto
 argparser.add_argument("-f", "--force", const=True, default=False, action='store_const', help="Overwrite output files")
 argparser.add_argument("-p", "--preview", const=True, default=False, action='store_const', help="Don't run anything only list runs that would occur")
 argparser.add_argument("-x", "--headless", const=True, default=False, action='store_const', help="Do not open any gui's")
+argparser.add_argument("-t", "--test", type=str, default="", help="Limit run tests to those whose description matches the specified regex")
 argparser.add_argument("--nndebug", const=True, default=False, action='store_const', help="Print information about cnn creation.")
 
 pwd      = os.path.dirname(os.path.abspath(__file__))
@@ -201,7 +206,7 @@ class Dataset(HashableBase):
         self.frmt = info['format']
         self.cols = info['columns']
         self.lblf = eval(info.get("label", "lambda gs: int(gs[0])"), globals(), {})
-        self.paths = [os.path.join(data_dir, path) for path in info.get('paths', [])]
+        self.paths = [path if path.startswith("/") else os.path.join(data_dir, path) for path in info.get('paths', [])]
 
         self.trace_scale = info.get("trace_scale", defaults["trace_scale"])
 
@@ -293,6 +298,7 @@ class Test(HashableBase):
         self.networks = [networks[n] for n in info['networks']]
         self.datasets = [datasets[d] for d in info['datasets']]
 
+        self.description   = info.get('desc', "")
         self.test_dataset  = datasets[info['test_dataset']] if 'test_dataset' in info else self.datasets[0]
         self.skip          = info.get('skip',           False)
         self.learning_rate = info.get('learning_rate',  defaults['learning_rate'])
@@ -316,6 +322,7 @@ class Test(HashableBase):
         that = cls.__new__(cls)
         that.networks = self.networks
         that.datasets = self.datasets
+        that.description   = self.description
         that.test_dataset  = self.test_dataset
         that.learning_rate = self.learning_rate
         that.learning_decay= self.learning_decay
@@ -332,7 +339,7 @@ class Test(HashableBase):
         return that
 
     def get_csv(self):
-        return f"{self.learning_rate},{self.learning_decay},{self.max_learn_rate},{self.optimizer},{self.batch_size},{self.max_epochs},{self.max_accuracy},{self.max_loss}"
+        return f"{self.learning_rate},{self.learning_decay},{self.max_learn_rate},{self.optimizer},{self.batch_size},{self.max_epochs},{self.max_accuracy},{self.max_loss},{self.test_dataset.name},{self.train_split}"
 
     def get_optimizer(self, cnn):
         if self.optimizer == 'Adam':
@@ -422,10 +429,10 @@ class Regression:
         if not(self.args.nowrite or self.args.preview):
             if not(os.path.isfile(self.csv)):
                 with open(self.csv, "w") as file:
-                    file.write("Run ID,Network,Network ID,Network Type,Definition,Inputs,")
-                    file.write("Dataset,Datset ID,Type,Path,Dataset Cols,Datset Info,Test ID,")
-                    file.write("Learning Rate,LR Decay,Max LR,Optimizer,Batch Size,Max Epochs,Target Accuracy,")
-                    file.write("Target Loss,Bit,Accuracy,Peak Accuracy,Test Accuracy,Loss,Epoch,Runtime\n")
+                    file.write("Run ID,Network,Network ID,Network Type,Definition,Inputs,Dataset,Datset ID,")
+                    file.write("Type,Path,Dataset Cols,Datset Info,Test ID,Learning Rate,LR Decay,Max LR,")
+                    file.write("Optimizer,Batch Size,Max Epochs,Target Accuracy,Target Loss,Test Dataset,Split,")
+                    file.write("Bit,Accuracy,Peak Accuracy,Test Accuracy,Loss,Epoch,Runtime,Job Timestamp\n")
 
         # Skipped tests
 
@@ -451,6 +458,7 @@ class Regression:
         # Regression main
 
         for test in self.tests:
+            if not re.match(args.test, test.description): continue
             if test.test_dataset not in test.datasets:
                 self.build_datasets(test.test_dataset, device=device)
                 test.test_dataset.builder.build_dataloaders(test=1, proportion=test.test_split, batch_size=test.batch_size, shuffle=True)
@@ -492,7 +500,7 @@ class Regression:
 
                     except KeyboardInterrupt as e:
                         if not(self.args.preview or self.args.nowrite):
-                            fig.savefig(f'{self.args.output}/{run_hash}.png')
+                            fig.savefig(f'{self.args.output}/{run_hash}_{job_launch_time}.png')
                             plt.close()
                         print("Keyboard Interrupt detected. Shutting down...")
                         exit()
@@ -644,7 +652,7 @@ class Regression:
         progress.stop(epoch+1)
 
         with open(self.csv, "a") as file:
-            file.write(f"{run_hash},{network.name},{network},{dataset.name},{dataset},{test},{bit},{facc},{pacc},{test_accuracy},{loss},{epoch},{runtime}\n")
+            file.write(f"{run_hash},{network.name},{network},{dataset.name},{dataset},{test},{bit},{facc},{pacc},{test_accuracy},{loss},{epoch},{runtime},{job_launch_time}\n")
 
 # Main ###########################################
 

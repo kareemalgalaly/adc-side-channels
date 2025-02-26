@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 
 DTYPE = np.float32
 
+HIWARN = 80e-3
+
 def select_func_gen(mode):
     def bmin(t1, v1, t2, v2, t): return v1
     def bmax(t1, v1, t2, v2, t): return v2
@@ -37,7 +39,8 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0
     valu_col = time_col + 1
 
     f = sample_func_gen(sample_mode)
-    l = select_func_gen('LINEAR')
+    #l = select_func_gen(f"BLINEAR")
+    l = select_func_gen(f"B{sample_mode}")
 
     tstart = 0
     tstop  = 1
@@ -66,13 +69,17 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0
             value = DTYPE(value)
 
             if stim >= wtim:
-                val_arr.append(f(val_win))
+                nval = f(val_win)
+                if nval > HIWARN: print(f"High value: Standard, {val_win}")
+                val_arr.append(nval)
                 tim_arr.append(wtim - sample_interval/2)
 
                 # if time is too big a gap:
                 wtim += sample_interval
                 while stim > wtim:
-                    val_arr.append(l(ptim, val_arr[-1], stim, value, (len(val_arr)+0.5)*sample_interval))
+                    nval = l(ptim, val_arr[-1], stim, value, (len(val_arr)+0.5)*sample_interval)
+                    if nval > HIWARN: print(f"High value: Large Timegap, l({ptim}, {val_arr[-1]}, {stim}, {value}, {(len(val_arr)+0.5)*sample_interval})")
+                    val_arr.append(nval)
                     tim_arr.append(wtim - sample_interval/2)
                     wtim += sample_interval
 
@@ -84,7 +91,9 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0
             ptim = stim
 
         if (len(val_arr) < max_samples) and val_win:
-            val_arr.append(f(val_win))
+            nval = f(val_win)
+            if nval > HIWARN: print(f"High value: Normal Timegap, {val_win}")
+            val_arr.append(nval)
             tim_arr.append(ptim)
 
         if len(val_arr) < max_samples:
@@ -96,6 +105,7 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0
             wtim = wtim + sample_interval/2
             for i in range(max_samples - len(val_arr)):
                 val_arr.append(y1:=((wtim - x1)*m+y1))
+                if y1 > HIWARN: print(f"High Value: Win empty, {wtim} {x1} {m} {y1}")
                 tim_arr.append(x1:=wtim)
                 wtim += sample_interval
 

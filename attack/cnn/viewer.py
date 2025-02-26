@@ -32,7 +32,13 @@ for label, ax in zip(args.traces, axs):
     ax.set_title(f"Trace {label}")
 
     for dname in datasets:
-        info = datasets[dname].get_trace(label)
+        try:
+            info = datasets[dname].get_trace(label)
+        except KeyError as e:
+            print(e)
+            print("Listing all labels available")
+            print(datasets[dname].builder.dataset.label_dict.keys())
+            continue
         trace = info.trace
         start = info.start
         stop  = info.stop
