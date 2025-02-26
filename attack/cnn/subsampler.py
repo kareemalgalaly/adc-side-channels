@@ -37,7 +37,7 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0
     valu_col = time_col + 1
 
     f = sample_func_gen(sample_mode)
-    l = select_func_gen('LINEAR')
+    l = select_func_gen(f'B{sample_mode}')
 
     tstart = 0
     tstop  = 1
