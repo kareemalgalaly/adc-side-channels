@@ -1,0 +1,167 @@
+**Analog ADC
+
+{assert pixels in (1,5)}
+
+{ifdef foss}
+.lib /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice {corner=tt}
+{else}
+.lib "models/sky130.lib.spice" {corner=tt}
+{endif}
+.inc adc.lib
+
+* Power and Control
+vrst rst GND PULSE(0 1.8 0 10p 10p 3u 260u)
+vdd  vdd GND 1.8
+vclk clk GND PULSE(0 1.8 0 10p 10p .5u 1u)
+vref gnd vref 1
+
+* Pixel Analog Inputs
+V1 pix_1 GND 0.1
+{if pixels == 5}
+V2 pix_2 GND 0.3
+V3 pix_3 GND 0.5
+V4 pix_4 GND 0.7
+V5 pix_5 GND 0.9
+{endif}
+{ifdef randramp}
+VRRC0 vc0 GND PWL(0 V1 67u V1 67.1u V2 131u V2 131.1u V3 195u V3 195.1u V4 259u V4 260u V1) r=0
+VRRC1 vc1 GND PWL(0 V1 67u V1 67.1u V2 131u V2 131.1u V3 195u V3 195.1u V4 259u V4 260u V1) r=0
+VRRC2 vc2 GND PWL(0 V1 67u V1 67.1u V2 131u V2 131.1u V3 195u V3 195.1u V4 259u V4 260u V1) r=0
+VRRC3 vc3 GND PWL(0 V1 67u V1 67.1u V2 131u V2 131.1u V3 195u V3 195.1u V4 259u V4 260u V1) r=0
+VRRC4 vc4 GND PWL(0 V1 67u V1 67.1u V2 131u V2 131.1u V3 195u V3 195.1u V4 259u V4 260u V1) r=0
+{endif}
+
+* Ramp Generator
+{ifdef randramp2}
+xramp_generator vref rst ramp vdd gnd ramp_generator_rand{ifdef layout _layout}
+{else}
+xramp_generator vref rst ramp vdd gnd ramp_generator{ifdef layout _layout}
+{endif}
+
+* Comparators
+xcomp_1 ramp pix_1 clk outp_1 outn_1 vdd gnd comparator_2_wrap{ifdef layout _layout}{ifdef mismatch _mismatch mismatch=500u}
+{if pixels==5}
+xcomp_2 ramp pix_2 clk outp_2 outn_2 vdd gnd comparator_2_wrap{ifdef layout _layout}{ifdef mismatch _mismatch mismatch=3m}
+xcomp_3 ramp pix_3 clk outp_3 outn_3 vdd gnd comparator_2_wrap{ifdef layout _layout}{ifdef mismatch _mismatch mismatch=-1m}
+xcomp_4 ramp pix_4 clk outp_4 outn_4 vdd gnd comparator_2_wrap{ifdef layout _layout}{ifdef mismatch _mismatch mismatch=-1500u}
+xcomp_5 ramp pix_5 clk outp_5 outn_5 vdd gnd comparator_2_wrap{ifdef layout _layout}{ifdef mismatch _mismatch mismatch=1m}
+{endif}
+
+* Protection
+{ifdef protected}
+{ifdef randramp}
+xramp_generator_p vref rst ramp_p vc4 vc3 vc2 vc1 vc0 vdd gnd ramp_generator_rand
+{else}
+xramp_generator_p vref rst ramp_p vdd gnd ramp_generator r=20Meg
+{endif}
+xcomp_p1 ramp_p pix_1 clk outpp_1 outpn_1 vdd gnd comparator_2_wrap{ifdef layout _layout}{ifdef mismatch _mismatch mismatch=1500u}
+{if pixels == 5}                                                                         
+xcomp_p2 ramp_p pix_2 clk outpp_2 outpn_2 vdd gnd comparator_2_wrap{ifdef layout _layout}{ifdef mismatch _mismatch mismatch=-2m}
+xcomp_p3 ramp_p pix_3 clk outpp_3 outpn_3 vdd gnd comparator_2_wrap{ifdef layout _layout}{ifdef mismatch _mismatch mismatch=3m}
+xcomp_p4 ramp_p pix_4 clk outpp_4 outpn_4 vdd gnd comparator_2_wrap{ifdef layout _layout}{ifdef mismatch _mismatch mismatch=-500u}
+xcomp_p5 ramp_p pix_5 clk outpp_5 outpn_5 vdd gnd comparator_2_wrap{ifdef layout _layout}{ifdef mismatch _mismatch mismatch=200u}
+{endif}
+{endif}
+
+.option method=Gear
+.ic v(inp)=0
+.control
+*tran 0.5u 270u
+*plot -i(vdd)
+
+{randvec_1}
+{randvec_2=*randvec_2}
+{randvec_3=*randvec_3}
+{randvec_4=*randvec_4}
+{randvec_5=*randvec_5}
+{ifdef randramp}
+{randvc0=*randvc0}
+{randvc1=*randvc1}
+{randvc2=*randvc2}
+{randvc3=*randvc3}
+{randvc4=*randvc4}
+{endif}
+
+set ext = ".txt"
+set dlm = "_"
+
+{ifndef plot}
+shell mkdir -p {outdir}
+set wr_singlescale
+set wr_vecnames
+{endif}
+
+let istart = 0
+let istop  = length(randvec_1)
+
+while istart < istop
+    echo
+    echo Running Sweep $&istart/$&istop
+    echo
+
+    let iseed = istart + {seed}
+    {for pixel in range(1,pixels+1)}
+        let pact_{pixel} = randvec_{pixel}[istart]
+        alter V{pixel} pact_{pixel}
+    {endfor}
+    {ifdef randramp}
+        {for vci in range(5)}
+            let vc{vci} = randvc{vci}[istart]
+            alter VRRC{vci} vc{vci}
+        {endfor}
+    {endif}
+    {ifdef randramp2}
+        {for vci in range(5)}
+            let vc0 = randvc{vci}[istart*4]
+            let vc1 = randvc{vci}[istart*4+1]
+            let vc2 = randvc{vci}[istart*4+2]
+            let vc3 = randvc{vci}[istart*4+3]
+            alter VRRC{vci} PWL(0 vc0 67u vc0 67.1u vc1 131u vc1 131.1u vc2 195u vc2 195.1u vc3 259u vc3 260u vc0) ;r=0
+        {endfor}
+    {endif}
+
+    tran 500n 520u uic
+
+    {ifdef plot}
+    plot title 'Current Trace $&istart' -I(vdd)
+    {if pixels == 5}
+    plot title 'Comparator Toggles $&istart' outp_1 outp_2+2 outp_3+4 outp_4+6 outp_5+8
+    {else}
+    plot title 'Comparator Toggles $&istart' outp_1
+    {endif}
+    {endif}
+
+    {ifndef plot}
+    let cut-tstart = 260u
+    let cut-tstop = 520u
+    cutout
+
+    ; plot I(vdd)
+    {if pixels == 5}
+    wrdata {outdir}/raw_s$&iseed$dlm$&pact_1$dlm$&pact_2$dlm$&pact_3$dlm$&pact_4$dlm$&pact_5$ext -I(vdd)
+    {else}
+    wrdata {outdir}/raw_s$&iseed$dlm$&pact_1$ext -I(vdd)
+    {endif}
+
+    let lin-tstart = 260u
+    let lin-tstop  = 520u
+    let lin-tstep  = 100n
+    linearize I(vdd) ; digitized
+
+    ; plot I(vdd)
+    {if pixels == 5}
+    wrdata {outdir}/lin_s$&iseed$dlm$&pact_1$dlm$&pact_2$dlm$&pact_3$dlm$&pact_4$dlm$&pact_5$ext -I(vdd)
+    {else}
+    wrdata {outdir}/lin_s$&iseed$dlm$&pact_1$ext -I(vdd)
+    {endif}
+    {endif}
+
+    let istart = istart + 1
+
+    {ifndef plot destroy all}
+end
+{ifndef plot}
+exit
+{endif}
+.endc
+

@@ -1,5 +1,5 @@
 * Single slope adc
-.include ../lib/adc.lib
+.include adc.lib
 
 * Parameters
 

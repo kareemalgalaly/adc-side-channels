@@ -1,5 +1,14 @@
+###############################################################################
+# File        : attack/cnn/subsampler.py
+# Author      : kareemahmad
+# Created     : 
+# Description : Subsample ngspice output file to csv 
+###############################################################################
+
 import numpy as np
 import matplotlib.pyplot as plt
+
+DTYPE = np.float32
 
 def select_func_gen(mode):
     def bmin(t1, v1, t2, v2, t): return v1
@@ -17,8 +26,91 @@ def select_func_gen(mode):
     elif mode == "LINEAR": return mlin
     else: raise ValueError("Illegal mode selected")
 
-def do_parse(file_in, file_out, interval=1e-6, samples=1000, time=2.5e-4, index=0, sample_mode="LINEAR"):
+def sample_func_gen(mode):
+    if   mode == 'MIN': return lambda x: np.min(x)
+    elif mode == 'MAX': return lambda x: np.max(x)
+    elif mode == 'AVG': return lambda x: np.average(x)
+    else: raise ValueError("Illegal mode selected")
 
+def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0):
+    time_col = column << 1
+    valu_col = time_col + 1
+
+    f = sample_func_gen(sample_mode)
+    l = select_func_gen('LINEAR')
+
+    tstart = 0
+    tstop  = 1
+
+    with open(fpath, 'r') as file:
+        header = file.readline()
+
+        tim_arr = [] # For debugging
+        val_arr = []
+        val_win = []
+
+        stim, value = file.readline().strip().split()
+        stim = DTYPE(stim)
+        tstart = stim
+        value = DTYPE(value)
+        ptim = stim
+        wtim = stim + sample_interval
+        val_win.append(value)
+        val_arr.append(value)
+        tim_arr.append(ptim)
+
+        for line in file.readlines():
+            if len(val_arr) == max_samples: break
+            stim, value = line.strip().split()
+            stim  = DTYPE(stim)
+            value = DTYPE(value)
+
+            if stim >= wtim:
+                val_arr.append(f(val_win))
+                tim_arr.append(wtim - sample_interval/2)
+
+                # if time is too big a gap:
+                wtim += sample_interval
+                while stim > wtim:
+                    val_arr.append(l(ptim, val_arr[-1], stim, value, (len(val_arr)+0.5)*sample_interval))
+                    tim_arr.append(wtim - sample_interval/2)
+                    wtim += sample_interval
+
+                val_win = [value]
+
+            else:
+                val_win.append(value)
+
+            ptim = stim
+
+        if (len(val_arr) < max_samples) and val_win:
+            val_arr.append(f(val_win))
+            tim_arr.append(ptim)
+
+        if len(val_arr) < max_samples:
+            # val_win is empty, latest wtim is handled
+            x0, x1 = tim_arr[-2:]
+            y0, y1 = val_arr[-2:]
+            m = (y1 - y0)/(x1 - x0)
+
+            wtim = wtim + sample_interval/2
+            for i in range(max_samples - len(val_arr)):
+                val_arr.append(y1:=((wtim - x1)*m+y1))
+                tim_arr.append(x1:=wtim)
+                wtim += sample_interval
+
+        if len(val_arr) < max_samples:
+            for i in range(40):
+                print(i, tim_arr[i], val_arr[i], sep="\t")
+            for i in range(40, 0, -1):
+                print(-i, tim_arr[-i], val_arr[-i], sep="\t")
+            exit()
+
+        tstop = wtim
+
+        return val_arr, tstart, tstop
+
+def do_parse(file_in, file_out, interval=1e-6, samples=1000, time=2.5e-4, index=0, sample_mode="LINEAR"):
     col_t = index << 1
     col_v = col_t + 1
 
@@ -27,10 +119,10 @@ def do_parse(file_in, file_out, interval=1e-6, samples=1000, time=2.5e-4, index=
     # print(time_index)
 
     # time = np array with even intervals within provided time
-    time = np.linspace(0, time, num=time_index, endpoint=False)
+    time = np.linspace(0, time, num=time_index, endpoint=False, dtype=DTYPE)
     # print(time)
     # vals = np array with time_index number of zeroes
-    vals = np.zeros((time_index,))
+    vals = np.zeros((time_index,), dtype=DTYPE)
     # print(len(vals))
     # interp = select_func_gen(sample_mode)
 
@@ -42,8 +134,8 @@ def do_parse(file_in, file_out, interval=1e-6, samples=1000, time=2.5e-4, index=
 
         # initialize time and val with value of first output line
         # it should be zero, zero
-        tp = float(l[col_t])
-        vp = float(l[col_v])
+        tp = DTYPE(l[col_t])
+        vp = DTYPE(l[col_v])
         time[curr_index] = tp
         vals[curr_index] = vp
 
@@ -54,8 +146,8 @@ def do_parse(file_in, file_out, interval=1e-6, samples=1000, time=2.5e-4, index=
             
             # tp, vp = time and val from line
             l = line.strip().split(",")
-            tp = float(l[col_t])
-            vp = float(l[col_v])
+            tp = DTYPE(l[col_t])
+            vp = DTYPE(l[col_v])
 
             # First, check if the next time value is smaller than tp
             # No need for approximation, just add
@@ -116,10 +208,10 @@ if __name__ == "__main__":#
 
     data = []
     for line in lines:
-        values = [float(value) for value in line.split(",") if value]
+        values = [DTYPE(value) for value in line.split(",") if value]
         data.append(values)
 
-    data = np.array(data)
+    data = np.array(data, dtype=DTYPE)
     timestamp = data[:, 0]
     # print(timestamp)
     test_v = data[:, 1]

@@ -9,6 +9,8 @@ argparser.add_argument("input_json", type=str, help="Path to Yosys generated jso
 argparser.add_argument("cell_path", type=str, help="Path to standard cells library folder")
 argparser.add_argument("module", type=str, help="Module name")
 argparser.add_argument("outfile", type=str, help="Output file path")
+argparser.add_argument("-f", "--fullpaths", const=True, default=False, action="store_const", help="Use full paths in synthesis output")
+argparser.add_argument("-d", "--debug", const=True, default=False, action="store_const", help="Enable debug printing")
 
 ## JSON Parsing Nets --------------------------------
 
@@ -24,8 +26,9 @@ argparser.add_argument("outfile", type=str, help="Output file path")
 # OPTION 3: mix naming between bits and names
 
 def parse_nets(netname_dict):
-    netnames = {}
-    tieoffs  = {}
+    netnames = {} # bit       : netname
+    tieoffs  = {} # netname   : value
+    aliases  = {} # aliasname : netname
 
     for netname in netname_dict:
         net = netname_dict[netname]
@@ -41,26 +44,43 @@ def parse_nets(netname_dict):
             if len(net['bits']) == 1:
                 b = net['bits'][0]
                 if isinstance(b, str):
-                    tieoffs[netname] = int(b)
+                    if netname in tieoffs: 
+                        print(f"WARNING: net {netname} already in tieoffs {tieoffs[netname]}. Ignoring additional tie to {b}")
+                    else:
+                        tieoffs[netname] = int(b)
                 else:
-                    netnames[b] = netname
+                    if b in netnames:
+                        print(f"WARNING: bit {b} already named in netnames as <{netnames[b]}>. Ignoring additional name <{netname}>")
+                        aliases[netname] = netnames[b]
+                        # ALT print(f"WARNING: bit {b} already named in netnames as <{netnames[b]}>. Swapping additional name <{netname}>")
+                        # ALT aliases[netnames[b]] = netname
+                        # ALT netnames[b] = netname
+                    else:
+                        netnames[b] = netname
             else:
                 i = 0
                 for b in net['bits']:
                     bname = f"{netname}.{i}"
                     if isinstance(b, str):
-                        tieoffs[bname] = int(b)
+                        if bname in tieoffs:
+                            print(f"WARNING: net {bname} already in tieoffs {tieoffs[bname]}. Ignoring additional tie to {b}")
+                        else:
+                            tieoffs[bname] = int(b)
                     else:
-                        netnames[b] = bname
+                        if b in netnames:
+                            print(f"WARNING: bit {b} already named in netnames as <{netnames[b]}>. Ignoring additional name <{bname}>")
+                            aliases[bname] = netnames[b]
+                        else:
+                            netnames[b] = bname
                     i += 1
 
-    return netnames, tieoffs
+    return netnames, tieoffs, aliases
 
 ## JSON Parsing Cells -------------------------------
 
 def parse_cells(cell_dict):
-    types = {}
-    cells = {}
+    types = {} # std_cell_type : {}
+    cells = {} # cell_name     : {type:std_cell_type, conn=connections}
 
     i = 0
 
@@ -83,25 +103,54 @@ def parse_cells(cell_dict):
 
 def parse_cell_types(celltypes, cell_path, module_dict):
     all_pg_pins = set()
+    unified_spice = cell_path.endswith("spice")
 
+    if unified_spice:
+        # Read the consolidated spice file and parse all subcircuit definitions
+        subckt_definitions = {}
+        with open(cell_path, "r") as spice_file:
+            lines = spice_file.readlines()
+        
+        for i, line in enumerate(lines):
+            if line.startswith(".subckt"):
+                parts = line.split()
+                subckt_name = parts[1]
+                pins = parts[2:]
+                subckt_definitions[subckt_name] = {
+                    "pins": pins,
+                    "path": cell_path,
+                    "line_index": i
+                }
+
+    # Match cell types to subcircuit definitions
     for ctype in celltypes:
-        ccatg = ctype.split('_')[-2]
-        cpath = os.path.join(cell_path, ccatg, ctype + ".spice")
-        with open(cpath, "r") as file:
-            for line in file.readlines():
-                if line.startswith(".subckt"):
-                    pins = line.split()[2:]
-                    pg = []
-                    for pin in pins:
-                        if (pin not in module_dict[ctype]['ports']):
-                            pg.append(1)
-                            all_pg_pins.add(pin)
-                        else:
-                            pg.append(0)
+        if unified_spice:
+            if ctype not in subckt_definitions:
+                raise ValueError(f"Subcircuit definition for cell type {ctype} not found in {cell_path}")
+            else:
+                subckt_info = subckt_definitions[ctype]
+                pins = subckt_info["pins"]
+                pg = []
+        else:
+            ccatg = ctype.split('_')[-2]
+            cpath = os.path.join(cell_path, ccatg, ctype + ".spice")
+            rpath = os.path.join(os.path.basename(cell_path), ccatg, ctype + ".spice")
+            with open(cpath, "r") as file:
+                for line in file.readlines():
+                    if line.startswith(".subckt"):
+                        pins = line.split()[2:]
+                        pg = []
+                        break
 
-                    celltypes[ctype]['pins'] = list(zip(pins, pg))
-                    celltypes[ctype]['path'] = cpath
-                    break
+        for pin in pins:
+            if pin not in module_dict[ctype]['ports']:
+                pg.append(1)
+                all_pg_pins.add(pin)
+            else:
+                pg.append(0)
+
+            celltypes[ctype]['pins'] = list(zip(pins, pg))
+            celltypes[ctype]['path'] = cell_path if unified_spice else cpath if args.fullpaths else rpath
 
     return all_pg_pins
 
@@ -114,22 +163,29 @@ def gen_spice_inc(celltypes, file):
     for ctype, cell in celltypes.items():
         file.write(f".include {cell['path']}\n")
 
-def gen_spice_mod(celltypes, cells, netnames):
+def gen_spice_mod(celltypes, cells, netnames, ports, file):
     file.write("* Standard Cells\n")
 
     for cellname, cell in cells.items():
         ctype = celltypes[cell['type']]
-        ports = []
+        pins = []
 
         for pin, pg in ctype['pins']:
             if pg:
-                ports.append(pin)
+                pins.append(pin)  # Power or ground pin
             else:
-                ports.append(netnames[cell['conn'][pin][0]])
+                # Map connection to a port or net
+                conn = cell['conn'].get(pin, [])
+                if len(conn) == 1:
+                    pins.append(netnames.get(conn[0], f"NET{conn[0]}"))
+                elif len(conn) == 0:
+                    pins.append("0")  # Default to 0 if not connected
+                else:
+                    raise RuntimeError("Got more than one conn.")
 
-        file.write(f"x{cellname} {' '.join(ports)} {cell['type']}\n")
+        file.write(f"x{cellname} {' '.join(pins)} {cell['type']}\n")
 
-def gen_spice_ports(module, modulename, pg_pins, file):
+def gen_spice_ports(module, modulename, pg_pins, aliases, file):
     ports = {}
     mindex = 9999
 
@@ -139,12 +195,15 @@ def gen_spice_ports(module, modulename, pg_pins, file):
         bits = port['bits']
 
         if len(bits) == 1:
+            if portname in aliases: portname = aliases[portname]
             ports[bits[0]] = portname
             mindex = min(bits[0], mindex)
         else:
             i = 0
             for b in bits:
-                ports[b] = f"{portname}.{i}"
+                pname = f"{portname}.{i}"
+                if pname in aliases: pname = aliases[pname]
+                ports[b] = pname
                 mindex = min(b, mindex)
                 i += 1
 
@@ -155,6 +214,7 @@ def gen_spice_ports(module, modulename, pg_pins, file):
     pg_pins = sorted(pg_pins)
 
     file.write(f".subckt {modulename} {' '.join(plist)} {' '.join(pg_pins)}\n\n")
+    return ports
 
 def gen_spice_ties(tieoffs, pin_lo, pin_hi, file):
     i = 0
@@ -169,6 +229,7 @@ def gen_spice_ties(tieoffs, pin_lo, pin_hi, file):
 ## Main ---------------------------------------------
 
 if __name__ == '__main__':
+    print("Starting json2spice.py")
     args = argparser.parse_args()
 
     with open(args.input_json, "r") as file:
@@ -179,17 +240,23 @@ if __name__ == '__main__':
     except:
         RuntimeError(f"Module {args.module} not found.")
 
-    netnames, tieoffs = parse_nets(module['netnames'])
-    celltypes, cells  = parse_cells(module['cells'])
-    all_pg_pins       = parse_cell_types(celltypes, args.cell_path, data["modules"])
+    netnames, tieoffs, aliases = parse_nets(module['netnames'])
+    celltypes, cells           = parse_cells(module['cells'])
+    all_pg_pins                = parse_cell_types(celltypes, args.cell_path, data["modules"])
+
+    if args.debug: print("netnames",    netnames)
+    if args.debug: print("tieoffs",     tieoffs)
+    if args.debug: print("celltypes",   celltypes)
+    if args.debug: print("cells",       cells)
+    if args.debug: print("all_pg_pins", all_pg_pins)
 
     with open(args.outfile, "w") as file:
         file.write(f"* {args.module}.spice\n")
         file.write("* File autogenerated by json2spice.py\n\n")
 
         gen_spice_inc(celltypes, file)
-        gen_spice_ports(module, args.module, all_pg_pins, file)
-        gen_spice_mod(celltypes, cells, netnames)
+        ports = gen_spice_ports(module, args.module, all_pg_pins, aliases, file)
+        gen_spice_mod(celltypes, cells, netnames, ports, file)
         file.write("\n")
         gen_spice_ties(tieoffs, "VGND", "VPWR", file)
         file.write("\n.ends\n\n")

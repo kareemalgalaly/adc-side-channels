@@ -1,0 +1,192 @@
+Simulation of digital counter circuit synthesized with Yosys
+{assert pixels in (1, 5)}
+
+** Libraries ----------------------------------------
+
+{ifdef foss}
+** opencircuitdesign pdks install
+.lib "/foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice" {corner=tt}
+.include "/foss/pdk/sky130A/libs.ref/sky130_fd_sc_hs/spice/sky130_fd_sc_hs.spice"
+{else}
+.lib "models/sky130.lib.spice" {corner=tt}
+.include cells/a21oi/sky130_fd_sc_hs__a21oi_1.spice
+.include cells/and2/sky130_fd_sc_hs__and2_1.spice
+.include cells/and3/sky130_fd_sc_hs__and3_1.spice
+.include cells/and4/sky130_fd_sc_hs__and4_1.spice
+.include cells/clkinv/sky130_fd_sc_hs__clkinv_1.spice
+.include cells/dfxtp/sky130_fd_sc_hs__dfxtp_1.spice
+.include cells/inv/sky130_fd_sc_hs__inv_1.spice
+.include cells/mux2i/sky130_fd_sc_hs__mux2i_1.spice
+.include cells/nor2b/sky130_fd_sc_hs__nor2b_1.spice
+.include cells/nor2/sky130_fd_sc_hs__nor2_1.spice
+.include cells/nor3/sky130_fd_sc_hs__nor3_1.spice
+.include cells/o21a/sky130_fd_sc_hs__o21a_1.spice
+.include cells/o21bai/sky130_fd_sc_hs__o21bai_1.spice
+.include cells/o21ba/sky130_fd_sc_hs__o21ba_1.spice
+.include cells/xor2/sky130_fd_sc_hs__xor2_1.spice
+{endif}
+
+.include lib/register_array.spice
+.include lib/negedge_detector.spice
+
+** Singleton Modules --------------------------------
+
+{ifdef halfcounter}
+.include lib/counter_half.spice
+XCOUNTER clk reset cen count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 overflow vss vss vdd vdd counter_half 
+xcen    reset vss vss vdd vdd cen_d sky130_fd_sc_hs__inv_1
+xcen_ff clk cen_d vss vss vdd vdd cen sky130_fd_sc_hs__dfxtp_1
+{else}
+.include lib/counter.spice
+XCOUNTER clk reset count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 vss vss vdd vdd counter
+{endif}
+
+** Per Pixel Modules --------------------------------
+
+{for p in range(1, pixels+1)}
+* Instantiate edge detector module (detects negative edges of comparator signals)
+XEDGE_DETECTOR_{p} clk reset comp.{p}_buffered enable vss vss vdd vdd negedge_detector
+
+* Instantiate registers module (stores values based on edge detector output)
+XREGISTER_ARRAY_{p} clk reset enable count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 digout_{p}.0 digout_{p}.1 digout_{p}.2 digout_{p}.3 digout_{p}.4 digout_{p}.5 digout_{p}.6 digout_{p}.7 vss vss vdd vdd register_array
+
+{ifdef protected}
+XEDGE_DETECTOR_P_{p} clk reset comp.{p}_buffered_p enable_p vss vss vdd vdd negedge_detector
+{if protected == "V2"}
+XINV_EN_{p}_p enable vss vss vdd vdd enable_p_act sky130_fd_sc_hs__inv_1
+XREGISTER_ARRAY_P_{p} clk reset enable_p_act count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 digfls_{p}.0 digfls_{p}.1 digfls_{p}.2 digfls_{p}.3 digfls_{p}.4 digfls_{p}.5 digfls_{p}.6 digfls_{p}.7 vss vss vdd vdd register_array
+{else}
+XREGISTER_ARRAY_P_{p} clk reset enable_p count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 digfls_{p}.0 digfls_{p}.1 digfls_{p}.2 digfls_{p}.3 digfls_{p}.4 digfls_{p}.5 digfls_{p}.6 digfls_{p}.7 vss vss vdd vdd register_array
+{endif}
+
+{endif}
+* ! Synthesizer optimizes the inversion in Verilog input. Inverters added manually for now.
+XINV_{p}_1 comp.{p}_toggl  vss vss vdd vdd comp.{p}_1 sky130_fd_sc_hs__inv_1
+XINV_{p}_2 comp.{p}_1      vss vss vdd vdd comp.{p}_2 sky130_fd_sc_hs__inv_1
+XINV_{p}_3 comp.{p}_2      vss vss vdd vdd comp.{p}_3 sky130_fd_sc_hs__inv_1
+XINV_{p}_4 comp.{p}_3      vss vss vdd vdd comp.{p}_buffered sky130_fd_sc_hs__inv_1
+{ifdef protected}
+
+XINV_{p}_1_P comp.{p}_toggl_p  vss vss vdd vdd comp.{p}_1_p sky130_fd_sc_hs__inv_1
+XINV_{p}_2_P comp.{p}_1_p      vss vss vdd vdd comp.{p}_2_p sky130_fd_sc_hs__inv_1
+XINV_{p}_3_P comp.{p}_2_p      vss vss vdd vdd comp.{p}_3_p sky130_fd_sc_hs__inv_1
+XINV_{p}_4_P comp.{p}_3_p      vss vss vdd vdd comp.{p}_buffered_p sky130_fd_sc_hs__inv_1
+{endif}
+{endfor}
+
+** Control Signals ----------------------------------
+
+* Voltage sources
+.param vdd=1.8
+Vdd vdd 0 {vdd}
+
+.param vss=0
+Vss vss 0 {vss}
+
+* Clock and Reset signals (1MHz clock)
+Vrst    reset   0   pulse   {vss}   {vdd}   0u      10n  10n    2u    260u
+Vclk    clk     0   pulse   {vss}   {vdd}   1u      10n  10n  0.5u      1u
+
+* Model Clocked Comparator
+{for p in range(1, pixels+1)}
+Vcomp{p} comp.{p}_ideal 0 pulse {vss} {vdd} 32u 5n 5n 224u 260u
+Bcomp{p} comp.{p}_toggl 0 V = V(comp.{p}_ideal) > {vdd/2} ? V(clk) : {vss}
+{ifdef protected}
+Bcomp{p}_p comp.{p}_toggl_p 0 V = V(comp.{p}_ideal) > {vdd/2} ? {vss} : V(clk)
+{endif}
+{endfor}
+
+** Simulation Control -------------------------------
+
+.option method=Gear
+.control
+;set color0=white
+set color1=rgb:50/50/50
+
+{randvec_1=compose randvec_1 values 64  0 255}
+{if pixels == 5}
+{randvec_2=compose randvec_2 values 16  0 255}
+{randvec_3=compose randvec_3 values 128 0 255}
+{randvec_4=compose randvec_4 values 96  0 255}
+{randvec_5=compose randvec_5 values 32  0 255}
+{endif}
+
+let treset  = 2u
+let tgap    = 2u
+let period  = 1u
+let digmax  = 256
+let istart  = 0
+let istop   = length(randvec_1)
+let tmax    = digmax * period + treset + tgap
+
+set ext = ".txt"
+set dlm = "_"
+
+{ifndef plot}
+shell mkdir -p {outdir}
+set wr_singlescale
+set wr_vecnames
+{endif}
+
+while istart < istop
+    echo
+    echo Running Sweep $&istart/$&istop
+    echo
+
+    let iseed = istart + {seed}
+    {for p in range(1, pixels+1)}
+    let dvalue_{p} = randvec_{p}[istart]
+    let tstart = treset + dvalue_{p} * period
+    let twidth = tmax - tstart - tgap
+    alter @Vcomp{p}[pulse] [ 0 1.8 $&tstart 5n 5n $&twidth $&tmax ]
+    {endfor}
+
+    tran 500n 520u uic
+    
+    {ifdef plot}
+    let digit_count = count.0/256 + count.1/128 + count.2/64 + count.3/32 + count.4/16 + count.5/8 + count.6/4 + count.7/2
+    let digit_sampl = digout_1.0/256 + digout_1.1/128 + digout_1.2/64 + digout_1.3/32 + digout_1.4/16 + digout_1.5/8 + digout_1.6/4 + digout_1.7/2
+
+    plot title 'Current Trace' -I(vdd)
+    plot title 'Digital Outputs' digit_count digit_sampl reset comp.1_ideal
+    {else}
+
+    let cut-tstart = 260u
+    let cut-tstop = 520u
+    cutout
+
+    {if pixels == 5}
+    wrdata {outdir}/sky_raw_s$&iseed$dlm$&dvalue_1$dlm$&dvalue_2$dlm$&dvalue_3$dlm$&dvalue_4$dlm$&dvalue_5$ext -I(vdd)
+    {else}
+    wrdata {outdir}/sky_raw_s$&iseed$dlm$&dvalue_1$ext -I(vdd)
+    {endif}
+
+    let lin-tstart = 260u
+    let lin-tstop  = 520u
+    let lin-tstep  = 100n
+    linearize I(vdd)
+
+    {if pixels == 5}
+    wrdata {outdir}/sky_lin_s$&iseed$dlm$&dvalue_1$dlm$&dvalue_2$dlm$&dvalue_3$dlm$&dvalue_4$dlm$&dvalue_5$ext -I(vdd)
+    {else}
+    wrdata {outdir}/sky_lin_s$&iseed$dlm$&dvalue_1$ext -I(vdd)
+    {endif}
+
+    destroy all
+    {endif}
+
+    let istart = istart + 1
+end
+{ifndef plot}
+echo
+echo -----------------------------------------
+echo All simulations completed. 
+echo Exiting...
+echo -----------------------------------------
+echo
+exit
+{endif}
+.endc
+
+.END
+
