@@ -10,10 +10,10 @@ if [ "$1" = "clean" ]; then
     [ "$1" = "" ] && exit 0
 fi
 
-corners=( tt ) # ss ff sf fs 
-flavors=( x l ) # xx px xm pm 
+corners=( ss ) # ss ff sf fs 
+flavors=( x ) # x l
 pixels=( 1 )
-seeds=( 0 128 )
+seeds=( 1024 1152 ) # 0 128 256 tt 384 512 l 1024 1152 <1280 1408>
 
 nseed=128
 
@@ -25,7 +25,7 @@ for seed in ${seeds[@]}; do
         [ -f seeds_$seed ] || python -c "print('randpx0=compose randpx0 values '+' '.join(str(i/256) for i in range(128, 256)))" > seeds_$seed
 
     else
-        [ -f seeds_$seed ] || python ../../script/gen_seeds.py -s $seed -p 1 -i 0 -r 1           -n $nseed       --prefix randpx > seeds_$seed
+        [ -f seeds_$seed ] || python ../../script/gen_seeds.py -s $seed -p 5 -i 0 -r 1           -n $nseed       --prefix randpx > seeds_$seed
     fi
 
     [ -f seeds_rr_$seed ]  || python ../../script/gen_seeds.py -s $seed -p 5 -i 0 -r 1.8 -t 2 -d -n $((nseed*4)) --prefix randvc > seeds_rr_$seed
@@ -45,7 +45,7 @@ for flavor in ${flavors[@]}; do
     esac
 
     for pixel in ${pixels[@]}; do
-        pxl="pixel=eval:$pixel"
+        pxl="pixels=eval:$pixel"
 
         echo Building demo_${pixel}_tt_${flavor}.cir
         python ../../script/template_engine.py analog.temp.cir -s $flv $pxl $foss seed=0 plot= -o demo_${pixel}_tt_${flavor}.cir
