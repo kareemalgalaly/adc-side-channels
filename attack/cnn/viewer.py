@@ -8,8 +8,8 @@ FIGY = 6
 
 ## Args + DB Info -----------------------------------
 
-argparser.add_argument("-t", "--traces", type=int, default=[1], nargs="+", help="Trace to plot")
-argparser.add_argument("-d", "--datasets", type=str, default=["a1u_tt:min"], nargs="+", help="Datasets to extract traces for plotting")
+argparser.add_argument("-T", "--traces", type=int, default=[1], nargs="+", help="Trace to plot")
+argparser.add_argument("-D", "--datasets", type=str, default=["a1u_tt:min"], nargs="+", help="Datasets to extract traces for plotting")
 args = argparser.parse_args()
 
 regression = Regression(args)

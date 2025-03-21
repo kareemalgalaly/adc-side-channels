@@ -1,4 +1,4 @@
-from dataloader import TraceDatasetBuilder
+from dataloader import TraceDatasetBuilder, TraceInfo
 from cnn_gen import GenericCNN
 import json
 #import pprint
@@ -233,7 +233,13 @@ class Dataset(HashableBase):
     
     def get_trace(self, label, index=0, bit=-1):
         dataset = self.builder.dataset if bit == -1 else self.builder.datasets[bit]
-        return dataset.get_by_label(label, index=index)
+        if label != -1:
+            return dataset.get_by_label(label, index=index)
+        
+        (sum, start, stop), label = dataset.get_item(0)
+        for i in range(1, len(dataset)):
+            sum += dataset[i][0]
+        return TraceInfo(sum / len(dataset), start, stop)
 
 class RawDataset(Dataset):
     def __init__(self, name, info, defaults):
