@@ -1,0 +1,47 @@
+Test circuit for d_process
+
+** Analog Control Signals ----------------------------------
+*vrst    reset   0   pulse   0.0   1.8   0u      10n  10n    2u    260u
+*ven     en      0   pulse   0.0   1.8   0u      10n  10n    1u     60u
+*vclk    clk     0   pulse   0.0   1.8   1u      10n  10n  0.5u      1u
+
+*abridge1 [reset clk en] [dreset dclk den] atod 
+*.model atod adc_bridge(in_low=0.2 in_high=1.6)
+
+** Digital Control Signals ---------------------------------
+
+aclk 0 dclk   d_clkgen
+arst 0 dreset d_rstgen
+aen  0 den    d_en_gen
+.model d_clkgen d_osc(cntl_array = [-1 1] freq_array = [1e6 1e6]
++                     duty_cycle = 0.5 init_phase = 180.0)
+
+.model d_rstgen d_osc(cntl_array = [-1 1] freq_array = [{1e6/260} {1e6/260}]
++                     duty_cycle = {1/260} init_phase = 0)
+
+.model d_en_gen d_osc(cntl_array = [-1 1] freq_array = [{4e6/260} {4e6/260}]
++                     duty_cycle = {4/260} init_phase = 0)
+
+abridge2 [dreset dclk den] [reset clk en] dtoa 
+.model dtoa dac_bridge(out_low=0 out_high=1.8)
+
+** D_Process Blocks ----------------------------------------
+acounter null dclk dreset [count0 count1 count2 count3 count4 count5 count6 count7] proc_counter
+.model proc_counter d_process (process_file="/home/kareem/miniconda3/envs/pykit/bin/python" process_params=["counter.py"])
+
+aregister [den count0 count1 count2 count3 count4 count5 count6 count7] dclk dreset [pixel0 pixel1 pixel2 pixel3 pixel4 pixel5 pixel6 pixel7] proc_register
+.model proc_register d_process (process_file="/home/kareem/miniconda3/envs/pykit/bin/python" process_params=["rarray.py"])
+
+** Control -------------------------------------------------
+.tran 0.5u 512u
+
+.control
+run
+edisplay
+*eprvcd dclk dreset count0 count1 count2 count3 count4 count5 count6 count7 den > dump.vcd
+eprvcd dclk dreset count0 count1 count2 count3 count4 count5 count6 count7 den pixel0 pixel1 pixel2 pixel3 pixel4 pixel5 pixel6 pixel7 > dump.vcd
+shell gtkwave dump.vcd
+.endc
+
+.end
+
