@@ -149,6 +149,16 @@
             "sample_interval" : 0.1e-6,
             "sample_duration" : 256e-6
         },
+        "analog_1px_tt_xl" : {
+            "path" : "analog_1px_tt_xl",
+            "type" : "sampled",
+            "format"  : "raw_s\\d+_((0\\.)?\\d+)\\.txt",
+            "columns" : 1,
+            "label"   : "lambda gs: int(round(float(gs[0])*256))",
+            "sample_mode"     : ["MIN", "MAX"],
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 256e-6
+        },
         "analog_1px_tt_px" : {
             "path" : "analog_1px_tt_px",
             "type" : "sampled",
@@ -179,8 +189,18 @@
             "sample_interval" : 0.1e-6,
             "sample_duration" : 256e-6
         },
-        "analog_1_tt_x" : {
-            "path" : "/home/kareem/Projects/adc-side-channels/analog/analog_protected/outfiles/analog_1_tt_x",
+        "analog_1_tt1_x" : {
+            "path" : "/home/kareem/Projects/adc-side-channels/analog/analog_protected/outfiles/analog_1_tt1_x",
+            "type" : "sampled",
+            "format"  : "raw_s\\d+_((0\\.)?\\d+).txt",
+            "columns" : 1,
+            "label"   : "lambda gs: int(round(float(gs[0])*256))",
+            "sample_mode"     : ["MIN", "MAX"],
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 256e-6
+        },
+        "analog_1_tt2_x" : {
+            "path" : "/home/kareem/Projects/adc-side-channels/analog/analog_protected/outfiles/analog_1_tt2_x",
             "type" : "sampled",
             "format"  : "raw_s\\d+_((0\\.)?\\d+).txt",
             "columns" : 1,
@@ -273,8 +293,48 @@
             "max_epochs"    : 20000
         },
         {
-            "desc"          : "Test 1A: A1 paper : unprotected",
+            "desc"          : "Table II BW, Table III BW unprot",
             "skip"          : false,
+            "networks"      : ["paper"],
+            "datasets"      : ["analog_1px_tt_xx:max"],
+            "test_dataset"  : ["analog_1px_tt_xm:max", "analog_1px_tt_xl:max", "analog_1_tt2_x:max", "analog_1_sf_x:max", "analog_1_tt_l:max"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.0002,
+            "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "Table II SE, Table III SE unprot",
+            "skip"          : false,
+            "networks"      : ["paper_se"],
+            "datasets"      : ["analog_1px_tt_xx:max"],
+            "test_dataset"  : ["analog_1px_tt_xm:max", "analog_1px_tt_xl:max", "analog_1_tt2_x:max", "analog_1_sf_x:max", "analog_1_tt_l:max"],
+            "learning_rate" : [0.001],
+            "learning_decay": 0.0005,
+            "max_epochs"    : 20000
+        },
+        {
+            "desc"          : "Table III BW prot",
+            "skip"          : false,
+            "networks"      : ["paper"],
+            "datasets"      : ["analog_1_tt1_x:max"],
+            "test_dataset"  : ["analog_1_tt2_x:max", "analog_1_sf_x:max", "analog_1_tt_l:max"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.0004,
+            "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "Table III SE prot",
+            "skip"          : false,
+            "networks"      : ["paper_se"],
+            "datasets"      : ["analog_1_tt1_x:max"],
+            "test_dataset"  : ["analog_1_tt2_x:max", "analog_1_sf_x:max", "analog_1_tt_l:max"],
+            "learning_rate" : [0.01],
+            "learning_decay": 0.0002,
+            "max_epochs"    : 20000
+        },
+        {
+            "desc"          : "Test 1A: A1 paper : unprotected",
+            "skip"          : true,
             "networks"      : ["paper"],
             "datasets"      : ["analog_1px_tt_xx:max"],
             "test_dataset"  : "analog_1px_tt_xm:max",
@@ -284,12 +344,12 @@
         },
         {
             "desc"          : "Test 1B: A1 paper_se : unprotected",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["paper_se"],
             "datasets"      : ["analog_1px_tt_xx:max"],
             "test_dataset"  : "analog_1px_tt_xm:max",
             "learning_rate" : [0.001],
-            "learning_decay": 0.0005,
+            "learning_decay": 0.001,
             "max_epochs"    : 20000
         },
         {
@@ -314,7 +374,7 @@
         },
         {
             "desc"          : "Test 2A: A1 paper : dummy. NOTE: params from se seem to work maybe better",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["paper"],
             "datasets"      : ["analog_1px_tt_px:max"],
             "test_dataset"  : "analog_1px_tt_pm:max",
@@ -324,7 +384,7 @@
         },
         {
             "desc"          : "Test 2B: A1 paper_se : dummy",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["paper_se"],
             "datasets"      : ["analog_1px_tt_px:max"],
             "test_dataset"  : "analog_1px_tt_pm:max",
@@ -334,7 +394,7 @@
         },
         {
             "desc"          : "Test 3A: A1 paper : unprotected attack dummy",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["paper"],
             "datasets"      : ["analog_1px_tt_xx:max"],
             "test_dataset"  : "analog_1px_tt_px:max",
@@ -344,7 +404,7 @@
         },
         {
             "desc"          : "Test 3B: A1 paper_se : unprotected attack dummy",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["paper_se"],
             "datasets"      : ["analog_1px_tt_xx:max"],
             "test_dataset"  : "analog_1px_tt_px:max",
@@ -354,20 +414,40 @@
         },
         {
             "desc"          : "Test 3C: A1 paper : unprotected attack protect",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["paper"],
             "datasets"      : ["analog_1px_tt_xx:max"],
-            "test_dataset"  : "analog_1_tt_x:max",
+            "test_dataset"  : "analog_1_tt2_x:max",
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.0002,
+            "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "Test 3C3: A1 paper : unprotected attack unprotect layout",
+            "skip"          : true,
+            "networks"      : ["paper"],
+            "datasets"      : ["analog_1px_tt_xx:max"],
+            "test_dataset"  : ["analog_1px_tt_xx:max","analog_1px_tt_xl:max","analog_1_sf_x:max"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.0002,
+            "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "Test 3C2: A1 paper : unprotected attack protect layout",
+            "skip"          : true,
+            "networks"      : ["paper"],
+            "datasets"      : ["analog_1px_tt_xx:max"],
+            "test_dataset"  : "analog_1_sf_x:max",
             "learning_rate" : [0.0003],
             "learning_decay": 0.0002,
             "max_epochs"    : 5000
         },
         {
             "desc"          : "Test 3D: A1 paper_se : unprotected attack protect",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["paper_se"],
             "datasets"      : ["analog_1px_tt_xx:max"],
-            "test_dataset"  : "analog_1_tt_x:max",
+            "test_dataset"  : "analog_1_tt1_x:max",
             "learning_rate" : [0.001],
             "learning_decay": 0.0005,
             "max_epochs"    : 20000
@@ -396,33 +476,74 @@
         },
         {
             "desc"          : "Test 5A: A1 paper : protected vs self",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["paper"],
-            "datasets"      : ["analog_1_tt_x:max"],
-            "test_dataset"  : "analog_1_tt_x:max",
+            "datasets"      : ["analog_1_tt1_x:max"],
+            "test_dataset"  : "analog_1_tt2_x:max",
             "train_split"   : 0.5,
             "learning_rate" : [0.0003],
             "learning_decay": 0.0004,
             "max_epochs"    : 5000
         },
         {
-            "desc"          : "Test 5: A1 paper : protected vs similar corner",
-            "skip"          : false,
+            "desc"          : "Test 5B: A1 paper : protected vs similar corner",
+            "skip"          : true,
             "networks"      : ["paper"],
-            "datasets"      : ["analog_1_tt_x:max"],
+            "datasets"      : ["analog_1_tt1_x:max"],
             "test_dataset"  : "analog_1_ss_x:max",
             "learning_rate" : [0.0003],
             "learning_decay": 0.0004,
             "max_epochs"    : 5000
         },
         {
-            "desc"          : "Test 5: A1 paper : protected vs skewed corner",
-            "skip"          : false,
+            "desc"          : "Test 5C: A1 paper : protected vs skewed corner",
+            "skip"          : true,
             "networks"      : ["paper"],
-            "datasets"      : ["analog_1_tt_x:max"],
+            "datasets"      : ["analog_1_tt1_x:max"],
             "test_dataset"  : "analog_1_sf_x:max",
             "learning_rate" : [0.0003],
             "learning_decay": 0.0004,
+            "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "Test 5D: A1 paper : protected vs layout",
+            "skip"          : true,
+            "networks"      : ["paper"],
+            "datasets"      : ["analog_1_tt1_x:max"],
+            "test_dataset"  : "analog_1_tt_l:max",
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.0004,
+            "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "Test 6A: A1 paper : protected vs self",
+            "skip"          : true,
+            "networks"      : ["paper_se"],
+            "datasets"      : ["analog_1_tt1_x:max"],
+            "test_dataset"  : "analog_1_tt2_x:max",
+            "train_split"   : 0.5,
+            "learning_rate" : [0.001],
+            "learning_decay": 0.0005,
+            "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "Test 6B: A1 paper : protected vs similar corner",
+            "skip"          : true,
+            "networks"      : ["paper_se"],
+            "datasets"      : ["analog_1_tt1_x:max"],
+            "test_dataset"  : "analog_1_ss_x:max",
+            "learning_rate" : [0.05],
+            "learning_decay": 0.0005,
+            "max_epochs"    : 20000
+        },
+        {
+            "desc"          : "Test 6C: A1 paper : protected vs skewed corner",
+            "skip"          : true,
+            "networks"      : ["paper_se"],
+            "datasets"      : ["analog_1_tt1_x:max"],
+            "test_dataset"  : "analog_1_sf_x:max",
+            "learning_rate" : [0.001],
+            "learning_decay": 0.0005,
             "max_epochs"    : 5000
         },
         {

@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 DTYPE = np.float32
 
 HIWARN = 80e-3
+warn = False
 
 def select_func_gen(mode):
     def bmin(t1, v1, t2, v2, t): return v1
@@ -70,7 +71,7 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0
 
             if stim >= wtim:
                 nval = f(val_win)
-                if nval > HIWARN: print(f"High value: Standard, {val_win}")
+                if nval > HIWARN and warn: print(f"High value: Standard, {val_win}")
                 val_arr.append(nval)
                 tim_arr.append(wtim - sample_interval/2)
 
@@ -78,7 +79,7 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0
                 wtim += sample_interval
                 while stim > wtim:
                     nval = l(ptim, val_arr[-1], stim, value, (len(val_arr)+0.5)*sample_interval)
-                    if nval > HIWARN: print(f"High value: Large Timegap, l({ptim}, {val_arr[-1]}, {stim}, {value}, {(len(val_arr)+0.5)*sample_interval})")
+                    if nval > HIWARN and warn: print(f"High value: Large Timegap, l({ptim}, {val_arr[-1]}, {stim}, {value}, {(len(val_arr)+0.5)*sample_interval})")
                     val_arr.append(nval)
                     tim_arr.append(wtim - sample_interval/2)
                     wtim += sample_interval
@@ -92,7 +93,7 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0
 
         if (len(val_arr) < max_samples) and val_win:
             nval = f(val_win)
-            if nval > HIWARN: print(f"High value: Normal Timegap, {val_win}")
+            if nval > HIWARN and warn: print(f"High value: Normal Timegap, {val_win}")
             val_arr.append(nval)
             tim_arr.append(ptim)
 
@@ -105,7 +106,7 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0
             wtim = wtim + sample_interval/2
             for i in range(max_samples - len(val_arr)):
                 val_arr.append(y1:=((wtim - x1)*m+y1))
-                if y1 > HIWARN: print(f"High Value: Win empty, {wtim} {x1} {m} {y1}")
+                if y1 > HIWARN and warn: print(f"High Value: Win empty, {wtim} {x1} {m} {y1}")
                 tim_arr.append(x1:=wtim)
                 wtim += sample_interval
 

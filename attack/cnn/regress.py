@@ -299,7 +299,10 @@ class Test(HashableBase):
         self.datasets = [datasets[d] for d in info['datasets']]
 
         self.description   = info.get('desc', "")
-        self.test_dataset  = datasets[info['test_dataset']] if 'test_dataset' in info else self.datasets[0]
+        if 'test_dataset' in info:
+            self.test_dataset = [datasets[td] for td in info['test_dataset']] if isinstance(info['test_dataset'], list) else [info['test_dataset']]
+        else:
+            self.test_dataset = [self.datasets[0]]
         self.skip          = info.get('skip',           False)
         self.learning_rate = info.get('learning_rate',  defaults['learning_rate'])
         self.learning_decay= info.get('learning_decay', defaults['learning_decay'])
@@ -338,8 +341,8 @@ class Test(HashableBase):
         that.test_split    = self.test_split
         return that
 
-    def get_csv(self):
-        return f"{self.learning_rate},{self.learning_decay},{self.max_learn_rate},{self.optimizer},{self.batch_size},{self.max_epochs},{self.max_accuracy},{self.max_loss},{self.test_dataset.name},{self.train_split}"
+    def get_csv(self, test_index=0):
+        return f"{self.learning_rate},{self.learning_decay},{self.max_learn_rate},{self.optimizer},{self.batch_size},{self.max_epochs},{self.max_accuracy},{self.max_loss},{self.test_dataset[test_index].name},{self.train_split}"
 
     def get_optimizer(self, cnn):
         if self.optimizer == 'Adam':
@@ -459,9 +462,10 @@ class Regression:
 
         for test in self.tests:
             if not re.match(args.test, test.description): continue
-            if test.test_dataset not in test.datasets:
-                self.build_datasets(test.test_dataset, device=device)
-                test.test_dataset.builder.build_dataloaders(test=1, proportion=test.test_split, batch_size=test.batch_size, shuffle=True)
+            for test_dataset in test.test_dataset:
+                if test_dataset not in test.datasets:
+                    self.build_datasets(test_dataset, device=device)
+                    test_dataset.builder.build_dataloaders(test=1, proportion=test.test_split, batch_size=test.batch_size, shuffle=True)
 
             for dataset in test.datasets:
                 self.build_datasets(dataset, device=device)
@@ -624,35 +628,36 @@ class Regression:
 
         # Find final accuracy on test dataset
 
-        if test.test_dataset in test.datasets:
-            test.test_dataset.builder.build_dataloaders(test=1, proportion=test.test_split, batch_size=test.batch_size, shuffle=True)
+        for ti, test_dataset in enumerate(test.test_dataset):
+            if test_dataset in test.datasets:
+                test_dataset.builder.build_dataloaders(test=1, proportion=test.test_split, batch_size=test.batch_size, shuffle=True)
 
-        dataloader = test.test_dataset.builder.dataloader if bit == "_" else test.test_dataset.builder.dataloaders[bit]
-        correct = 0
-        for inputs, labels in dataloader:
-            if device:
-                inputs = inputs.cuda()
-                labels = labels.cuda()
+            dataloader = test_dataset.builder.dataloader if bit == "_" else test_dataset.builder.dataloaders[bit]
+            correct = 0
+            for inputs, labels in dataloader:
+                if device:
+                    inputs = inputs.cuda()
+                    labels = labels.cuda()
 
-            inputs = network.preprocess(inputs)
+                inputs = network.preprocess(inputs)
 
-            # Forward
+                # Forward
 
-            optimizer.zero_grad()
-            output = cnn(inputs)
+                optimizer.zero_grad()
+                output = cnn(inputs)
 
-            if single_ended:
-                labels = labels.reshape(output.shape)
-                correct += (output.round() == labels.round()).sum()
-            else:
-                _, predicted = torch.max(output, 1)
-                correct += (predicted == labels).sum()
-        test_accuracy = correct / len(test.test_dataset.builder.dataset)
-        progress.update(epoch, tst=round(float(test_accuracy), 4))
-        progress.stop(epoch+1)
+                if single_ended:
+                    labels = labels.reshape(output.shape)
+                    correct += (output.round() == labels.round()).sum()
+                else:
+                    _, predicted = torch.max(output, 1)
+                    correct += (predicted == labels).sum()
+            test_accuracy = correct / len(test_dataset.builder.dataset)
+            progress.update(epoch, tst=round(float(test_accuracy), 4))
+            progress.stop(epoch+1)
 
-        with open(self.csv, "a") as file:
-            file.write(f"{run_hash},{network.name},{network},{dataset.name},{dataset},{test},{bit},{facc},{pacc},{test_accuracy},{loss},{epoch},{runtime},{job_launch_time}\n")
+            with open(self.csv, "a") as file:
+                file.write(f"{run_hash},{network.name},{network},{dataset.name},{dataset},{test.hash()},{test.get_csv(ti)},{bit},{facc},{pacc},{test_accuracy},{loss},{epoch},{runtime},{job_launch_time}\n")
 
 # Main ###########################################
 
