@@ -30,7 +30,7 @@ fig, ax = plt.subplots(1, figsize=(FIGX, FIGY))
 
 ## Main ---------------------------------------------
 
-ax.set_title(f"Diff {args.dataset1}[{args.trace1}]-{args.dataset2}[{args.trace2}]")
+ax.set_title(f"Diff {args.dataset1}[{args.trace1}]-{args.dataset2}[{args.trace2 if args.trace2 != -1 else 'avg'}]")
 
 info1  = dataset1.get_trace(args.trace1)
 trace1, start, stop = info1
