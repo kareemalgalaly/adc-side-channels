@@ -90,7 +90,7 @@ while istart < istop
     {if pixels == 5}
     wrdata {outdir=outfiles/analog}/raw_s$&iseed$dlm$&vact0$dlm$&vact1$dlm$&vact2$dlm$&vact3$dlm$&vact4$ext -I(vdda)
     {else}
-    wrdata {outdir=outfiles/analog}/raw_s$&iseed$dlm$&vact$ext -I(vdda)
+    wrdata {outdir=outfiles/analog}/raw_s$&iseed$dlm$&vact0$ext -I(vdda)
     {endif}
     {else}
     plot outpp0 outnp0
@@ -111,7 +111,7 @@ while istart < istop
     {if pixels == 5}
     wrdata {outdir=outfiles/analog}/lin_s$&iseed$dlm$&vact0$dlm$&vact1$dlm$&vact2$dlm$&vact3$dlm$&vact4$ext -I(vdda)
     {else}
-    wrdata {outdir=outfiles/analog}/lin_s$&iseed$dlm$&vact$ext -I(vdda)
+    wrdata {outdir=outfiles/analog}/lin_s$&iseed$dlm$&vact0$ext -I(vdda)
     {endif}
     {else}
     ;plot i(v.xrmpp.vim) i(v.xrmpn.vim)

@@ -10,12 +10,22 @@ if [ "$1" = "clean" ]; then
     [ "$1" = "" ] && exit 0
 fi
 
-corners=( ss ) # ss ff sf fs 
-flavors=( x ) # x l
 pixels=( 1 )
-seeds=( 1024 1152 ) # 0 128 256 tt 384 512 l 1024 1152 <1280 1408>
+flavors=( x )
+
+# tt sf ss
+# 0 128 256 tt 384 512 l 1024 1152 <1280 1408>
 
 nseed=128
+
+case $1 in
+    tt1 ) corners=( tt ) ; seeds=$(seq 0    $nseed  896 ) ;;
+    tt2 ) corners=( tt ) ; seeds=$(seq 1024 $nseed 1920 ) ;;
+    ttl ) corners=( tt ) ; seeds=$(seq 1280 $nseed 1920 ) ; flavors=( l ) ;;
+    ss  ) corners=( ss ) ; seeds=$(seq 1024 $nseed 1920 ) ;;
+    sf  ) corners=( sf ) ; seeds=$(seq 1024 $nseed 1920 ) ;;
+esac
+
 
 for seed in ${seeds[@]}; do
     if [ "$seed" = "0" ]; then 

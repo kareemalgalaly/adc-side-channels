@@ -1,10 +1,12 @@
 Simulation of digital counter circuit synthesized with Yosys
-{assert pixels in (1, 5, 10)}
+{default pixels   1}
+{default protect  0}
+{assert  pixels > 0}
+{define  getbus func:name,suffix="",rng=range(8): " ".join(name+suffix+"."+str(i) for i in rng)}
 
-** Libraries ----------------------------------------
+** Libraries --------------------------------------------------
 
-{ifdef foss}
-** opencircuitdesign pdks install
+{ifxst /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice}
 .lib "/foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice" {corner=tt}
 .include "/foss/pdk/sky130A/libs.ref/sky130_fd_sc_hs/spice/sky130_fd_sc_hs.spice"
 {else}
@@ -26,55 +28,68 @@ Simulation of digital counter circuit synthesized with Yosys
 .include cells/xor2/sky130_fd_sc_hs__xor2_1.spice
 {endif}
 
-.include lib/register_array.spice
-.include lib/negedge_detector.spice
+.inc lib/register_array.spice    {ifdef regarry_header model else synth}
+.inc lib/negedge_detector.spice ;{ifdef edetect_header model else synth}
+.lib lib/counter_half.spice      {ifdef counter_header model else synth}
 
-** Singleton Modules --------------------------------
+** Counter -------------------------------------------------
 
-{ifdef halfcounter}
-.include lib/counter_half.spice
-XCOUNTER clk reset cen count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 overflow vss vss vdd vdd counter_half 
+{ifdef counter_header}
+* TODO 
+{else}
+XCOUNTER clk reset cen {getbus("count")} overflow vss vss vdd vdd counter_half 
 xcen    reset vss vss vdd vdd cen_d sky130_fd_sc_hs__inv_1
 xcen_ff clk cen_d vss vss vdd vdd cen sky130_fd_sc_hs__dfxtp_1
-{else}
-.include lib/counter.spice
-XCOUNTER clk reset count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 vss vss vdd vdd counter
 {endif}
 
-** Per Pixel Modules --------------------------------
+** Per Pixel Modules ---------------------------------------
 
 {for p in range(1, pixels+1)}
-* Instantiate edge detector module (detects negative edges of comparator signals)
+{ifdef edetect_header}
+* TODO
+{else}
 XEDGE_DETECTOR_{p} clk reset comp.{p}_buffered enable vss vss vdd vdd negedge_detector
+{endif}
 
-* Instantiate registers module (stores values based on edge detector output)
-XREGISTER_ARRAY_{p} clk reset enable count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 digout_{p}.0 digout_{p}.1 digout_{p}.2 digout_{p}.3 digout_{p}.4 digout_{p}.5 digout_{p}.6 digout_{p}.7 vss vss vdd vdd register_array
+{ifdef register_header}
+* TODO 
+{else}
+XREGISTER_{p}      clk reset enable {getbus("count")} {getbus("digout_", p)} vss vss vdd vdd register_array
+{endif}
 
-{ifdef protected}
+{ifdef cbuf_header}
+vcomp_buff comp.{p}_toggl comp.{p}_buffered 0
+{else}
+XINV_{p}_1 comp.{p}_toggl  vss vss vdd vdd comp.{p}_1 sky130_fd_sc_hs__inv_1
+XINV_{p}_2 comp.{p}_1      vss vss vdd vdd comp.{p}_2 sky130_fd_sc_hs__inv_2
+XINV_{p}_3 comp.{p}_2      vss vss vdd vdd comp.{p}_3 sky130_fd_sc_hs__inv_4
+XINV_{p}_4 comp.{p}_3      vss vss vdd vdd comp.{p}_buffered sky130_fd_sc_hs__inv_8
+{endif}
+
+{if protect}
+{ifdef cbuf_header}
+vcomp_buff comp.{p}_toggl_p comp.{p}_buffered_p 0
+{else}
+XINV_{p}_1_P comp.{p}_toggl_p  vss vss vdd vdd comp.{p}_1_p sky130_fd_sc_hs__inv_1
+XINV_{p}_2_P comp.{p}_1_p      vss vss vdd vdd comp.{p}_2_p sky130_fd_sc_hs__inv_2
+XINV_{p}_3_P comp.{p}_2_p      vss vss vdd vdd comp.{p}_3_p sky130_fd_sc_hs__inv_4
+XINV_{p}_4_P comp.{p}_3_p      vss vss vdd vdd comp.{p}_buffered_p sky130_fd_sc_hs__inv_8
+{endif}
+
+{ifdef edetect_header}
 XEDGE_DETECTOR_P_{p} clk reset comp.{p}_buffered_p enable_p vss vss vdd vdd negedge_detector
+
 {if protected == "V2"}
 XINV_EN_{p}_p enable vss vss vdd vdd enable_p_act sky130_fd_sc_hs__inv_1
-XREGISTER_ARRAY_P_{p} clk reset enable_p_act count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 digfls_{p}.0 digfls_{p}.1 digfls_{p}.2 digfls_{p}.3 digfls_{p}.4 digfls_{p}.5 digfls_{p}.6 digfls_{p}.7 vss vss vdd vdd register_array
+XREGISTER_ARRAY_P_{p} clk reset enable_p_act {getbus("count")} {getbus("digout_", p)} vss vss vdd vdd register_array
 {else}
-XREGISTER_ARRAY_P_{p} clk reset enable_p count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 digfls_{p}.0 digfls_{p}.1 digfls_{p}.2 digfls_{p}.3 digfls_{p}.4 digfls_{p}.5 digfls_{p}.6 digfls_{p}.7 vss vss vdd vdd register_array
+XREGISTER_ARRAY_P_{p} clk reset enable_p {getbus("count")} {getbus("digout_", p)} vss vss vdd vdd register_array
 {endif}
 
-{endif}
-* ! Synthesizer optimizes the inversion in Verilog input. Inverters added manually for now.
-XINV_{p}_1 comp.{p}_toggl  vss vss vdd vdd comp.{p}_1 sky130_fd_sc_hs__inv_1
-XINV_{p}_2 comp.{p}_1      vss vss vdd vdd comp.{p}_2 sky130_fd_sc_hs__inv_1
-XINV_{p}_3 comp.{p}_2      vss vss vdd vdd comp.{p}_3 sky130_fd_sc_hs__inv_1
-XINV_{p}_4 comp.{p}_3      vss vss vdd vdd comp.{p}_buffered sky130_fd_sc_hs__inv_1
-{ifdef protected}
-
-XINV_{p}_1_P comp.{p}_toggl_p  vss vss vdd vdd comp.{p}_1_p sky130_fd_sc_hs__inv_1
-XINV_{p}_2_P comp.{p}_1_p      vss vss vdd vdd comp.{p}_2_p sky130_fd_sc_hs__inv_1
-XINV_{p}_3_P comp.{p}_2_p      vss vss vdd vdd comp.{p}_3_p sky130_fd_sc_hs__inv_1
-XINV_{p}_4_P comp.{p}_3_p      vss vss vdd vdd comp.{p}_buffered_p sky130_fd_sc_hs__inv_1
 {endif}
 {endfor}
 
-** Control Signals ----------------------------------
+** Control Signals -----------------------------------------
 
 * Voltage sources
 .param vdd=1.8
@@ -96,7 +111,7 @@ Bcomp{p}_p comp.{p}_toggl_p 0 V = V(comp.{p}_ideal) > {vdd/2} ? {vss} : V(clk)
 {endif}
 {endfor}
 
-** Simulation Control -------------------------------
+** Simulation Control --------------------------------------
 
 .option method=Gear
 .control

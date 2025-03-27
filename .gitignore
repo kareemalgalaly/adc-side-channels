@@ -1,6 +1,6 @@
 aalog/adc_obj_dir
 analog/*.h
-attack/cnn/outputs
+attack/cnn/outputs*
 synth/*
 build
 *.swp

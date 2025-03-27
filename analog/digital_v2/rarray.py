@@ -5,12 +5,10 @@ printf = d_process.printf
 
 class RArray:
     def __init__(self, pxls=1, bits=8):
-        #self.pixels = [0 for i in range(pxls)]
         self.pixels = pxls
         self.max_value = (1 << bits) - 1
 
     def compute(self, data_in, data_out, time):
-        #printf("compute")
         if time < 0:
             for i in range(self.pixels):
                 data_out[f"pixel{i}"] = 0
