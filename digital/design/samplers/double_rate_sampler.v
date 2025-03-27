@@ -11,7 +11,7 @@ module double_rate_sampler #(
     input clk,
     input rst, 
     input comp,
-    input [WIDTH-1:0] counter
+    input [WIDTH-1:0] counter,
     output reg [WIDTH-1:0] count_true,
     output reg [WIDTH-1:0] count_false
 );
