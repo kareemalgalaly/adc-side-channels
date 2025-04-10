@@ -1,12 +1,15 @@
-Simulation of digital counter circuit synthesized with Yosys
+Simulation of digital adc
 {default pixels   1}
 {assert  pixels > 0}
+{default dvals list(range(0, 255, 256//pixels))}
+{ifdef   seed}
+    {import  random}
+    {eval    random.seed(seed)}
+    {define  dvals [random.randint(0, 255) for p in range(pixels)]}
+{endif}
 {define  getbus func:name,suffix="",rng=range(8): " ".join(name+str(suffix)+"."+str(i) for i in rng)}
 {define  dplot  func:vars: " ".join(var+"/2+"+str(i) for i, var in enumerate(vars.split()))}
 {define  dbus   func:name,suffix="",rng=range(8): "+".join(name+str(suffix)+"."+str(i)+"/"+str(1 << (8-i)) for i in rng)}
-{default outdir "outfiles"}
-{default dump 0}
-{default plot dump == 0}
 
 ** Libraries --------------------------------------------------
 
@@ -75,7 +78,7 @@ Vclk2   clk2    0   pulse   {vss}   {vdd}   1.25u   10n  10n 0.25u    0.5u
 
 * Model Clocked Comparator
 {for p in range(1, pixels+1)}
-Vcomp{p} comp_ideal.{p} 0 pulse {vss} {vdd} 32u 5n 5n 224u 260u
+Vcomp{p} comp_ideal.{p} 0 pulse {vss} {vdd} {eval 2+dvals[p-1]}u 10n 10n {eval 258-dvals[p-1]}u 260u
 Bcomp{p} comp_toggl.{p} 0 V = V(comp_ideal.{p}) > {vdd/2} ? V(clk) : {vss}     ; regular  comp out
 Bcompn{p} comp_toggln.{p} 0 V = V(comp_ideal.{p}) > {vdd/2} ? {vss} : V(clk) ; inverted comp out
 {endfor}
@@ -83,98 +86,21 @@ Bcompn{p} comp_toggln.{p} 0 V = V(comp_ideal.{p}) > {vdd/2} ? {vss} : V(clk) ; i
 ** Simulation Control --------------------------------------
 
 .option method=Gear
-.control
-;set color0=white
-set color1=rgb:50/50/50
 
-{randvec_1=compose  randvec_1  values 30  90 160}
-{if pixels >= 5}    
-{randvec_2=compose  randvec_2  values 16  0 255}
-{randvec_3=compose  randvec_3  values 128 0 255}
-{randvec_4=compose  randvec_4  values 96  0 255}
-{randvec_5=compose  randvec_5  values 32  0 255}
-{endif}             
-{if pixels >= 10}   
-{randvec_6=compose  randvec_6  values 16  0 255}
-{randvec_7=compose  randvec_7  values 128 0 255}
-{randvec_8=compose  randvec_8  values 96  0 255}
-{randvec_9=compose  randvec_9  values 32  0 255}
-{randvec_10=compose randvec_10 values 32  0 255}
-{endif}
+.save rst clk clk2 I(vdd) {for p in range(1, pixels+1)} {getbus("count")} {getbus("pixel"+str(p))} {getbus("pixeld"+str(p))} comp_ideal.{p} comp_toggl.{p} comp.toggln.{p} xsample_{p}.reset_cycle xsample_{p}.pdp.vald xsample_{p}.pdn.vald xsample_{p}.wen xsample_{p}.wenn {endfor}
 
-let treset  = 2u
-let tgap    = 2u
-let period  = 1u
-let digmax  = 256
-let istart  = {simstart=0}
-let istop   = {numsim=length(randvec_1)}
-let tmax    = digmax * period + treset + tgap
+;.tran 1u 520u uic
+.tran 1u 260u uic
+;.tran 1u 10u uic
+;.set color0=white
+;set color1=rgb:50/50/50
 
-set ext = ".txt"
-set dlm = "_"
-
-{if dump}
-shell mkdir -p {outdir}
-set wr_singlescale
-set wr_vecnames
-{endif}
-
-while istart < istop
-    echo
-    echo Running Sweep $&istart/$&istop
-    echo
-
-    let iseed = istart + {seed=0}
-    {for p in range(1, pixels+1)}
-    let dvalue_{p} = randvec_{p}[istart]
-    let tstart = treset + dvalue_{p} * period
-    let twidth = tmax - tstart - tgap
-    alter @Vcomp{p}[pulse] [ 0 1.8 $&tstart 5n 5n $&twidth $&tmax ]
-    {endfor}
-
-    ;tran 1u 520u uic
-    ;tran 1u 260u uic
-    tran 1u 90u uic
-    
-    {if plot}
-    let digit_count = {dbus("count")}
-    let digit_sampl = {dbus("pixel1")}
-    let digit_false = {dbus("pixeld1")}
-
-    plot title 'Current Trace' -I(vdd)
-    plot title 'Digital Outputs' digit_false digit_sampl digit_count comp_ideal.1
-    plot title 'Comp_D' {dplot("clk clk2 xsample_1.reset_cycle comp_toggl.1 xsample_1.comp_d")}
-    {endif}
-
-    {if dump}
-    ;let cut-tstart = 260u
-    ;let cut-tstop = 520u
-    ;cutout
-
-    wrdata {outdir}/sky_raw_s$&iseed{for i in range(1,pixels+1)}$dlm$&dvalue_{i}{endfor}$ext -I(vdd)
-
-    ;let lin-tstart = 260u
-    ;let lin-tstop  = 520u
-    ;let lin-tstep  = 100n
-    ;linearize I(vdd)
-
-    ;wrdata {outdir}/sky_lin_s$&iseed{for i in range(1,pixels+1)}$dlm$&dvalue_{i}{endfor}$ext -I(vdd)
-
-    {if not plot}destroy all{endif}
-    {endif}
-
-    let istart = istart + 1
-end
-{if not plot}
-echo
-echo -----------------------------------------
-echo All simulations completed. 
-echo Exiting...
-echo -----------------------------------------
-echo
-exit
-{endif}
+{ifdef interactive}
+.control 
+    run
+    plot -I(vdd)
 .endc
+{endif}
 
 .END
 

@@ -1,0 +1,8 @@
+* Post process script for template_batch.cir
+
+.control
+    load {rawfile}
+    wrdata {outfile} -I(vdd)
+    exit
+.endc
+.end

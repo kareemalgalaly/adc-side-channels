@@ -10,13 +10,14 @@
 ** model ---------------------------------------------------
 .lib model
 
-subckt counter_half clk rst en count0 count1 count2 count3 count4 count5 count6 count7 overflow VGND VNB VPB VPWR
+.subckt counter_half clk rst en count0 count1 count2 count3 count4 count5 count6 count7 overflow VGND VNB VPB VPWR
 
 abridgea [rst clk] [dreset dclk] atod 
 abridged [dcount0 dcount1 dcount2 dcount3 dcount4 dcount5 dcount6 dcount7] [count0 count1 count2 count3 count4 count5 count6 count7] dtoa 
 acounter null dclk dreset [dcount0 dcount1 dcount2 dcount3 dcount4 dcount5 dcount6 dcount7] proc_counter
 .model atod adc_bridge(in_low=0.2 in_high=1.6)
-.model proc_counter d_process (process_file="/home/kareem/miniconda3/envs/pykit/bin/python" process_params=["counter.py"])
+.model dtoa dac_bridge(out_low=0 out_high=1.8)
+.model proc_counter d_process (process_file="/home/kareem/miniconda3/envs/pykit/bin/python" process_params=["lib/counter.py"])
 .ends
 
 .endl model

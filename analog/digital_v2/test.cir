@@ -27,10 +27,10 @@ abridge2 [dreset dclk den] [reset clk en] dtoa
 
 ** D_Process Blocks ----------------------------------------
 acounter null dclk dreset [count0 count1 count2 count3 count4 count5 count6 count7] proc_counter
-.model proc_counter d_process (process_file="/home/kareem/miniconda3/envs/pykit/bin/python" process_params=["counter.py"])
+.model proc_counter d_process (process_file="/home/kareem/miniconda3/envs/pykit/bin/python" process_params=["lib/counter.py"])
 
 aregister [den count0 count1 count2 count3 count4 count5 count6 count7] dclk dreset [pixel0 pixel1 pixel2 pixel3 pixel4 pixel5 pixel6 pixel7] proc_register
-.model proc_register d_process (process_file="/home/kareem/miniconda3/envs/pykit/bin/python" process_params=["rarray.py"])
+.model proc_register d_process (process_file="/home/kareem/miniconda3/envs/pykit/bin/python" process_params=["lib/rarray.py"])
 
 ** Control -------------------------------------------------
 .tran 0.5u 512u
@@ -39,7 +39,7 @@ aregister [den count0 count1 count2 count3 count4 count5 count6 count7] dclk dre
 run
 edisplay
 *eprvcd dclk dreset count0 count1 count2 count3 count4 count5 count6 count7 den > dump.vcd
-eprvcd dclk dreset count0 count1 count2 count3 count4 count5 count6 count7 den pixel0 pixel1 pixel2 pixel3 pixel4 pixel5 pixel6 pixel7 > dump.vcd
+eprvcd dclk dreset count0 count1 count2 count3 count4 count5 count6 count7 den pixel0 pixel1 pixel2 pixel3 pixel4 pixel5 pixel6 pixel7 > outfiles/test.vcd
 shell gtkwave dump.vcd
 .endc
 
