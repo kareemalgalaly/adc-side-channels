@@ -201,6 +201,16 @@
             "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
             "sample_duration" : 256e-6
+        },
+        "digital_v2" : {
+            "path" : "/home/kareem/Projects/adc-side-channels/analog/digital_v2/outfiles/v2_short",
+            "type" : "sampled",
+            "format"  : "trace_(\\d+)",
+            "columns" : 1,
+            "label"   : "lambda gs: int(gs[0])",
+            "sample_mode"     : ["MIN", "MAX"],
+            "sample_interval" : 0.02e-6,
+            "sample_duration" : 10e-6
         }
     },
     "tests" : [
@@ -489,7 +499,7 @@
             "desc"          : "Test ??: Trying to get resnet to work",
             "skip"          : true,
             "networks"      : ["resnet101"],
-            "datasets"      : ["analog_1_tt_x:max"],
+            "datasets"      : ["analog_1_tt_l:max"],
             "learning_rate" : [1e-5]
         }
     ],

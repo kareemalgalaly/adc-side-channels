@@ -25,6 +25,9 @@ def warn(*args):
     global warns
     warns += 1
 
+def info(*args):
+    print("INFO:", *args)
+
 ## JSON Parsing Nets --------------------------------
 
 #bits = set()
@@ -63,11 +66,13 @@ def parse_nets(netname_dict):
                         tieoffs[netname] = int(b)
                 else:
                     if b in netnames:
-                        warn(f"bit {b} already named in netnames as <{netnames[b]}>. Ignoring additional name <{netname}>")
-                        aliases[netname] = netnames[b]
-                        # ALT print(f"WARNING: bit {b} already named in netnames as <{netnames[b]}>. Swapping additional name <{netname}>")
-                        # ALT aliases[netnames[b]] = netname
-                        # ALT netnames[b] = netname
+                        if "." in netname:
+                            info(f"bit {b:4} already named. {netname} => {netnames[b]}")
+                            aliases[netname] = netnames[b]
+                        else:
+                            info(f"bit {b:4} already named. {netnames[b]} => {netname}")
+                            aliases[netnames[b]] = netname
+                            netnames[b] = netname
                     else:
                         netnames[b] = netname
             else:

@@ -14,7 +14,7 @@ puts "Module: $SYNTH_MODULE"
 yosys echo on
 
 # read liberty files
-yosys read_liberty -lib ~/Lib/skywater-pdk/libraries/sky130_fd_sc_hs/latest/timing/sky130_fd_sc_hs__tt_025C_1v50.lib 
+yosys read_liberty -lib $::env(PDK_LIBERTY)
 
 # read design
 yosys read_verilog -sv $::env(SYNTH_VERILOG)
