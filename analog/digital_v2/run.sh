@@ -9,11 +9,11 @@ interactive=""
 dvalue="[30]"
 pixels=1
 seed=""
-corner=""
+corner="corner=tt"
 numsim=1
 norun=""
 debug=""
-version="v2"
+version="v3"
 
 while getopts "id:p:s:c:n:v:NQ:" opt
 do
@@ -44,7 +44,8 @@ if [ "$queue" != "" ]; then
 fi
 
 if [ "$norun" = "" ] || [ "$queue" ]; then
-    mkdir -p outfiles/$version
+    outdir=outfiles/${version}_${corner:7}
+    mkdir -p $outdir
 fi
 
 # local s value
@@ -68,11 +69,11 @@ for i in $(seq $numsim); do
             ngspice <($SPGEN $value)
         else
             if [ "$queue" ]; then
-                echo "ngspice -b -r outfiles/$version/rawfile_${s} <($SPGEN $value)" >> jobs.sh
-                echo "ngspice <($TENG template_batch_post.cir rawfile=outfiles/$version/rawfile_${s} outfile=outfiles/$version/trace_${s})" >> jobs_post.sh
+                echo "ngspice -b -r $outdir/rawfile_${s} <($SPGEN $value)" >> jobs.sh
+                echo "ngspice <($TENG template_batch_post.cir rawfile=$outdir/rawfile_${s} outfile=$outdir/trace_${s})" >> jobs_post.sh
             else
                 ngspice -b -r rawfile_${s} <($SPGEN $value)
-                ngspice <($TENG template_batch_post.cir rawfile=rawfile_${s} outfile=outfiles/$version/trace_$s)
+                ngspice <($TENG template_batch_post.cir rawfile=rawfile_${s} outfile=$outdir/trace_$s)
             fi
         fi
     fi

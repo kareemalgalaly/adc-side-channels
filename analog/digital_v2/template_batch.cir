@@ -93,7 +93,7 @@ Bcompn{p} comp_toggln.{p} 0 V = V(comp_ideal.{p}) > {vdd/2} ? {vss} : V(clk) ; i
 
 ;.tran 1u 520u uic
 ;.tran 1u 260u uic
-.tran 10n 100u uic
+.tran 10n 260u uic
 ;.set color0=white
 ;set color1=rgb:50/50/50
 
