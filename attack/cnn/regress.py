@@ -350,7 +350,7 @@ class Test(HashableBase):
     def get_csv(self, test_index=0):
         return f"{self.learning_rate},{self.learning_decay},{self.max_learn_rate},{self.optimizer},{self.batch_size},{self.max_epochs},{self.max_accuracy},{self.max_loss},{self.test_dataset[test_index].name},{self.train_split}"
 
-    def get_optimizer(self, cnn):
+    def get_optimizer(self, cnn, accuracy=0):
         if self.optimizer == 'Adam':
             return optim.Adam(cnn.parameters(), lr=self.learning_rate, weight_decay=self.learning_decay)
 
@@ -547,7 +547,7 @@ class Regression:
         acc_g  = None
 
         criterion = test.get_loss(network) #nn.CrossEntropyLoss()
-        optimizer = test.get_optimizer(cnn)
+        optimizer = test.get_optimizer(cnn, accuracy=0)
         #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=100, factor=0.7)
         scheduler = None
     
@@ -606,6 +606,9 @@ class Regression:
                         loss_g = axs[0].plot(loss_arr.detach().cpu()[:epoch], color='gray', linestyle='dotted')[0]
                         acc_g  = axs[1].plot(acc_arr.cpu()[:acc_indx+1],  color='gray', linestyle='dotted')[0]
                         plt.pause(0.01)
+
+                #if accuracy >= test.learning_decay_start:
+                #    optimizer = test.get_optimizer(cnn, accuracy)
 
                 if accuracy >= test.max_accuracy:
                     progress.update(epoch, msg=f"Hit Acc {test.max_accuracy}"); break
