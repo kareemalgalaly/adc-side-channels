@@ -165,6 +165,7 @@ def parse_cell_types(celltypes, cell_path, module_dict):
                         break
 
         for pin in pins:
+            # only available if yosys reads liberty as design file
             if pin not in module_dict[ctype]['ports']:
                 pg.append(1)
                 all_pg_pins.add(pin)

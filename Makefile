@@ -40,7 +40,7 @@ digital-synth: ${TOP_SYNTH}.spice
 
 # Dynamically Defined Synth -----------------------------
 
-synth/%: ${P_DESIGN}/%.v
+synth/%: ${P_DESIGN}/%.v ${P_SCRIPT}/synth.tcl
 	mkdir -p $@
 	SYNTH_VERILOG=${P_DESIGN}/$*.v SYNTH_PATH=$@ PDK_LIBERTY=${PDK_LIBERTY} PDK_CELL=${PDK_CELL_LIB} yosys -c ${P_SCRIPT}/synth.tcl
 
