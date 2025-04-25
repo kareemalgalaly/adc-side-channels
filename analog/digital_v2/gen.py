@@ -10,11 +10,11 @@ argparser.add_argument("-c", "--corner",  type=str, default="tt", help="Corner t
 argparser.add_argument("-v", "--version", type=str, default="v3", help="Version of sampler")
 args = argparser.parse_args()
 
-random.seed(args.seed)
-
 jobs = ["#!/bin/bash"]
 
 for s in range(args.seed, args.seed+args.numsim):
+    random.seed(s)
+
     dvals = [str(random.randint(0, 255)) for p in range(args.pixels)]
     dcmd  = "dvals=eval:[" + ",".join(dvals) + "]"
     dnam  = "_".join(dvals)
