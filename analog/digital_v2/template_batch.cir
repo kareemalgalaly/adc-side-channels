@@ -23,7 +23,6 @@ Simulation of digital adc
 .include cells/and2/sky130_fd_sc_hs__and2_1.spice
 .include cells/and3/sky130_fd_sc_hs__and3_1.spice
 .include cells/and4/sky130_fd_sc_hs__and4_1.spice
-.include cells/clkinv/sky130_fd_sc_hs__clkinv_1.spice
 .include cells/dfxtp/sky130_fd_sc_hs__dfxtp_1.spice
 .include cells/inv/sky130_fd_sc_hs__inv_1.spice
 .include cells/mux2i/sky130_fd_sc_hs__mux2i_1.spice
@@ -45,7 +44,7 @@ Simulation of digital adc
 *.lib lib/register_array.spice    {ifdef regarry_header model else synth}
 *.inc lib/negedge_detector.spice ;{ifdef edetect_header model else synth}
 .lib lib/counter_half.spice      {ifdef counter_header model else synth}
-.inc lib/double_rate_sampler_{version=v2}.spice
+.inc lib/double_rate_sampler_{version=v3}.spice
 
 ** Counter -------------------------------------------------
 
@@ -88,7 +87,7 @@ Bcompn{p} comp_toggln.{p} 0 V = V(comp_ideal.{p}) > {vdd/2} ? {vss} : V(clk) ; i
 .option method=Gear
 
 {ifndef interactive}
-.save rst cen clk clk2 I(vdd) {for p in range(1, pixels+1)} {getbus("count")} {getbus("pixel"+str(p))} {getbus("pixeld"+str(p))} comp_ideal.{p} comp_toggl.{p} comp.toggln.{p} xsample_{p}.reset_cycle xsample_{p}.pdp.vald xsample_{p}.pdn.vald xsample_{p}.wen xsample_{p}.wenn {endfor}
+.save rst cen clk clk2 I(vdd) {getbus("count")} {for p in range(1, pixels+1)} {getbus("pixel"+str(p))} {getbus("pixeld"+str(p))} comp_ideal.{p} comp_toggl.{p} comp.toggln.{p} xsample_{p}.reset_cycle xsample_{p}.pdp.vald xsample_{p}.pdn.vald xsample_{p}.wen xsample_{p}.wenn {endfor}
 {endif}
 
 ;.tran 1u 520u uic
