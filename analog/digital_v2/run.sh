@@ -94,6 +94,8 @@ if [ "$pixels" = 1 ]; then
 else
     if [ "$seed" = "" ]; then seed=0; fi
     if [ "$interactive" != "" ]; then interactive="-i"; fi
+
+    mkdir -p "outfiles/${version}_${corner}_${pixels}"
     python3 gen.py -p $pixels -c $corner -n $numsim -s $seed -v $version $interactive > jobs.sh
     echo "Generated jobs.sh"
 
