@@ -1,3 +1,4 @@
+import os
 import argparse
 import random
 
@@ -19,8 +20,8 @@ for s in range(args.seed, args.seed+args.numsim):
     dcmd  = "dvals=eval:[" + ",".join(dvals) + "]"
     dnam  = "_".join(dvals)
 
-    rnam = f"outfiles/{args.version}_{args.corner}/rawfile_s{s}_{dnam}"
-    tnam = f"outfiles/{args.version}_{args.corner}/trace_s{s}_{dnam}"
+    rnam = f"outfiles/{args.version}_{args.corner}_{args.pixels}/rawfile_s{s}_{dnam}"
+    tnam = f"outfiles/{args.version}_{args.corner}_{args.pixels}/trace_s{s}_{dnam}"
 
     job_sim = f"ngspice -b -r {rnam} <(python3 ../../script/teng.py -g template_batch.cir pixels=eval:{args.pixels} corner={args.corner} version={args.version} {dcmd})"
     job_prs = f"ngspice <(python3 ../../script/teng.py template_batch_post.cir rawfile={rnam} outfile={tnam})"
