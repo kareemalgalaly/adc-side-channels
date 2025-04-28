@@ -38,7 +38,24 @@ SPGEN="$TENG -g template_batch.cir pixels=eval:$pixels corner=$corner version=$v
 
 # Main
 
-if [ "$pixels" = 1 ]; then
+if [ "$version" = "ece" ]; then
+    if ! [ $queue ]; then queue=1; fi
+
+    echo "#!/bin/bash" > jobs.sh
+    for i in $(seq $queue); do
+        echo "ngspice <(python3 ../../script/teng.py -g template_ece_randprot.cir corner=$corner start=$((numsim*(i-1)/queue+seed)) stop=$((numsim*i/queue+seed)) stdc=hs)" >> jobs.sh
+    done
+
+    if [ "$norun" = "" ]; then
+        if [ "$queue" != 1 ]; then
+            echo "Batching with NUM_SIMULTANEOUS_JOBS=$queue"
+            cat jobs.sh | xargs -I cmd -P $queue bash -c "echo '> cmd'; eval 'cmd'"
+        else
+            bash jobs.sh
+        fi
+    fi
+
+elif [ "$pixels" = 1 ]; then
 
     if [ "$queue" != "" ]; then
         echo "#!/bin/bash" > jobs.sh

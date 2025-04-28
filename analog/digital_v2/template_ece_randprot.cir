@@ -400,8 +400,8 @@ let treset  = 2u
 let tgap    = 2u
 let period  = 1u
 let digmax  = 256
-let istart  = 0
-let istop   = 1 ;length(randvec_0)
+let istart  = {start=0}
+let istop   = {stop=length(randvec_0)}
 let tmax    = digmax * period + treset + tgap
 
 set ext = ".txt"
