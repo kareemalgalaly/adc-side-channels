@@ -1,0 +1,463 @@
+Simulation of digital single-slope adc circuit synthesized with Yosys
+
+** Libraries ----------------------------------------
+.lib "models/sky130.lib.spice" ff
+.include cells/a211oi/sky130_fd_sc_hd__a211oi_1.spice
+.include cells/a21oi/sky130_fd_sc_hd__a21oi_1.spice
+.include cells/and2/sky130_fd_sc_hd__and2_1.spice
+.include cells/and3/sky130_fd_sc_hd__and3_1.spice
+.include cells/and4/sky130_fd_sc_hd__and4_1.spice
+.include cells/buf/sky130_fd_sc_hd__buf_1.spice
+.include cells/dfxtp/sky130_fd_sc_hd__dfxtp_1.spice
+.include cells/inv/sky130_fd_sc_hd__inv_1.spice
+.include cells/mux2i/sky130_fd_sc_hd__mux2i_1.spice
+.include cells/mux2/sky130_fd_sc_hd__mux2_1.spice
+.include cells/nand2b/sky130_fd_sc_hd__nand2b_1.spice
+.include cells/nor2b/sky130_fd_sc_hd__nor2b_1.spice
+.include cells/nor2/sky130_fd_sc_hd__nor2_1.spice
+.include cells/nor3b/sky130_fd_sc_hd__nor3b_1.spice
+.include cells/nor3/sky130_fd_sc_hd__nor3_1.spice
+.include cells/nor4b/sky130_fd_sc_hd__nor4b_1.spice
+.include cells/o21a/sky130_fd_sc_hd__o21a_1.spice
+.include cells/o21bai/sky130_fd_sc_hd__o21bai_1.spice
+.include cells/o21ba/sky130_fd_sc_hd__o21ba_1.spice
+.include cells/or2/sky130_fd_sc_hd__or2_1.spice
+.include cells/or3b/sky130_fd_sc_hd__or3b_1.spice
+.include cells/xor2/sky130_fd_sc_hd__xor2_1.spice
+
+.lib lib/register_array.spice   synth_hd
+.lib lib/negedge_detector.spice synth_hd
+.lib lib/counter_half.spice     synth_hd
+
+** Singleton Modules --------------------------------
+XCOUNTER clk reset cen count_unbuf.0 count_unbuf.1 count_unbuf.2 count_unbuf.3 count_unbuf.4 count_unbuf.5 count_unbuf.6 count_unbuf.7 overflow vss vss vdd vdd counter_half 
+xcen    reset vss vss vdd vdd cen_d sky130_fd_sc_hd__inv_1
+xcen_ff clk cen_d vss vss vdd vdd cen sky130_fd_sc_hd__dfxtp_1
+
+XBUF0 count_unbuf.0 vss vss vdd vdd count.0 sky130_fd_sc_hd__buf_1
+XBUF1 count_unbuf.1 vss vss vdd vdd count.1 sky130_fd_sc_hd__buf_1
+XBUF2 count_unbuf.2 vss vss vdd vdd count.2 sky130_fd_sc_hd__buf_1
+XBUF3 count_unbuf.3 vss vss vdd vdd count.3 sky130_fd_sc_hd__buf_1
+XBUF4 count_unbuf.4 vss vss vdd vdd count.4 sky130_fd_sc_hd__buf_1
+XBUF5 count_unbuf.5 vss vss vdd vdd count.5 sky130_fd_sc_hd__buf_1
+XBUF6 count_unbuf.6 vss vss vdd vdd count.6 sky130_fd_sc_hd__buf_1
+XBUF7 count_unbuf.7 vss vss vdd vdd count.7 sky130_fd_sc_hd__buf_1
+
+* Instantiate edge detector module (detects negative edges of comparator signals)
+XEDGE_DETECTOR clk reset comp_buffered enable vss vss vdd vdd negedge_detector
+* Instantiate registers module (stores values based on edge detector output)
+XREGISTER_ARRAY clk reset enable count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 digout.0 digout.1 digout.2 digout.3 digout.4 digout.5 digout.6 digout.7 vss vss vdd vdd register_array
+
+XEDGE_DETECTOR_P clk reset comp_buffered_p enable_p vss vss vdd vdd negedge_detector
+XINV_EN_p enable vss vss vdd vdd enable_p_act sky130_fd_sc_hd__inv_1
+XREGISTER_ARRAY_P clk reset enable_p_act count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 digfls.0 digfls.1 digfls.2 digfls.3 digfls.4 digfls.5 digfls.6 digfls.7 vss vss vdd vdd register_array
+
+* ! Synthesizer optimizes the inversion in Verilog input. Inverters added manually for now.
+XINV_1 comp_toggl  vss vss vdd vdd comp_1 sky130_fd_sc_hd__inv_1
+XINV_2 comp_1      vss vss vdd vdd comp_2 sky130_fd_sc_hd__inv_1
+XINV_3 comp_2      vss vss vdd vdd comp_3 sky130_fd_sc_hd__inv_1
+XINV_4 comp_3      vss vss vdd vdd comp_buffered sky130_fd_sc_hd__inv_1
+
+XINV_1_P comp_toggl_p  vss vss vdd vdd comp_1_p sky130_fd_sc_hd__inv_1
+XINV_2_P comp_1_p      vss vss vdd vdd comp_2_p sky130_fd_sc_hd__inv_1
+XINV_3_P comp_2_p      vss vss vdd vdd comp_3_p sky130_fd_sc_hd__inv_1
+XINV_4_P comp_3_p      vss vss vdd vdd comp_buffered_p sky130_fd_sc_hd__inv_1
+
+
+
+*** DUPLICATE WHOLE DIGITAL CIRCUITRY FOR ANALOG DUMMY BLOCK
+* Instantiate edge detector module (detects negative edges of comparator signals)
+XEDGE_DETECTOR2 clk reset comp_buffered2 enable2 vss vss vdd vdd negedge_detector
+* Instantiate registers module (stores values based on edge detector output)
+XREGISTER_ARRAY2 clk reset enable2 count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 digfls2.0 digfls2.1 digfls2.2 digfls2.3 digfls2.4 digfls2.5 digfls2.6 digfls2.7 vss vss vdd vdd register_array
+
+XEDGE_DETECTOR_P2 clk reset comp_buffered_p2 enable_p2 vss vss vdd vdd negedge_detector
+XINV_EN_p2 enable2 vss vss vdd vdd enable_p_act2 sky130_fd_sc_hd__inv_1
+XREGISTER_ARRAY_P2 clk reset enable_p_act2 count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 digfls3.0 digfls3.1 digfls3.2 digfls3.3 digfls3.4 digfls3.5 digfls3.6 digfls3.7 vss vss vdd vdd register_array
+
+* ! Synthesizer optimizes the inversion in Verilog input. Inverters added manually for now.
+XINV2_1 comp_toggl2  vss vss vdd vdd comp2_1 sky130_fd_sc_hd__inv_1
+XINV2_2 comp2_1      vss vss vdd vdd comp2_2 sky130_fd_sc_hd__inv_1
+XINV2_3 comp2_2      vss vss vdd vdd comp2_3 sky130_fd_sc_hd__inv_1
+XINV2_4 comp2_3      vss vss vdd vdd comp_buffered2 sky130_fd_sc_hd__inv_1
+
+XINV2_1_P comp_toggl_p2  vss vss vdd vdd comp2_1_p sky130_fd_sc_hd__inv_1
+XINV2_2_P comp2_1_p      vss vss vdd vdd comp2_2_p sky130_fd_sc_hd__inv_1
+XINV2_3_P comp2_2_p      vss vss vdd vdd comp2_3_p sky130_fd_sc_hd__inv_1
+XINV2_4_P comp2_3_p      vss vss vdd vdd comp_buffered_p2 sky130_fd_sc_hd__inv_1
+
+
+
+** Control Signals ----------------------------------
+* Voltage sources
+.param vdd=1.8
+Vdd vdd 0 {vdd}
+
+.param vss=0
+Vss vss 0 {vss}
+
+* Clock and Reset signals (1MHz clock)
+Vrst    reset   0   pulse   {vss}   {vdd}   0u      10n  10n    2u    260u
+Vclk    clk     0   pulse   {vss}   {vdd}   1u      10n  10n  0.5u      1u
+
+* Model Clocked Comparator
+Vcomp       comp_ideal      0 pulse {vss} {vdd} 46u 5n 5n 210u 260u
+
+Bcomp       comp_toggl      0 V = V(comp_ideal) > {vdd/2} ? V(clk) : {vss}
+Bcomp_p     comp_toggl_p    0 V = V(comp_ideal) > {vdd/2} ? {vss} : V(clk)
+
+
+* From analog dummy block
+Vramp       ramp2           0 pwl(0 0 67u 0 131u 0 195u 0 260u 0) r=0
+
+Vinp        inp_ideal       0 dc 0.9
+
+R1 inp_ideal 0 1Meg
+C1 inp_ideal 0 1n
+
+Bcomp2      comp_toggl2     0 V = V(ramp2) > V(inp_ideal) ? {vss} : V(clk) 
+Bcomp_p2    comp_toggl_p2   0 V = V(ramp2) > V(inp_ideal) ? V(clk) : {vss}
+
+
+** Simulation Control -------------------------------
+.option method=Gear
+.option KLU
+.option skywaterpdk
+.control
+*set color0=white
+set color1=rgb:50/50/50
+
+compose randvec_0 values 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 161 162 163 164 165 166 167 168 169 170 171 172 173 174 175 176 177 178 179 180 181 182 183 184 185 186 187 188 189 190 191 192 193 194 195 196 197 198 199 200 201 202 203 204 205 206 207 208 209 210 211 212 213 214 215 216 217 218 219 220 221 222 223 224 225 226 227 228 229 230 231 232 233 234 235 236 237 238 239 240 241 242 243 244 245 246 247 248 249 250 251 252 253 254 255
+*compose randvec_0 values 48 107
+compose randvec_1 values 66e2 34e2 14e2 5e3
+        compose randvec_2 values 34e2 22e2 34e2 38e2
+        compose randvec_3 values 98e2 1e3 66e2 26e2
+        compose randvec_4 values 18e2 126e2 126e2 34e2
+        compose randvec_5 values 86e2 126e2 86e2 3e3
+        compose randvec_6 values 74e2 14e2 94e2 6e2
+        compose randvec_7 values 58e2 7e3 46e2 78e2
+        compose randvec_8 values 18e2 42e2 46e2 11e3
+        compose randvec_9 values 106e2 94e2 6e2 102e2
+        compose randvec_10 values 13e3 5e3 74e2 6e2
+        compose randvec_11 values 94e2 9e3 26e2 9e3
+        compose randvec_12 values 102e2 14e2 42e2 82e2
+        compose randvec_13 values 11e3 58e2 14e2 98e2
+        compose randvec_14 values 126e2 102e2 118e2 58e2
+        compose randvec_15 values 22e2 74e2 102e2 78e2
+        compose randvec_16 values 122e2 6e2 13e3 18e2
+        compose randvec_17 values 54e2 98e2 46e2 6e2
+        compose randvec_18 values 3e3 5e3 114e2 78e2
+        compose randvec_19 values 118e2 42e2 34e2 54e2
+        compose randvec_20 values 82e2 126e2 5e3 86e2
+        compose randvec_21 values 98e2 18e2 62e2 66e2
+        compose randvec_22 values 106e2 38e2 58e2 82e2
+        compose randvec_23 values 94e2 5e3 114e2 11e3
+        compose randvec_24 values 66e2 18e2 74e2 6e2
+        compose randvec_25 values 126e2 82e2 3e3 46e2
+        compose randvec_26 values 3e3 1e3 6e2 38e2
+        compose randvec_27 values 13e3 42e2 58e2 1e3
+        compose randvec_28 values 58e2 102e2 3e3 6e2
+        compose randvec_29 values 114e2 22e2 42e2 58e2
+        compose randvec_30 values 122e2 94e2 6e2 3e3
+        compose randvec_31 values 1e3 114e2 34e2 74e2
+        compose randvec_32 values 1e3 54e2 102e2 38e2
+        compose randvec_33 values 126e2 6e2 14e2 26e2
+        compose randvec_34 values 6e2 34e2 54e2 94e2
+        compose randvec_35 values 54e2 3e3 98e2 126e2
+        compose randvec_36 values 54e2 82e2 106e2 126e2
+        compose randvec_37 values 42e2 34e2 102e2 98e2
+        compose randvec_38 values 82e2 102e2 66e2 14e2
+        compose randvec_39 values 122e2 54e2 86e2 54e2
+        compose randvec_40 values 3e3 118e2 106e2 98e2
+        compose randvec_41 values 58e2 9e3 122e2 102e2
+        compose randvec_42 values 18e2 34e2 22e2 106e2
+        compose randvec_43 values 42e2 94e2 9e3 86e2
+        compose randvec_44 values 122e2 62e2 106e2 22e2
+        compose randvec_45 values 26e2 114e2 126e2 58e2
+        compose randvec_46 values 26e2 46e2 22e2 18e2
+        compose randvec_47 values 26e2 118e2 118e2 13e3
+        compose randvec_48 values 34e2 34e2 54e2 58e2
+        compose randvec_49 values 22e2 82e2 34e2 78e2
+        compose randvec_50 values 114e2 22e2 122e2 82e2
+        compose randvec_51 values 46e2 46e2 122e2 82e2
+        compose randvec_52 values 6e2 98e2 126e2 5e3
+        compose randvec_53 values 78e2 18e2 118e2 34e2
+        compose randvec_54 values 34e2 34e2 6e2 13e3
+        compose randvec_55 values 34e2 38e2 7e3 54e2
+        compose randvec_56 values 86e2 9e3 126e2 6e2
+        compose randvec_57 values 122e2 7e3 98e2 13e3
+        compose randvec_58 values 82e2 13e3 74e2 14e2
+        compose randvec_59 values 18e2 11e3 114e2 82e2
+        compose randvec_60 values 26e2 74e2 126e2 86e2
+        compose randvec_61 values 9e3 13e3 106e2 13e3
+        compose randvec_62 values 42e2 82e2 26e2 54e2
+        compose randvec_63 values 102e2 62e2 74e2 9e3
+        compose randvec_64 values 46e2 58e2 126e2 102e2
+        compose randvec_65 values 114e2 38e2 34e2 86e2
+        compose randvec_66 values 9e3 86e2 22e2 106e2
+        compose randvec_67 values 78e2 11e3 54e2 106e2
+        compose randvec_68 values 34e2 74e2 54e2 34e2
+        compose randvec_69 values 66e2 18e2 9e3 1e3
+        compose randvec_70 values 6e2 5e3 14e2 38e2
+        compose randvec_71 values 18e2 13e3 3e3 98e2
+        compose randvec_72 values 3e3 74e2 38e2 82e2
+        compose randvec_73 values 94e2 14e2 118e2 22e2
+        compose randvec_74 values 98e2 54e2 13e3 54e2
+        compose randvec_75 values 5e3 7e3 13e3 13e3
+        compose randvec_76 values 106e2 34e2 3e3 26e2
+        compose randvec_77 values 9e3 62e2 6e2 62e2
+        compose randvec_78 values 126e2 22e2 78e2 98e2
+        compose randvec_79 values 22e2 9e3 26e2 82e2
+        compose randvec_80 values 74e2 5e3 126e2 74e2
+        compose randvec_81 values 122e2 58e2 13e3 26e2
+        compose randvec_82 values 1e3 78e2 6e2 38e2
+        compose randvec_83 values 58e2 11e3 38e2 114e2
+        compose randvec_84 values 34e2 7e3 78e2 122e2
+        compose randvec_85 values 46e2 74e2 34e2 122e2
+        compose randvec_86 values 118e2 3e3 98e2 38e2
+        compose randvec_87 values 18e2 18e2 11e3 14e2
+        compose randvec_88 values 98e2 94e2 54e2 86e2
+        compose randvec_89 values 74e2 54e2 42e2 74e2
+        compose randvec_90 values 14e2 94e2 46e2 82e2
+        compose randvec_91 values 126e2 11e3 5e3 74e2
+        compose randvec_92 values 6e2 122e2 34e2 13e3
+        compose randvec_93 values 118e2 13e3 7e3 106e2
+        compose randvec_94 values 122e2 86e2 58e2 66e2
+        compose randvec_95 values 6e2 26e2 38e2 26e2
+        compose randvec_96 values 7e3 46e2 102e2 1e3
+        compose randvec_97 values 66e2 26e2 54e2 13e3
+        compose randvec_98 values 18e2 26e2 58e2 34e2
+        compose randvec_99 values 38e2 7e3 11e3 38e2
+        compose randvec_100 values 38e2 106e2 54e2 22e2
+        compose randvec_101 values 98e2 3e3 38e2 38e2
+        compose randvec_102 values 82e2 122e2 74e2 62e2
+        compose randvec_103 values 82e2 86e2 34e2 42e2
+        compose randvec_104 values 118e2 11e3 94e2 98e2
+        compose randvec_105 values 22e2 46e2 94e2 82e2
+        compose randvec_106 values 14e2 7e3 3e3 42e2
+        compose randvec_107 values 34e2 1e3 78e2 1e3
+        compose randvec_108 values 94e2 118e2 86e2 94e2
+        compose randvec_109 values 22e2 38e2 3e3 82e2
+        compose randvec_110 values 74e2 46e2 46e2 102e2
+        compose randvec_111 values 118e2 6e2 5e3 58e2
+        compose randvec_112 values 86e2 66e2 58e2 74e2
+        compose randvec_113 values 106e2 114e2 78e2 13e3
+        compose randvec_114 values 78e2 62e2 98e2 114e2
+        compose randvec_115 values 18e2 66e2 58e2 82e2
+        compose randvec_116 values 18e2 98e2 122e2 38e2
+        compose randvec_117 values 82e2 114e2 1e3 34e2
+        compose randvec_118 values 13e3 118e2 9e3 13e3
+        compose randvec_119 values 11e3 54e2 11e3 18e2
+        compose randvec_120 values 126e2 118e2 102e2 5e3
+        compose randvec_121 values 14e2 14e2 5e3 11e3
+        compose randvec_122 values 106e2 34e2 86e2 54e2
+        compose randvec_123 values 46e2 5e3 18e2 11e3
+        compose randvec_124 values 7e3 118e2 106e2 26e2
+        compose randvec_125 values 106e2 86e2 3e3 126e2
+        compose randvec_126 values 22e2 114e2 58e2 98e2
+        compose randvec_127 values 22e2 9e3 7e3 6e2
+        compose randvec_128 values 42e2 78e2 54e2 86e2
+        compose randvec_129 values 126e2 6e2 18e2 94e2
+        compose randvec_130 values 46e2 34e2 38e2 98e2
+        compose randvec_131 values 58e2 54e2 98e2 54e2
+        compose randvec_132 values 14e2 102e2 18e2 3e3
+        compose randvec_133 values 102e2 22e2 86e2 82e2
+        compose randvec_134 values 98e2 22e2 5e3 126e2
+        compose randvec_135 values 94e2 82e2 42e2 26e2
+        compose randvec_136 values 11e3 58e2 66e2 74e2
+        compose randvec_137 values 38e2 7e3 66e2 106e2
+        compose randvec_138 values 7e3 106e2 11e3 114e2
+        compose randvec_139 values 9e3 46e2 26e2 82e2
+        compose randvec_140 values 42e2 82e2 86e2 74e2
+        compose randvec_141 values 74e2 34e2 82e2 11e3
+        compose randvec_142 values 6e2 38e2 94e2 6e2
+        compose randvec_143 values 46e2 54e2 74e2 98e2
+        compose randvec_144 values 11e3 126e2 54e2 9e3
+        compose randvec_145 values 22e2 22e2 78e2 7e3
+        compose randvec_146 values 7e3 14e2 13e3 3e3
+        compose randvec_147 values 102e2 58e2 114e2 86e2
+        compose randvec_148 values 3e3 18e2 9e3 94e2
+        compose randvec_149 values 78e2 114e2 94e2 126e2
+        compose randvec_150 values 6e2 38e2 122e2 78e2
+        compose randvec_151 values 26e2 3e3 54e2 3e3
+        compose randvec_152 values 74e2 3e3 22e2 98e2
+        compose randvec_153 values 22e2 22e2 26e2 94e2
+        compose randvec_154 values 86e2 14e2 9e3 13e3
+        compose randvec_155 values 6e2 3e3 98e2 5e3
+        compose randvec_156 values 26e2 118e2 7e3 46e2
+        compose randvec_157 values 82e2 74e2 66e2 114e2
+        compose randvec_158 values 34e2 122e2 7e3 3e3
+        compose randvec_159 values 114e2 13e3 22e2 9e3
+        compose randvec_160 values 22e2 6e2 22e2 118e2
+        compose randvec_161 values 6e2 14e2 7e3 6e2
+        compose randvec_162 values 98e2 11e3 102e2 114e2
+        compose randvec_163 values 54e2 102e2 38e2 94e2
+        compose randvec_164 values 98e2 5e3 62e2 9e3
+        compose randvec_165 values 22e2 94e2 98e2 13e3
+        compose randvec_166 values 42e2 126e2 26e2 3e3
+        compose randvec_167 values 94e2 126e2 114e2 106e2
+        compose randvec_168 values 14e2 14e2 126e2 62e2
+        compose randvec_169 values 7e3 6e2 114e2 78e2
+        compose randvec_170 values 6e2 5e3 54e2 7e3
+        compose randvec_171 values 122e2 34e2 102e2 118e2
+        compose randvec_172 values 5e3 118e2 7e3 118e2
+        compose randvec_173 values 18e2 22e2 58e2 26e2
+        compose randvec_174 values 6e2 18e2 38e2 58e2
+        compose randvec_175 values 11e3 122e2 66e2 114e2
+        compose randvec_176 values 82e2 82e2 106e2 38e2
+        compose randvec_177 values 18e2 62e2 122e2 118e2
+        compose randvec_178 values 34e2 94e2 126e2 114e2
+        compose randvec_179 values 98e2 22e2 7e3 9e3
+        compose randvec_180 values 14e2 7e3 7e3 54e2
+        compose randvec_181 values 22e2 94e2 34e2 42e2
+        compose randvec_182 values 74e2 11e3 62e2 122e2
+        compose randvec_183 values 82e2 1e3 11e3 5e3
+        compose randvec_184 values 42e2 126e2 106e2 5e3
+        compose randvec_185 values 18e2 22e2 5e3 58e2
+        compose randvec_186 values 102e2 118e2 106e2 18e2
+        compose randvec_187 values 6e2 5e3 3e3 9e3
+        compose randvec_188 values 54e2 13e3 7e3 5e3
+        compose randvec_189 values 13e3 46e2 3e3 54e2
+        compose randvec_190 values 38e2 13e3 38e2 9e3
+        compose randvec_191 values 11e3 106e2 114e2 98e2
+        compose randvec_192 values 126e2 114e2 78e2 13e3
+        compose randvec_193 values 78e2 22e2 3e3 66e2
+        compose randvec_194 values 54e2 6e2 118e2 9e3
+        compose randvec_195 values 94e2 94e2 7e3 7e3
+        compose randvec_196 values 42e2 14e2 94e2 18e2
+        compose randvec_197 values 94e2 14e2 58e2 74e2
+        compose randvec_198 values 62e2 42e2 78e2 74e2
+        compose randvec_199 values 34e2 122e2 3e3 9e3
+        compose randvec_200 values 74e2 22e2 22e2 46e2
+        compose randvec_201 values 114e2 58e2 66e2 126e2
+        compose randvec_202 values 46e2 6e2 114e2 102e2
+        compose randvec_203 values 62e2 62e2 46e2 38e2
+        compose randvec_204 values 34e2 102e2 114e2 114e2
+        compose randvec_205 values 5e3 46e2 62e2 38e2
+        compose randvec_206 values 38e2 66e2 14e2 18e2
+        compose randvec_207 values 126e2 94e2 78e2 98e2
+        compose randvec_208 values 5e3 54e2 118e2 42e2
+        compose randvec_209 values 1e3 3e3 126e2 54e2
+        compose randvec_210 values 7e3 13e3 14e2 34e2
+        compose randvec_211 values 102e2 42e2 106e2 94e2
+        compose randvec_212 values 62e2 122e2 58e2 58e2
+        compose randvec_213 values 78e2 82e2 22e2 66e2
+        compose randvec_214 values 86e2 106e2 14e2 6e2
+        compose randvec_215 values 46e2 114e2 14e2 58e2
+        compose randvec_216 values 42e2 3e3 26e2 13e3
+        compose randvec_217 values 66e2 11e3 13e3 54e2
+        compose randvec_218 values 26e2 62e2 3e3 94e2
+        compose randvec_219 values 114e2 62e2 38e2 9e3
+        compose randvec_220 values 118e2 38e2 62e2 38e2
+        compose randvec_221 values 82e2 11e3 98e2 118e2
+        compose randvec_222 values 98e2 66e2 3e3 86e2
+        compose randvec_223 values 1e3 1e3 1e3 82e2
+        compose randvec_224 values 26e2 78e2 22e2 22e2
+        compose randvec_225 values 82e2 74e2 9e3 5e3
+        compose randvec_226 values 38e2 46e2 102e2 114e2
+        compose randvec_227 values 106e2 46e2 7e3 9e3
+        compose randvec_228 values 58e2 94e2 62e2 1e3
+        compose randvec_229 values 58e2 42e2 38e2 114e2
+        compose randvec_230 values 3e3 82e2 9e3 46e2
+        compose randvec_231 values 5e3 9e3 98e2 9e3
+        compose randvec_232 values 14e2 1e3 46e2 74e2
+        compose randvec_233 values 86e2 9e3 26e2 22e2
+        compose randvec_234 values 14e2 78e2 34e2 42e2
+        compose randvec_235 values 122e2 54e2 114e2 82e2
+        compose randvec_236 values 13e3 34e2 86e2 126e2
+        compose randvec_237 values 62e2 82e2 102e2 6e2
+        compose randvec_238 values 66e2 34e2 74e2 34e2
+        compose randvec_239 values 102e2 74e2 7e3 102e2
+        compose randvec_240 values 38e2 7e3 6e2 22e2
+        compose randvec_241 values 14e2 94e2 1e3 26e2
+        compose randvec_242 values 54e2 22e2 118e2 13e3
+        compose randvec_243 values 42e2 62e2 38e2 34e2
+        compose randvec_244 values 11e3 58e2 13e3 42e2
+        compose randvec_245 values 118e2 22e2 106e2 122e2
+        compose randvec_246 values 3e3 13e3 13e3 38e2
+        compose randvec_247 values 54e2 38e2 58e2 58e2
+        compose randvec_248 values 82e2 5e3 98e2 74e2
+        compose randvec_249 values 118e2 102e2 106e2 34e2
+        compose randvec_250 values 22e2 13e3 62e2 102e2
+        compose randvec_251 values 6e2 3e3 54e2 14e2
+        compose randvec_252 values 42e2 78e2 22e2 106e2
+        compose randvec_253 values 86e2 34e2 3e3 18e2
+        compose randvec_254 values 38e2 66e2 22e2 3e3
+        compose randvec_255 values 94e2 14e2 38e2 7e3
+        compose randvec_256 values 9e3 126e2 126e2 9e3
+        compose randvec_257 values 94e2 98e2 74e2 114e2
+        
+
+let treset  = 2u
+let tgap    = 2u
+let period  = 1u
+let digmax  = 256
+let istart  = 0
+let istop   = 1 ;length(randvec_0)
+let tmax    = digmax * period + treset + tgap
+
+set ext = ".txt"
+set dlm = "_"
+
+shell mkdir -p outfiles/digital_1px_ff_randomized
+set wr_singlescale
+set wr_vecnames
+
+while istart < istop
+    echo
+    echo Running Sweep $&istart/$&istop
+    echo
+
+    let iseed = istart + 0
+    let dvalue = randvec_0[istart]
+    let tstart = treset + dvalue * period
+    let twidth = tmax - tstart - tgap
+    alter @Vcomp[pulse] [ 0 1.8 $&tstart 5n 5n $&twidth $&tmax ]
+
+    let index = 1 + iseed
+    let S1 = randvec_{$&index}[0]
+    let S2 = randvec_{$&index}[1]
+    let S3 = randvec_{$&index}[2]
+    let S4 = randvec_{$&index}[3]
+
+    let P1 = 1.8 - 67u*$&S1
+    let P2 = 1.8 - 67u*$&S1 - 64u*$&S2
+    let P3 = 1.8 - 67u*$&S1 - 64u*$&S2 - 64u*$&S3
+    let P4 = 1.8 - 67u*$&S1 - 64u*$&S2 - 64u*$&S3 - 65u*$&S4
+
+    alter @Vramp[pwl] [ 0 1.8 67u $&P1 131u $&P2 195u $&P3 260u $&P4 ]
+    * 1.8 * digital_value / 256
+    let temp_val = 7.03125e-3 * $&dvalue
+
+    alter Vinp dc = $&temp_val
+
+    tran 500n 520u uic
+
+
+    let cut-tstart = 260u
+    let cut-tstop = 520u
+    cutout
+
+    wrdata outfiles/digital_1px_ff_randomized/sky_raw_s$&iseed$dlm$&dvalue$ext -I(vdd)
+
+    let lin-tstart = 260u
+    let lin-tstop  = 520u
+    let lin-tstep  = 100n
+    linearize I(vdd)
+
+    wrdata outfiles/digital_1px_ff_randomized/sky_lin_s$&iseed$dlm$&dvalue$ext -I(vdd)
+
+    destroy all
+
+    let istart = istart + 1
+end
+echo
+echo -----------------------------------------
+echo All simulations completed. 
+echo Exiting...
+echo -----------------------------------------
+echo
+exit
+.endc
+
+.END

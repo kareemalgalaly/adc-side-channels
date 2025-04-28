@@ -42,7 +42,7 @@ Simulation of digital adc
 {endif}
 
 *.lib lib/register_array.spice    {ifdef regarry_header model else synth}
-*.inc lib/negedge_detector.spice ;{ifdef edetect_header model else synth}
+*.lib lib/negedge_detector.spice  {ifdef edetect_header model else synth}
 .lib lib/counter_half.spice      {ifdef counter_header model else synth}
 .inc lib/double_rate_sampler_{version=v3}.spice
 
