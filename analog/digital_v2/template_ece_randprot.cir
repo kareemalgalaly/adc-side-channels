@@ -1,47 +1,55 @@
 Simulation of digital single-slope adc circuit synthesized with Yosys
 
-** Libraries ----------------------------------------
-.lib "models/sky130.lib.spice" ff
-.include cells/a211oi/sky130_fd_sc_hd__a211oi_1.spice
-.include cells/a21oi/sky130_fd_sc_hd__a21oi_1.spice
-.include cells/and2/sky130_fd_sc_hd__and2_1.spice
-.include cells/and3/sky130_fd_sc_hd__and3_1.spice
-.include cells/and4/sky130_fd_sc_hd__and4_1.spice
-.include cells/buf/sky130_fd_sc_hd__buf_1.spice
-.include cells/dfxtp/sky130_fd_sc_hd__dfxtp_1.spice
-.include cells/inv/sky130_fd_sc_hd__inv_1.spice
-.include cells/mux2i/sky130_fd_sc_hd__mux2i_1.spice
-.include cells/mux2/sky130_fd_sc_hd__mux2_1.spice
-.include cells/nand2b/sky130_fd_sc_hd__nand2b_1.spice
-.include cells/nor2b/sky130_fd_sc_hd__nor2b_1.spice
-.include cells/nor2/sky130_fd_sc_hd__nor2_1.spice
-.include cells/nor3b/sky130_fd_sc_hd__nor3b_1.spice
-.include cells/nor3/sky130_fd_sc_hd__nor3_1.spice
-.include cells/nor4b/sky130_fd_sc_hd__nor4b_1.spice
-.include cells/o21a/sky130_fd_sc_hd__o21a_1.spice
-.include cells/o21bai/sky130_fd_sc_hd__o21bai_1.spice
-.include cells/o21ba/sky130_fd_sc_hd__o21ba_1.spice
-.include cells/or2/sky130_fd_sc_hd__or2_1.spice
-.include cells/or3b/sky130_fd_sc_hd__or3b_1.spice
-.include cells/xor2/sky130_fd_sc_hd__xor2_1.spice
+{default stdc hs}
 
-.lib lib/register_array.spice   synth_hd
-.lib lib/negedge_detector.spice synth_hd
-.lib lib/counter_half.spice     synth_hd
+** Libraries ----------------------------------------
+{ifxst /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice}
+.lib "/foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice" {corner=tt}
+.include "/foss/pdk/sky130A/libs.ref/sky130_fd_sc_{stdc}/spice/sky130_fd_sc_{stdc}.spice"
+{else}
+.lib "models/sky130.lib.spice" {corner=tt}
+.include cells/a211oi/sky130_fd_sc_{stdc}__a211oi_1.spice
+.include cells/a21oi/sky130_fd_sc_{stdc}__a21oi_1.spice
+.include cells/and2/sky130_fd_sc_{stdc}__and2_1.spice
+.include cells/and3/sky130_fd_sc_{stdc}__and3_1.spice
+.include cells/and4/sky130_fd_sc_{stdc}__and4_1.spice
+.include cells/buf/sky130_fd_sc_{stdc}__buf_1.spice
+.include cells/dfxtp/sky130_fd_sc_{stdc}__dfxtp_1.spice
+.include cells/inv/sky130_fd_sc_{stdc}__inv_1.spice
+.include cells/mux2i/sky130_fd_sc_{stdc}__mux2i_1.spice
+.include cells/mux2/sky130_fd_sc_{stdc}__mux2_1.spice
+.include cells/nand2b/sky130_fd_sc_{stdc}__nand2b_1.spice
+.include cells/nor2b/sky130_fd_sc_{stdc}__nor2b_1.spice
+.include cells/nor2/sky130_fd_sc_{stdc}__nor2_1.spice
+.include cells/nor3b/sky130_fd_sc_{stdc}__nor3b_1.spice
+.include cells/nor3/sky130_fd_sc_{stdc}__nor3_1.spice
+.include cells/nor4b/sky130_fd_sc_{stdc}__nor4b_1.spice
+.include cells/o21a/sky130_fd_sc_{stdc}__o21a_1.spice
+.include cells/o21bai/sky130_fd_sc_{stdc}__o21bai_1.spice
+.include cells/o21ba/sky130_fd_sc_{stdc}__o21ba_1.spice
+.include cells/or2/sky130_fd_sc_{stdc}__or2_1.spice
+.include cells/or3b/sky130_fd_sc_{stdc}__or3b_1.spice
+.include cells/xor2/sky130_fd_sc_{stdc}__xor2_1.spice
+{endif}
+
+.lib lib/register_array.spice   synth{if stdc == "hd"}_hd{endif}
+.lib lib/negedge_detector.spice synth{if stdc == "hd"}_hd{endif}
+.lib lib/counter_half.spice     synth{if stdc == "hd"}_hd{endif}
 
 ** Singleton Modules --------------------------------
 XCOUNTER clk reset cen count_unbuf.0 count_unbuf.1 count_unbuf.2 count_unbuf.3 count_unbuf.4 count_unbuf.5 count_unbuf.6 count_unbuf.7 overflow vss vss vdd vdd counter_half 
-xcen    reset vss vss vdd vdd cen_d sky130_fd_sc_hd__inv_1
-xcen_ff clk cen_d vss vss vdd vdd cen sky130_fd_sc_hd__dfxtp_1
+;XCOUNTER clk reset cen count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 overflow vss vss vdd vdd counter_half 
+xcen    reset vss vss vdd vdd cen_d sky130_fd_sc_{stdc}__inv_1
+xcen_ff clk cen_d vss vss vdd vdd cen sky130_fd_sc_{stdc}__dfxtp_1
 
-XBUF0 count_unbuf.0 vss vss vdd vdd count.0 sky130_fd_sc_hd__buf_1
-XBUF1 count_unbuf.1 vss vss vdd vdd count.1 sky130_fd_sc_hd__buf_1
-XBUF2 count_unbuf.2 vss vss vdd vdd count.2 sky130_fd_sc_hd__buf_1
-XBUF3 count_unbuf.3 vss vss vdd vdd count.3 sky130_fd_sc_hd__buf_1
-XBUF4 count_unbuf.4 vss vss vdd vdd count.4 sky130_fd_sc_hd__buf_1
-XBUF5 count_unbuf.5 vss vss vdd vdd count.5 sky130_fd_sc_hd__buf_1
-XBUF6 count_unbuf.6 vss vss vdd vdd count.6 sky130_fd_sc_hd__buf_1
-XBUF7 count_unbuf.7 vss vss vdd vdd count.7 sky130_fd_sc_hd__buf_1
+XBUF0 count_unbuf.0 vss vss vdd vdd count.0 sky130_fd_sc_{stdc}__buf_1
+XBUF1 count_unbuf.1 vss vss vdd vdd count.1 sky130_fd_sc_{stdc}__buf_1
+XBUF2 count_unbuf.2 vss vss vdd vdd count.2 sky130_fd_sc_{stdc}__buf_1
+XBUF3 count_unbuf.3 vss vss vdd vdd count.3 sky130_fd_sc_{stdc}__buf_1
+XBUF4 count_unbuf.4 vss vss vdd vdd count.4 sky130_fd_sc_{stdc}__buf_1
+XBUF5 count_unbuf.5 vss vss vdd vdd count.5 sky130_fd_sc_{stdc}__buf_1
+XBUF6 count_unbuf.6 vss vss vdd vdd count.6 sky130_fd_sc_{stdc}__buf_1
+XBUF7 count_unbuf.7 vss vss vdd vdd count.7 sky130_fd_sc_{stdc}__buf_1
 
 * Instantiate edge detector module (detects negative edges of comparator signals)
 XEDGE_DETECTOR clk reset comp_buffered enable vss vss vdd vdd negedge_detector
@@ -49,19 +57,19 @@ XEDGE_DETECTOR clk reset comp_buffered enable vss vss vdd vdd negedge_detector
 XREGISTER_ARRAY clk reset enable count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 digout.0 digout.1 digout.2 digout.3 digout.4 digout.5 digout.6 digout.7 vss vss vdd vdd register_array
 
 XEDGE_DETECTOR_P clk reset comp_buffered_p enable_p vss vss vdd vdd negedge_detector
-XINV_EN_p enable vss vss vdd vdd enable_p_act sky130_fd_sc_hd__inv_1
+XINV_EN_p enable vss vss vdd vdd enable_p_act sky130_fd_sc_{stdc}__inv_1
 XREGISTER_ARRAY_P clk reset enable_p_act count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 digfls.0 digfls.1 digfls.2 digfls.3 digfls.4 digfls.5 digfls.6 digfls.7 vss vss vdd vdd register_array
 
 * ! Synthesizer optimizes the inversion in Verilog input. Inverters added manually for now.
-XINV_1 comp_toggl  vss vss vdd vdd comp_1 sky130_fd_sc_hd__inv_1
-XINV_2 comp_1      vss vss vdd vdd comp_2 sky130_fd_sc_hd__inv_1
-XINV_3 comp_2      vss vss vdd vdd comp_3 sky130_fd_sc_hd__inv_1
-XINV_4 comp_3      vss vss vdd vdd comp_buffered sky130_fd_sc_hd__inv_1
+XINV_1 comp_toggl  vss vss vdd vdd comp_1 sky130_fd_sc_{stdc}__inv_1
+XINV_2 comp_1      vss vss vdd vdd comp_2 sky130_fd_sc_{stdc}__inv_1
+XINV_3 comp_2      vss vss vdd vdd comp_3 sky130_fd_sc_{stdc}__inv_1
+XINV_4 comp_3      vss vss vdd vdd comp_buffered sky130_fd_sc_{stdc}__inv_1
 
-XINV_1_P comp_toggl_p  vss vss vdd vdd comp_1_p sky130_fd_sc_hd__inv_1
-XINV_2_P comp_1_p      vss vss vdd vdd comp_2_p sky130_fd_sc_hd__inv_1
-XINV_3_P comp_2_p      vss vss vdd vdd comp_3_p sky130_fd_sc_hd__inv_1
-XINV_4_P comp_3_p      vss vss vdd vdd comp_buffered_p sky130_fd_sc_hd__inv_1
+XINV_1_P comp_toggl_p  vss vss vdd vdd comp_1_p sky130_fd_sc_{stdc}__inv_1
+XINV_2_P comp_1_p      vss vss vdd vdd comp_2_p sky130_fd_sc_{stdc}__inv_1
+XINV_3_P comp_2_p      vss vss vdd vdd comp_3_p sky130_fd_sc_{stdc}__inv_1
+XINV_4_P comp_3_p      vss vss vdd vdd comp_buffered_p sky130_fd_sc_{stdc}__inv_1
 
 
 
@@ -72,19 +80,19 @@ XEDGE_DETECTOR2 clk reset comp_buffered2 enable2 vss vss vdd vdd negedge_detecto
 XREGISTER_ARRAY2 clk reset enable2 count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 digfls2.0 digfls2.1 digfls2.2 digfls2.3 digfls2.4 digfls2.5 digfls2.6 digfls2.7 vss vss vdd vdd register_array
 
 XEDGE_DETECTOR_P2 clk reset comp_buffered_p2 enable_p2 vss vss vdd vdd negedge_detector
-XINV_EN_p2 enable2 vss vss vdd vdd enable_p_act2 sky130_fd_sc_hd__inv_1
+XINV_EN_p2 enable2 vss vss vdd vdd enable_p_act2 sky130_fd_sc_{stdc}__inv_1
 XREGISTER_ARRAY_P2 clk reset enable_p_act2 count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 digfls3.0 digfls3.1 digfls3.2 digfls3.3 digfls3.4 digfls3.5 digfls3.6 digfls3.7 vss vss vdd vdd register_array
 
 * ! Synthesizer optimizes the inversion in Verilog input. Inverters added manually for now.
-XINV2_1 comp_toggl2  vss vss vdd vdd comp2_1 sky130_fd_sc_hd__inv_1
-XINV2_2 comp2_1      vss vss vdd vdd comp2_2 sky130_fd_sc_hd__inv_1
-XINV2_3 comp2_2      vss vss vdd vdd comp2_3 sky130_fd_sc_hd__inv_1
-XINV2_4 comp2_3      vss vss vdd vdd comp_buffered2 sky130_fd_sc_hd__inv_1
+XINV2_1 comp_toggl2  vss vss vdd vdd comp2_1 sky130_fd_sc_{stdc}__inv_1
+XINV2_2 comp2_1      vss vss vdd vdd comp2_2 sky130_fd_sc_{stdc}__inv_1
+XINV2_3 comp2_2      vss vss vdd vdd comp2_3 sky130_fd_sc_{stdc}__inv_1
+XINV2_4 comp2_3      vss vss vdd vdd comp_buffered2 sky130_fd_sc_{stdc}__inv_1
 
-XINV2_1_P comp_toggl_p2  vss vss vdd vdd comp2_1_p sky130_fd_sc_hd__inv_1
-XINV2_2_P comp2_1_p      vss vss vdd vdd comp2_2_p sky130_fd_sc_hd__inv_1
-XINV2_3_P comp2_2_p      vss vss vdd vdd comp2_3_p sky130_fd_sc_hd__inv_1
-XINV2_4_P comp2_3_p      vss vss vdd vdd comp_buffered_p2 sky130_fd_sc_hd__inv_1
+XINV2_1_P comp_toggl_p2  vss vss vdd vdd comp2_1_p sky130_fd_sc_{stdc}__inv_1
+XINV2_2_P comp2_1_p      vss vss vdd vdd comp2_2_p sky130_fd_sc_{stdc}__inv_1
+XINV2_3_P comp2_2_p      vss vss vdd vdd comp2_3_p sky130_fd_sc_{stdc}__inv_1
+XINV2_4_P comp2_3_p      vss vss vdd vdd comp_buffered_p2 sky130_fd_sc_{stdc}__inv_1
 
 
 
