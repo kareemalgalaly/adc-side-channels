@@ -31,7 +31,7 @@
             "columns" : 1,
             "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
-            "sample_duration" : 256e-6,
+            "sample_duration" : 260e-6,
             "trace_scale"     : 1e3
         },
         "digital_1px_ss_x" : {
@@ -41,7 +41,7 @@
             "columns" : 1,
             "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
-            "sample_duration" : 256e-6,
+            "sample_duration" : 260e-6,
             "trace_scale"     : 1e3
         },
         "digital_1px_ff_p" : {
@@ -51,7 +51,7 @@
             "columns" : 1,
             "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
-            "sample_duration" : 256e-6,
+            "sample_duration" : 260e-6,
             "trace_scale"     : 1e3
         },
         "digital_1px_ss_p" : {
@@ -61,17 +61,37 @@
             "columns" : 1,
             "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
-            "sample_duration" : 256e-6,
+            "sample_duration" : 260e-6,
             "trace_scale"     : 1e3
         },
-        "digital_1px_tt_rand" : {
-            "path" : "digital_1px_tt_rand",
+        "digital_1px_tt_r" : {
+            "path" : "digital_1px_tt_r",
             "type" : "sampled",
             "format"  : "sky_raw_s\\d+_(\\d+).txt",
             "columns" : 1,
             "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
-            "sample_duration" : 256e-6,
+            "sample_duration" : 260e-6,
+            "trace_scale"     : 1e3
+        },
+        "digital_1px_fs_r" : {
+            "path" : "digital_1px_fs_r",
+            "type" : "sampled",
+            "format"  : "sky_raw_s\\d+_(\\d+).txt",
+            "columns" : 1,
+            "sample_mode"     : ["MIN", "MAX"],
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 260e-6,
+            "trace_scale"     : 1e3
+        },
+        "digital_1px_ss_r" : {
+            "path" : "digital_1px_ss_r",
+            "type" : "sampled",
+            "format"  : "sky_raw_s\\d+_(\\d+).txt",
+            "columns" : 1,
+            "sample_mode"     : ["MIN", "MAX"],
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 260e-6,
             "trace_scale"     : 1e3
         },
         "digital_5px_fs_p" : {
@@ -82,7 +102,7 @@
             "label"   : "lambda gs: int(gs[0])",
             "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
-            "sample_duration" : 256e-6,
+            "sample_duration" : 260e-6,
             "trace_scale"     : 1e3
         },
         "digital_1px_tt_3" : {
@@ -125,17 +145,17 @@
             "skip"          : true,
             "networks"      : ["paper"],
             "datasets"      : ["digital_1px_ff_x:max"],
-            "test_dataset"  : "digital_1px_ss_x:max",
+            "test_dataset"  : ["digital_1px_ss_x:max"],
             "learning_rate" : [0.0001],
             "learning_decay": 0.000005,
             "optimizer"     : "Amsgrad"
         },
         {
             "desc"          : "Unprotected SE",
-            "skip"          : true,
+            "skip"          : false,
             "networks"      : ["paper_se"],
             "datasets"      : ["digital_1px_ff_x:max"],
-            "test_dataset"  : "digital_1px_ss_x:max",
+            "test_dataset"  : ["digital_1px_ss_x:max"],
             "learning_rate" : [0.0001],
             "learning_decay": 0.000005,
             "max_epochs"    : 20000
@@ -145,7 +165,7 @@
             "skip"          : true,
             "networks"      : ["paper"],
             "datasets"      : ["digital_1px_ff_p:max"],
-            "test_dataset"  : "digital_1px_ss_p:max",
+            "test_dataset"  : ["digital_1px_ss_p:max"],
             "learning_rate" : [0.00015],
             "learning_decay": 0.000015,
             "optimizer"     : "Amsgrad"
@@ -155,30 +175,31 @@
             "skip"          : true,
             "networks"      : ["paper_se"],
             "datasets"      : ["digital_1px_ff_p:max"],
-            "test_dataset"  : "digital_1px_ss_p:max",
-            "learning_rate" : [0.003],
+            "test_dataset"  : ["digital_1px_ss_p:max"],
+            "learning_rate" : [0.0025],
             "learning_decay": 0.000005,
-            "max_epochs"    : 20000
+            "max_epochs"    : 30000
         },
         {
-            "desc"          : "Digital Rand Test (ECE version)",
+            "desc"          : "Digital Rand Test",
             "skip"          : true,
             "networks"      : ["paper"],
-            "datasets"      : ["digital_1px_tt_rand:max"],
-            "test_dataset"  : ["digital_1px_tt_rand:max"],
+            "datasets"      : ["digital_1px_tt_r:max"],
+            "test_dataset"  : ["digital_1px_ss_r:max", "digital_1px_fs_r:max"],
             "learning_rate" : [0.0003],
-            "learning_decay": 0.0004,
-            "max_epochs"    : 5000,
-            "train_split"   : 0.5
+            "learning_decay": 0.000025,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 3000
         },
         {
             "desc"          : "Protected v3",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["paper"],
             "datasets"      : ["digital_1px_tt_3:max"],
-            "test_dataset"  : ["digital_1px_ss_3:max"],
-            "learning_rate" : [0.0002],
-            "learning_decay": 0.0001,
+            "test_dataset"  : ["digital_1px_ss_3:max", "digital_1px_fs_3:max"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.000025,
+            "optimizer"     : "Amsgrad",
             "max_epochs"    : 5000
         }
     ],
