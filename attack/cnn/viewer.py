@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from regress import argparser, Regression
+from classes import argparser, Regression
 
 FIGX = 8
 FIGY = 6

@@ -9,6 +9,7 @@ import os
 import re
 import sys
 import argparse
+import traceback
 
 argparser = argparse.ArgumentParser(prog="teng")
 argparser.add_argument("template", type=str, help="Template file to process")
@@ -46,15 +47,15 @@ func__re = re.compile(r"\s*(\w+)\s*\(.*\)\s*")                                # 
 _errors = 0
 _warnings = 0
 
-def error(*msg):
+def error(*msg, **kwargs):
     global _errors
     _errors += 1
-    print("ERROR  :", *msg, file=sys.stderr)
+    print("ERROR  :", *msg, file=sys.stderr, **kwargs)
 
-def warn(*msg):
+def warn(*msg, **kwargs):
     global _warnings
     _warnings += 1
-    print("WARNING:", *msg, file=sys.stderr)
+    print("WARNING:", *msg, file=sys.stderr, **kwargs)
 
 ## --------------------------------------------------
 
@@ -211,8 +212,12 @@ class TEngine:
             return None
         try:
             return eval(expr, env, get_globals())
-        except NameError as e:
-            error(f"Undefined variable in expression {expr}: {e}")
+        except Exception as e:
+            if isinstance(e, NameError):
+                error(f"Undefined variable in expression {expr}: {e}")
+            else:
+                error(f"Exception occurred while evaluating expression\n  Expression: {expr}\n  Exception : {e}\n  Env : {env}\n{traceback.format_exc()}")
+
         
 ## main ----------------------------------------------------
 

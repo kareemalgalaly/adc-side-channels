@@ -29,7 +29,7 @@ yosys synth -top $SYNTH_MODULE
 yosys dfflibmap -liberty $::env(PDK_LIBERTY)
 
 # mapping logic to mycells.lib
-yosys abc -liberty $::env(PDK_LIBERTY)
+yosys abc -liberty $::env(PDK_LIBERTY) -dont_use sky130_fd_sc_hs__clkinv_1
 
 yosys flatten
 yosys clean
@@ -37,6 +37,7 @@ yosys clean
 # write synthesized design
 yosys write_verilog -noattr $SYNTH_TARGET.v
 yosys write_json $SYNTH_TARGET.json
+#yosys show -prefix $SYNTH_TARGET
 
 #yosys show
 exec python script/json2spice.py $SYNTH_TARGET.json $::env(PDK_CELL) $SYNTH_MODULE $SYNTH_TARGET.spice | tee /dev/tty
