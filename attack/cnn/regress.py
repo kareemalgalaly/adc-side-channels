@@ -276,5 +276,6 @@ if __name__  == '__main__':
 
     regression = CNNRegression(args)
     regression.load()
-    regression.run_all()
+    for i in range(args.repeat):
+        regression.run_all()
 
