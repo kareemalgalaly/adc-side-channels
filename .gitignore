@@ -12,6 +12,6 @@ obj_dir
 trained_models*
 outfiles*
 demo*.cir
-runme*.cir
+*runme*.cir
 seeds_*
 temp*txt
