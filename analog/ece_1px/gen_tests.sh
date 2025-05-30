@@ -32,8 +32,6 @@ fi
 #python ../../script/teng.py digital.temp.cir -o demo_${pixels}_tt_x.cir $args plot= seed=0            
 python ../../script/teng.py digital.temp.cir $args plot= seed=0 protected=V2 > demo_${pixels}_tt_p.cir
 
-exit
-
 if [ "$pixels" = "1px" ]; then
     values=("randvec_1=eval:'compose randvec_1 values '+' '.join(str(i) for i in range(256))")
 else
@@ -52,8 +50,8 @@ for seed in ${seeds[@]}; do
     fi
 
     for corner in ${corners[@]}; do
-        python ../../script/template_engine.py digital.temp.cir -s $args "${values[@]}" seed=$seed outdir=outfiles/digital_${pixels}_${corner}_x              -o runme_${pixels}_${corner}_x_${seed}.cir
-        python ../../script/template_engine.py digital.temp.cir -s $args "${values[@]}" seed=$seed outdir=outfiles/digital_${pixels}_${corner}_p protected=   -o runme_${pixels}_${corner}_p_${seed}.cir
+        python ../../script/template_engine.py digital.temp.cir -s $args "${values[@]}" seed=$seed outdir=outfiles/digital_${pixels}_${corner}_x protected=   -o runme_${pixels}_${corner}_x_${seed}.cir
+        python ../../script/template_engine.py digital.temp.cir -s $args "${values[@]}" seed=$seed outdir=outfiles/digital_${pixels}_${corner}_p protected=V1 -o runme_${pixels}_${corner}_p_${seed}.cir
         python ../../script/template_engine.py digital.temp.cir -s $args "${values[@]}" seed=$seed outdir=outfiles/digital_${pixels}_${corner}_q protected=V2 -o runme_${pixels}_${corner}_q_${seed}.cir
     done
 done
