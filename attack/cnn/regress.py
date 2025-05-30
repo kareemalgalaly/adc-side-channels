@@ -22,6 +22,7 @@ argparser.add_argument("-f", "--force", const=True, default=False, action='store
 argparser.add_argument("-p", "--preview", const=True, default=False, action='store_const', help="Don't run anything only list runs that would occur")
 argparser.add_argument("-x", "--headless", const=True, default=False, action='store_const', help="Do not open any gui's")
 argparser.add_argument("-t", "--test", type=str, default="", help="Limit run tests to those whose description matches the specified regex")
+argparser.add_argument("-r", "--repeat", type=int, default=1, help="Rerun training/test this many times. requires -f flag to work properly")
 argparser.add_argument("--nndebug", const=True, default=False, action='store_const', help="Print information about cnn creation.")
 args = argparser.parse_args()
 
