@@ -1,3 +1,11 @@
+###############################################################################
+# File        : attack/cnn/pt_cnn.py
+# Author      : 
+# Created     : 
+# Description : Original training setup, no longer used
+###############################################################################
+
+
 import os
 import torch
 import torch.nn as nn

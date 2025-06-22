@@ -1,3 +1,12 @@
+###############################################################################
+# File        : /Users/kareemahmad/Projects/SideChannels/adc-side-channel/attack/cnn/viewer.py
+# Author      : kareemahmad
+# Created     : 
+# Description : Plots traces.
+#               See python viewer.py -h for usage instructions
+###############################################################################
+
+
 import matplotlib.pyplot as plt
 import numpy as np
 

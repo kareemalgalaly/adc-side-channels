@@ -1,3 +1,10 @@
+###############################################################################
+# File        : /Users/kareemahmad/Projects/SideChannels/adc-side-channel/attack/cnn/regress.py
+# Author      : kareemahmad
+# Created     : 
+# Description : __main__ equivalent. Handles CNN training and testing
+###############################################################################
+
 from classes import argparser, Regression, ProgressBar, base36hash
 import json
 

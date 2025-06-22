@@ -1,3 +1,12 @@
+###############################################################################
+# File        : attack/cnn/differ.py
+# Author      : kareemahmad
+# Created     : 
+# Description : Plots difference of traces.
+#               See python differ.py -h for usage instructions
+###############################################################################
+
+
 import matplotlib.pyplot as plt
 import argparse
 import numpy as np

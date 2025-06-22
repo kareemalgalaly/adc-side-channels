@@ -1,3 +1,12 @@
+###############################################################################
+# File        : attack/cnn/dpa.py
+# Author      : kareemahmad
+# Created     :
+# Description : Basic DPA attempt for comparison. 
+#               Far from complete
+###############################################################################
+
+
 import matplotlib.pyplot as plt
 import numpy as np
 import argparse
