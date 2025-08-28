@@ -27,13 +27,13 @@ def select_func_gen(mode):
     elif mode == "VMAX": return vmax
     elif mode == "NEAREST": return near
     elif mode == "LINEAR": return mlin
-    else: raise ValueError("Illegal mode selected")
+    else: raise ValueError(f"Illegal mode selected {mode}")
 
 def sample_func_gen(mode):
     if   mode == 'MIN': return lambda x: np.min(x)
     elif mode == 'MAX': return lambda x: np.max(x)
     elif mode == 'AVG': return lambda x: np.average(x)
-    else: raise ValueError("Illegal mode selected")
+    else: raise ValueError(f"Illegal mode selected {mode}")
 
 def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0):
     time_col = column << 1

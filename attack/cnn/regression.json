@@ -24,6 +24,16 @@
         }
     },
     "datasets" : {
+        "digital_1px_tt_x" : {
+            "path" : "digital_1px_tt_x",
+            "type" : "sampled",
+            "format"  : "sky_raw_s\\d+_(\\d+).txt",
+            "columns" : 1,
+            "sample_mode"     : ["MIN", "MAX"],
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 260e-6,
+            "trace_scale"     : 1e3
+        },
         "digital_1px_ff_x" : {
             "path" : "digital_1px_ff_x",
             "type" : "sampled",
@@ -46,6 +56,16 @@
         },
         "digital_1px_ss_x" : {
             "path" : "digital_1px_ss_x",
+            "type" : "sampled",
+            "format"  : "sky_raw_s\\d+_(\\d+).txt",
+            "columns" : 1,
+            "sample_mode"     : ["MIN", "MAX"],
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 260e-6,
+            "trace_scale"     : 1e3
+        },
+        "digital_1px_tt_p" : {
+            "path" : "digital_1px_tt_p",
             "type" : "sampled",
             "format"  : "sky_raw_s\\d+_(\\d+).txt",
             "columns" : 1,
@@ -92,7 +112,7 @@
             "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
             "sample_duration" : 260e-6,
-            "trace_scale"     : 1e3
+            "trace_scale"     : 500
         },
         "digital_1px_fs_r" : {
             "path" : "digital_1px_fs_r",
@@ -102,7 +122,7 @@
             "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
             "sample_duration" : 260e-6,
-            "trace_scale"     : 1e3
+            "trace_scale"     : 500
         },
         "digital_1px_ss_r" : {
             "path" : "digital_1px_ss_r",
@@ -162,9 +182,9 @@
     "tests" : [
         {
             "desc"          : "Table II - Unprotected BW",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["paper"],
-            "datasets"      : ["digital_1px_ff_x:max"],
+            "datasets"      : ["digital_1px_tt_x:max"],
             "test_dataset"  : ["digital_1px_ss_x:max", "digital_1px_fs_x:max"],
             "learning_rate" : [0.0001],
             "learning_decay": 0.000005,
@@ -172,19 +192,19 @@
         },
         {
             "desc"          : "Table II - Unprotected SE",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["paper_se"],
             "datasets"      : ["digital_1px_ff_x:max"],
             "test_dataset"  : ["digital_1px_ss_x:max", "digital_1px_fs_x:max"],
-            "learning_rate" : [0.005],
+            "learning_rate" : [0.0025],
             "learning_decay": 0.000005,
             "max_epochs"    : 30000
         },
         {
             "desc"          : "Table III - Masking Bad BW",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["paper"],
-            "datasets"      : ["digital_1px_ff_p:max"],
+            "datasets"      : ["digital_1px_tt_p:max"],
             "test_dataset"  : ["digital_1px_ss_p:max", "digital_1px_fs_p:max"],
             "learning_rate" : [0.00015],
             "learning_decay": 0.000015,
@@ -192,9 +212,9 @@
         },
         {
             "desc"          : "Table III - Masking Bad SE",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["paper_se"],
-            "datasets"      : ["digital_1px_ff_p:max"],
+            "datasets"      : ["digital_1px_tt_p:max"],
             "test_dataset"  : ["digital_1px_ss_p:max", "digital_1px_fs_p:max"],
             "learning_rate" : [0.0025],
             "learning_decay": 0.000005,
@@ -202,7 +222,7 @@
         },
         {
             "desc"          : "Table IV - Masking Good BW",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["paper"],
             "datasets"      : ["digital_1px_tt_3:max"],
             "test_dataset"  : ["digital_1px_ss_3:max", "digital_1px_fs_3:max"],
@@ -213,7 +233,7 @@
         },
         {
             "desc"          : "Table IV - Masking Good SE",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["paper_se"],
             "datasets"      : ["digital_1px_tt_3:max"],
             "test_dataset"  : ["digital_1px_ss_3:max", "digital_1px_fs_3:max"],

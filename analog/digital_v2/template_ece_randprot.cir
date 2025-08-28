@@ -1,13 +1,14 @@
 Simulation of digital single-slope adc circuit synthesized with Yosys
 
 {default stdc hs}
+{default corner tt}
 
 ** Libraries ----------------------------------------
 {ifxst /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice}
-.lib "/foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice" {corner=tt}
+.lib "/foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice" {corner}
 .include "/foss/pdk/sky130A/libs.ref/sky130_fd_sc_{stdc}/spice/sky130_fd_sc_{stdc}.spice"
 {else}
-.lib "models/sky130.lib.spice" {corner=tt}
+.lib "models/sky130.lib.spice" {corner}
 .include cells/a211oi/sky130_fd_sc_{stdc}__a211oi_1.spice
 .include cells/a21oi/sky130_fd_sc_{stdc}__a21oi_1.spice
 .include cells/and2/sky130_fd_sc_{stdc}__and2_1.spice
@@ -407,7 +408,7 @@ let tmax    = digmax * period + treset + tgap
 set ext = ".txt"
 set dlm = "_"
 
-shell mkdir -p outfiles/digital_1px_ff_randomized
+shell mkdir -p outfiles/digital_1px_{corner}_r
 set wr_singlescale
 set wr_vecnames
 
@@ -446,14 +447,14 @@ while istart < istop
     let cut-tstop = 520u
     cutout
 
-    wrdata outfiles/digital_1px_ff_randomized/sky_raw_s$&iseed$dlm$&dvalue$ext -I(vdd)
+    wrdata outfiles/digital_1px_{corner}_r/sky_raw_s$&iseed$dlm$&dvalue$ext -I(vdd)
 
     let lin-tstart = 260u
     let lin-tstop  = 520u
     let lin-tstep  = 100n
     linearize I(vdd)
 
-    wrdata outfiles/digital_1px_ff_randomized/sky_lin_s$&iseed$dlm$&dvalue$ext -I(vdd)
+    wrdata outfiles/digital_1px_{corner}_r/sky_lin_s$&iseed$dlm$&dvalue$ext -I(vdd)
 
     destroy all
 

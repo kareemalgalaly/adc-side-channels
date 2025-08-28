@@ -56,6 +56,11 @@ for i in range(0, len(datasets), 2):
         trace1 = trace1[:mlen]
         trace2 = trace2[:mlen]
 
+    power_t1 = trace1.sum() / dataset1.trace_scale
+    power_t2 = trace2.sum() / dataset2.trace_scale
+    print(f"Power {dataset1.name[:-4]} : {power_t1}")
+    print(f"Power {dataset2.name[:-4]} : {power_t2}")
+
     time = np.linspace(start, stop, num=len(trace1))
     ax.plot(time, trace1-trace2, alpha=0.5, linestyle='solid', label=f"{dataset1.name[:-4]}[{traces[i]}]-{dataset2.name[:-4]}[{traces[i+1] if traces[i+1] != -1 else 'avg'}]")
 #f"Diff {args.dataset1}[{args.trace1}]-{args.dataset2}[{args.trace2 if args.trace2 != -1 else 'avg'}]")
