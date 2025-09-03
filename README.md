@@ -1,78 +1,155 @@
 # SingleSlopeADC
 
-- [ ] This document requires significant updating
+This repo contains the designs and experiments used for the following papers:
 
-## Organization
-```txt
-analog
-digital
-  tb
-  design
-    top
-    unprotected
-attack/cnn
-script
-build
-synth
-Makefile
-```
+[C. Körpe, K. Ahmad, E. Öztürk, K. Tihaiya, R. Tran, H. Yang, J. Yang, G. Dündar, V. Mooney and K. Ozanoglu, "A Side-Channel Attack-Resilient Single-Slope ADC for Image Sensor Applications," 21st International Conference on Synthesis, Modeling, Analysis and Simulation Methods, and Applications to Circuit Design (SMACD'25), July 2025.](https://xplorestaging.ieee.org/document/11092095/)
 
-## Tools Used
-- ngspice
+[K. Ahmad, E. Öztürk, C. Körpe, H. Yang, J. Yang, K. Tihaiya, R. Tran, G. Dündar, V. Mooney and K. Ozanoglu, "Protection of the Digital Circuitry of a Single-Slope ADC Against Side-Channel Attacks," 2025 IEEE International Conference on Cyber Security and Resilience (CSR'25), August 2025.](https://xplorestaging.ieee.org/document/11130145)
+
+## Tools Required
+- ngspice (version 44 or later)
 - verilator
 - yosys
 - x-server (XQuartz or Xpra on Mac)
-- python
+- python (version 3.10 or later)
   - pytorch
+- bash
 
-## Make Commands
-This section is far outdated. Most analog designs come with a run.sh
+Tools have been tested on MacOS (arm), Debian 12 Bookwork (amd64), and Fedora 42 (amd64). Shell scripts are written for bash.
 
+## Toolchain Setup (Spice Simulations and CNN Attack)
+
+1. Install ngspice 
+2. Clone efabless skywater PDK libraries
+    - [https://github.com/efabless/skywater-pdk-libs-sky130_fd_pr]()
+    - [https://github.com/efabless/skywater-pdk-libs-sky130_fd_sc_hs]() 
+3. Edit .spiceinit files (`analog/*/.spiceinit`) to point to cloned efabless repos
+4. Edit Makefile PDK
+6. Install python 3.10 or higher
+7. Install all libraries in `requirements.txt`. 
+   `pip install -r requirements.txt`
+
+## Toolchain Setup (Digital Synthesis)
+
+1. Install yosys
+2. Clone skywater PDK library
+    - [https://github.com/google/skywater-pdk]()
+3. Run the following commands in skywater repo:
 ```bash
-make control_v0.synth  # Synthesize module
-make control_v0.adcsim # Simulate adc with given module verilog
+    SUBMODULE_VERSION=latest make submodules -j3 || make submodules -j1
+    make timing
+```
+4. Clone efabless skywater PDK libraries
+    - [https://github.com/efabless/skywater-pdk-libs-sky130_fd_pr]()
+    - [https://github.com/efabless/skywater-pdk-libs-sky130_fd_sc_hs]() 
+5. Edit the first three entries in the makefile:
+```Makefile
+    PDK_PROCESS_LIB	?= ${PATH_TO_EFABLESS_FD_PR_REPO}/models/sky130.lib.spice
+    PDK_CELL_LIB 	?= ${PATH_TO_EFABLESS_FD_SC_HS_REPO}/cells
+    PDK_LIBERTY     ?= ${PATH_TO_SKYWATER_REPO}/latest/timing/sky130_fd_sc_hs__tt_025C_1v50.lib
 ```
 
-## Conference Paper
-### Objective
+## Experiments (SMACD '25)
 
-1. Combine analog and digital designs into a joint attack (1 pixel)
-    a. Unprotected design
-    a. Protected design (digital #3, analog random ramp for dummy)
-    a. Protected design (digital #3, analog random ramp for both, requires digital resolve logic)
-2. Try various attack techniques
-3. Use better data splitting (markov datasets), including perhaps a validation dataset
+### Experiment 1: Unprotected
 
-::: info
-**From Mooney's Slides**
+```bash
+cd analog/analog_base
+./gen_test.sh 1px
+ngspice runme_1px_tt_xx_0.cir
+ngspice runme_1px_tt_xm_0.cir
+ngspice runme_1px_tt_xl_0.cir
+mkdir -p ../outfiles
+mv outfiles/* ../outfiles
+```
 
-- if a single pixel cannot be protected, then the protection of multiple pixels will likely be problematic
-- if a single pixel can be protected, we can then proceed with perhaps similar techniques to protect large simultaneous samples of a realistic pixel array size
-:::
+The `demo.*cir` files run a small set of simulations and produce plots for viewing basic results.
 
-### Required Work 
+### Experiment 2: Protected
 
-| #  | Description                                  | Engineering Effort | Time Effort |
-|----|----------------------------------------------|-----------------|-----------------|
-| 1. | Setup multi-trace CNN attack                 | Medium          | ~ 1 wk          |
-| 2. | Implement digital logic for random ramp      | High            | ~ 1-2 wks       |
-| 3. | TT simulation for training                   | Low             | ???             |
-| 5. | Corner simulations for test dataset          | Low             | ???             |
-| 6. | Markov-based simulations for test dataset    | Low-Medium      | ???             |
-| 7. | Sweep CNN trace scale                        | Low-Medium      | ???             |
+```bash
+cd analog/analog_base
+./gen_test.sh tt1
+./gen_test.sh tt2
+./gen_test.sh ttl
+./gen_test.sh sf
+for runfile in $(ls | grep runme.*cir); do
+    ngspice $runfile
+done
+mkdir -p ../outfiles
+mv outfiles/* ../outfiles
+```
 
-### Optional Work 
-| #  | Description                                  | Engineering Effort | Time Effort |
-|----|----------------------------------------------|-----------------|-----------------|
-| 1. | Place and route digital logic                | High            | 2+ wks          |
-| 2. | Setup different types of CNN attack          | High            | 3+ wks          |
-| 3. | Additional analog updates? (e.g. IDAC)       | ???             | ???             |
-| 4. | Explore additional analog protections?       | ???             | ???             |
-| 5. | Understand vanishing gradient issue (multipix) | High          | ???             |
-| 6. | Multipixel attack                            | High            | ???             |
+The `demo.*cir` files run a small set of simulations and produce plots for viewing basic results.
 
+### CNN Attack
 
-::: {.info .warn}
-- assuming pixels with wide dynamic range
-- random ramp that reaches 255 early or never reaches may be a point of information leakage
-:::
+```bash
+cd attack/cnn
+python regress.py --json smacd.json
+```
+
+Generates training plots and `run_results.csv` in `outfiles`.
+
+Use `--help` for additional arguments
+
+## Experiments (HACS  '25)
+
+### Experiment 1 : Unprotected
+
+```bash
+cd analog/ece_1px
+./gen_tests 1px
+ngspice runme_1px_tt_x_0.cir
+ngspice runme_1px_ss_x_0.cir
+ngspice runme_1px_fs_x_0.cir
+mkdir -p ../outfiles
+mv outfiles/* ../outfiles
+```
+
+### Experiment 2 : Failed Protection
+
+```bash
+cd analog/ece_1px
+./gen_tests 1px
+ngspice runme_1px_tt_p_0.cir
+ngspice runme_1px_ss_p_0.cir
+ngspice runme_1px_fs_p_0.cir
+mkdir -p ../outfiles
+mv outfiles/* ../outfiles
+```
+
+### Experiment 3 : Masked Protection
+
+```bash
+cd analog/digital_v2
+./run.sh -v v3 -c tt -s 0 -n 256
+./run.sh -v v3 -c ss -s 0 -n 256
+./run.sh -v v3 -c fs -s 0 -n 256
+mkdir -p ../outfiles
+mv outfiles/* ../outfiles
+```
+
+### Experiment 4 : Random Protection
+
+```bash
+cd analog/digital_v2
+./run.sh -v ece -c tt -s 0 -n 256
+./run.sh -v ece -c ss -s 0 -n 256
+./run.sh -v ece -c fs -s 0 -n 256
+mkdir -p ../outfiles
+mv outfiles/* ../outfiles
+```
+
+## Digital Synthesis
+
+```bash
+make synth/counters/counter_half
+make synth/samplers/double_rate_sampler
+make synth/ece_1px_unprot/edge_detector
+make synth/ece_1px_unprot/register_array
+# etc
+```
+
+Generated spice files are manually copied to relevant libraries under their `analog/{experiment_tb}` manually assembled into the setups found there.
+
