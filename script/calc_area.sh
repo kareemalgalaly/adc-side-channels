@@ -17,7 +17,6 @@ between() {
     stop=$2
     file=$3
     cat $file | awk -v start="$start" -v stop="$stop" 'BEGIN {disp=0} $0~start {disp=2} $0~stop {disp=0} $0 {if (disp>1) {disp=1} else if (disp) print($0)}'
-
 }
 
 echo "--------------------------------------------------"
