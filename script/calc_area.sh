@@ -1,3 +1,5 @@
+#!/bin/bash
+
 D1=analog/ece_1px
 D2=analog/digital_v2
 D1LIB=$D1/lib
@@ -23,7 +25,6 @@ echo "--------------------------------------------------"
 echo "-- Digital Components                           --"
 echo "--------------------------------------------------"
 
-#counter_half=$(measure2 $D2LIB/counter_half.spice)
 counter_half=$(measure2 <(between 'lib synth$' 'endl synth$' $D2LIB/counter_half.spice))
 echo -e "\ncounter_half        $counter_half"
 

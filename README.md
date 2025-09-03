@@ -153,3 +153,10 @@ make synth/ece_1px_unprot/register_array
 
 Generated spice files are manually copied to relevant libraries under their `analog/{experiment_tb}` manually assembled into the setups found there.
 
+**Calculating Area**
+
+Area is approximated by summing the areas of standard cells in each design.
+
+```bash
+make area
+```
