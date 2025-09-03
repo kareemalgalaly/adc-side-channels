@@ -17,15 +17,10 @@ vclk  clk   gnd PULSE(0   1.8 0 10p 10p .5u 1u)
 vdda  vdd   gnd 1.8
 vrfp  gnd   vrefp 1
 vrfn  vrefn gnd   1
-;vini vini  gnd   1.5
 
-vpix pix GND 0.3
-
-*vc0  vc0 gnd 0
-*vc1  vc1 gnd 0
-*vc2  vc2 gnd 0
-*vc3  vc3 gnd 0
-*vc4  vc4 gnd 0
+{for p in range(pixels)}
+vpix{p} pix{p} GND 0.3
+{endfor}
 
 vc0  vc0 GND PWL(0 0 67u 0 67.1u 0 131u 0 131.1u 0 195u 0 195.1u 0 259u 0 260u 0) r=0
 vc1  vc1 GND PWL(0 0 67u 0 67.1u 0 131u 0 131.1u 0 195u 0 195.1u 0 259u 0 260u 0) r=0
@@ -38,16 +33,22 @@ vc4  vc4 GND PWL(0 0 67u 0 67.1u 0 131u 0 131.1u 0 195u 0 195.1u 0 259u 0 260u 0
 xrmpp vrefp      vc0 vc1 vc2 vc3 vc4 rampp vdd gnd rst  ramp_generator
 xrmpn vrefn vdd  vc0 vc1 vc2 vc3 vc4 rampn vdd gnd rst  ramp_generator_init_k
 
-xcmpp rampp pix clk outpp outnp vdd gnd comparator_wrap
-xcmpn rampn pix clk outpn outnn vdd gnd comparator_wrap
+{for p in range(pixels)}
+xcmpp{p} rampp pix{p} clk outpp{p} outnp{p} vdd gnd comparator_wrap
+xcmpn{p} rampn pix{p} clk outpn{p} outnn{p} vdd gnd comparator_wrap
+{endfor}
 
 .control
-{randpx0=compose randpx0 values 3e-1 7e-1} ;  0.5 0.8
-{randvc0=compose randvc0 values 0   18e-1 18e-1     0  18e-1     0 0 18e-1 }
-{randvc1=compose randvc1 values 0   18e-1     0     0    0       0 0 18e-1 }
-{randvc2=compose randvc2 values 0   18e-1     0     0    0       0 0 18e-1 }
-{randvc3=compose randvc3 values 0   18e-1     0     0    0       0 0 18e-1 }
-{randvc4=compose randvc4 values 0   18e-1     0 18e-1    0   18e-1 0 18e-1 }
+{randpx0=compose randpx0 values 3e-1 7e-1}
+{randpx1=compose randpx1 values 2e-1 8e-1}
+{randpx2=compose randpx2 values 1e-1 9e-1}
+{randpx3=compose randpx3 values 4e-1 6e-1}
+{randpx4=compose randpx4 values 5e-1 5e-1}
+{randvc0=compose randvc0 values 0   18e-1 18e-1     0  18e-1     0 0 18e-1}
+{randvc1=compose randvc1 values 0   18e-1     0     0    0       0 0 18e-1}
+{randvc2=compose randvc2 values 0   18e-1     0     0    0       0 0 18e-1}
+{randvc3=compose randvc3 values 0   18e-1     0     0    0       0 0 18e-1}
+{randvc4=compose randvc4 values 0   18e-1     0 18e-1    0   18e-1 0 18e-1}
 
 let istart = 0
 let istop  = length(randpx0)
@@ -66,8 +67,10 @@ while istart < istop
 
     let iseed = istart + {seed}
 
-    alter vpix randpx0[istart]
-    let vact  = randpx0[istart]
+    {for p in range(pixels)}
+    let   vact{p} = randpx{p}[istart]
+    alter vpix{p} vact{p}
+    {endfor}
     let index = istart*4 % length(randvc0)
     {for i in range(4)}
     let V1 = randvc{i}[index]
@@ -84,9 +87,16 @@ while istart < istop
     cutout
 
     {ifndef plot}
-    wrdata {outdir=outfiles/analog}/raw_s$&iseed$dlm$&vact$ext -I(vdda)
+    {if pixels == 5}
+    wrdata {outdir=outfiles/analog}/raw_s$&iseed$dlm$&vact0$dlm$&vact1$dlm$&vact2$dlm$&vact3$dlm$&vact4$ext -I(vdda)
     {else}
-    plot outpp outnp
+    wrdata {outdir=outfiles/analog}/raw_s$&iseed$dlm$&vact0$ext -I(vdda)
+    {endif}
+    {else}
+    plot outpp0 outnp0
+    {if pixels == 5}
+    plot outpp0 outpp1 outpp2 outpp3 outpp4
+    {endif}
     plot rampp rampn pix
     plot i(vdda)
     plot vc0 vc1+2 vc2+4 vc3+6 vc4+8
@@ -98,14 +108,20 @@ while istart < istop
     linearize I(vdda) ; digitized
 
     {ifndef plot}
-    wrdata {outdir=outfiles/analog}/lin_s$&iseed$dlm$&vact$ext -I(vdda)
+    {if pixels == 5}
+    wrdata {outdir=outfiles/analog}/lin_s$&iseed$dlm$&vact0$dlm$&vact1$dlm$&vact2$dlm$&vact3$dlm$&vact4$ext -I(vdda)
+    {else}
+    wrdata {outdir=outfiles/analog}/lin_s$&iseed$dlm$&vact0$ext -I(vdda)
+    {endif}
     {else}
     ;plot i(v.xrmpp.vim) i(v.xrmpn.vim)
     ;plot (-i(vrfp)) (-i(vrfn))
     {endif}
 
     let istart = istart + 1
+    {ifndef plot destroy all}
 end
+{ifndef plot exit}
 .endc
 
 .end

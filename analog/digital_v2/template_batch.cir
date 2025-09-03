@@ -1,0 +1,114 @@
+Simulation of digital adc
+{default pixels   1}
+{assert  pixels > 0}
+{default dvals list(range(0, 255, 256//pixels))}
+{ifdef   seed}
+    {import  random}
+    {eval    random.seed(seed)}
+    {define  dvals [random.randint(0, 255) for p in range(pixels)]}
+{endif}
+{define  getbus func:name,suffix="",rng=range(8): " ".join(name+str(suffix)+"."+str(i) for i in rng)}
+{define  dplot  func:vars: " ".join(var+"/2+"+str(i) for i, var in enumerate(vars.split()))}
+{define  dbus   func:name,suffix="",rng=range(8): "+".join(name+str(suffix)+"."+str(i)+"/"+str(1 << (8-i)) for i in rng)}
+
+** Libraries --------------------------------------------------
+
+{ifxst /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice}
+.lib "/foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice" {corner=tt}
+.include "/foss/pdk/sky130A/libs.ref/sky130_fd_sc_hs/spice/sky130_fd_sc_hs.spice"
+{else}
+.lib "models/sky130.lib.spice" {corner=tt}
+.include cells/a211oi/sky130_fd_sc_hs__a211oi_1.spice
+.include cells/a21oi/sky130_fd_sc_hs__a21oi_1.spice
+.include cells/and2/sky130_fd_sc_hs__and2_1.spice
+.include cells/and3/sky130_fd_sc_hs__and3_1.spice
+.include cells/and4/sky130_fd_sc_hs__and4_1.spice
+.include cells/dfxtp/sky130_fd_sc_hs__dfxtp_1.spice
+.include cells/inv/sky130_fd_sc_hs__inv_1.spice
+.include cells/mux2i/sky130_fd_sc_hs__mux2i_1.spice
+.include cells/mux2/sky130_fd_sc_hs__mux2_1.spice
+.include cells/nand2b/sky130_fd_sc_hs__nand2b_1.spice
+.include cells/nor2b/sky130_fd_sc_hs__nor2b_1.spice
+.include cells/nor2/sky130_fd_sc_hs__nor2_1.spice
+.include cells/nor3b/sky130_fd_sc_hs__nor3b_1.spice
+.include cells/nor3/sky130_fd_sc_hs__nor3_1.spice
+.include cells/nor4b/sky130_fd_sc_hs__nor4b_1.spice
+.include cells/o21a/sky130_fd_sc_hs__o21a_1.spice
+.include cells/o21bai/sky130_fd_sc_hs__o21bai_1.spice
+.include cells/o21ba/sky130_fd_sc_hs__o21ba_1.spice
+.include cells/or2/sky130_fd_sc_hs__or2_1.spice
+.include cells/or3b/sky130_fd_sc_hs__or3b_1.spice
+.include cells/xor2/sky130_fd_sc_hs__xor2_1.spice
+{endif}
+
+*.lib lib/register_array.spice    {ifdef regarry_header model else synth}
+*.lib lib/negedge_detector.spice  {ifdef edetect_header model else synth}
+.lib lib/counter_half.spice      {ifdef counter_header model else synth}
+.inc lib/double_rate_sampler_{version=v3}.spice
+
+** Counter -------------------------------------------------
+
+xcounter clk rst cen {getbus("count")} overflow vss vss vdd vdd counter_half 
+* cen = delayed inverted rst
+xcen    rst vss vss vdd vdd cen_d sky130_fd_sc_hs__inv_1
+xcen_ff clk cen_d vss vss vdd vdd cen sky130_fd_sc_hs__dfxtp_1
+
+** Per Pixel Modules ---------------------------------------
+
+{for p in range(1, pixels+1)}
+
+xsample_{p} clk2 rst comp_toggl.{p} comp_toggln.{p} {getbus("count")} {getbus("pixel",p)} {getbus("pixeld",p)} vss vss vdd vdd double_rate_sampler
+
+{endfor}
+
+** Control Signals -----------------------------------------
+
+* Voltage sources
+.param vdd=1.8
+Vdd vdd 0 {vdd}
+
+.param vss=0
+Vss vss 0 {vss}
+
+* Clock and Reset signals (1MHz clock)
+Vrst    rst     0   pulse   {vss}   {vdd}   0u      10n  10n    2u    260u
+Vclk    clk     0   pulse   {vss}   {vdd}   1u      1n   1n   0.5u      1u
+Vclk2   clk2    0   pulse   {vss}   {vdd}   1.25u   1n   1n  0.25u    0.5u
+
+* Model Clocked Comparator
+{for p in range(1, pixels+1)}
+Vcomp{p} comp_ideal.{p} 0 pulse {vss} {vdd} {eval 2+dvals[p-1]}u 10n 10n {eval 258-dvals[p-1]}u 260u
+Bcomp{p} comp_toggl.{p} 0 V = V(comp_ideal.{p}) > {vdd/2} ? V(clk) : {vss}     ; regular  comp out
+Bcompn{p} comp_toggln.{p} 0 V = V(comp_ideal.{p}) > {vdd/2} ? {vss} : V(clk) ; inverted comp out
+{endfor}
+
+** Simulation Control --------------------------------------
+
+.option method=Gear
+
+{ifndef interactive}
+.save rst cen clk clk2 I(vdd) {getbus("count")} {for p in range(1, pixels+1)} {getbus("pixel"+str(p))} {getbus("pixeld"+str(p))} comp_ideal.{p} comp_toggl.{p} comp.toggln.{p} xsample_{p}.reset_cycle xsample_{p}.pdp.vald xsample_{p}.pdn.vald xsample_{p}.wen xsample_{p}.wenn {endfor}
+{endif}
+
+;.tran 1u 520u uic
+;.tran 1u 260u uic
+.tran 10n 260u uic
+;.set color0=white
+;set color1=rgb:50/50/50
+
+{ifdef interactive}
+.control 
+    run
+    plot -I(vdd)
+    plot clk rst cen
+    let count = {dbus("count")}
+    {for p in range(1, pixels+1)}
+        plot count {dbus("pixel", p)}
+    {endfor}
+    ; debugging pixel value changing randomly cause of wen
+    plot comp_toggl.1 xsample_1.pdp.vald+2 xsample_1.wen+4 xsample_1.set_cycle+6 xsample_1.__81__+8 xsample_1.__82__+10 clk2-2 rst-4 xsample_1.reset_cycle+12 xsample_1.__41__+14
+.endc
+{endif}
+
+.END
+

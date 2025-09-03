@@ -10,16 +10,6 @@
             "type"       : "single_ended",
             "inputs"     : 1
         },
-        "deep" : {
-            "definition" : "C(5,5,1):R:C(5,5,1):R:C(5,5,1):R:C(5,5,1):P(5,5):R:C(5,5,1):P(5,5):R:F(256):R:F(256):R:F(256):R:F(128):R:F(64):R:F(2):S",
-            "type"       : "bitwise",
-            "inputs"     : 1
-        },
-        "deep_se" : {
-            "definition" : "C(5,5,1):R:C(5,5,1):R:C(5,5,1):R:C(5,5,1):P(5,5):R:C(5,5,1):P(5,5):R:F(512):R:F(256):R:F(256):R:F(256):R:F(128):R:F(64):R:F(1)",
-            "type"       : "single_ended",
-            "inputs"     : 1
-        },
         "resnet101pt" : {
             "definition" : "predef::resnet101",
             "type"       : "bitwise",
@@ -34,71 +24,6 @@
         }
     },
     "datasets" : {
-        "linearized3k" : {
-            "path"    : "sky_Dec_18_2151",
-            "type"    : "raw",
-            "format"  : "sky_d(\\d+)_.*\\.txt",
-            "columns" : 1,
-            "len"     : 3000
-        },
-        "a1u_tt:lin" : {
-            "path"    : "analog_1px_unprot_tt_Jan_28_1945",
-            "type"    : "raw",
-            "format"  : "sky_lin_d(\\d+)v.txt",
-            "columns" : 1,
-            "len"     : 2551
-        },
-        "a1u_tt" : {
-            "path"    : "analog_1px_unprot_tt_Jan_28_1945",
-            "type"    : "sampled",
-            "format"  : "sky_raw_d(\\d+)v.txt",
-            "columns" : 1,
-            "sample_mode"     : ["MAX","MIN"],
-            "sample_interval" : 0.1e-6,
-            "sample_duration" : 255e-6
-        },
-        "a1u_ss:lin" : {
-            "path"    : "analog_1px_unprot_ss_Jan_29_0103",
-            "type"    : "raw",
-            "format"  : "sky_lin_d(\\d+)v.txt",
-            "columns" : 1,
-            "len"     : 2561
-        },
-        "a1u_ss" : {
-            "path"    : "analog_1px_unprot_ss_Jan_29_0103",
-            "type"    : "sampled",
-            "format"  : "sky_raw_d(\\d+)v.txt",
-            "columns" : 1,
-            "sample_mode"     : ["MAX", "MIN"],
-            "sample_interval" : 0.1e-6,
-            "sample_duration" : 256e-6
-        },
-        "a1u_ff:lin" : {
-            "path"    : "analog_1px_unprot_ff_Jan_29_1818",
-            "type"    : "raw",
-            "format"  : "sky_lin_d(\\d+)v.txt",
-            "columns" : 1,
-            "len"     : 2561
-        },
-        "a1u_ff" : {
-            "path"    : "analog_1px_unprot_ff_Jan_29_1818",
-            "type"    : "sampled",
-            "format"  : "sky_raw_d(\\d+)v.txt",
-            "columns" : 1,
-            "sample_mode"     : ["MAX", "MIN"],
-            "sample_interval" : 0.1e-6,
-            "sample_duration" : 256e-6
-        },
-        "digital_1px_ff_p" : {
-            "path" : "digital_1px_ff_p",
-            "type" : "sampled",
-            "format"  : "sky_raw_s\\d+_(\\d+).txt",
-            "columns" : 1,
-            "sample_mode"     : ["MIN", "MAX"],
-            "sample_interval" : 0.1e-6,
-            "sample_duration" : 256e-6,
-            "trace_scale"     : 1e3
-        },
         "digital_1px_ff_x" : {
             "path" : "digital_1px_ff_x",
             "type" : "sampled",
@@ -106,17 +31,17 @@
             "columns" : 1,
             "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
-            "sample_duration" : 256e-6,
+            "sample_duration" : 260e-6,
             "trace_scale"     : 1e3
         },
-        "digital_1px_ss_p" : {
-            "path" : "digital_1px_ss_p",
+        "digital_1px_fs_x" : {
+            "path" : "digital_1px_fs_x",
             "type" : "sampled",
             "format"  : "sky_raw_s\\d+_(\\d+).txt",
             "columns" : 1,
             "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
-            "sample_duration" : 256e-6,
+            "sample_duration" : 260e-6,
             "trace_scale"     : 1e3
         },
         "digital_1px_ss_x" : {
@@ -126,311 +51,198 @@
             "columns" : 1,
             "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
-            "sample_duration" : 256e-6,
+            "sample_duration" : 260e-6,
             "trace_scale"     : 1e3
         },
-        "analog_1px_tt_xx" : {
-            "path" : "analog_1px_tt_xx",
+        "digital_1px_ff_p" : {
+            "path" : "digital_1px_ff_p",
             "type" : "sampled",
-            "format"  : "raw_s\\d+_((0\\.)?\\d+)\\.txt",
+            "format"  : "sky_raw_s\\d+_(\\d+).txt",
             "columns" : 1,
-            "label"   : "lambda gs: int(round(float(gs[0])*256))",
             "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
-            "sample_duration" : 256e-6
+            "sample_duration" : 260e-6,
+            "trace_scale"     : 1e3
         },
-        "analog_1px_tt_xm" : {
-            "path" : "analog_1px_tt_xm",
+        "digital_1px_fs_p" : {
+            "path" : "digital_1px_fs_p",
             "type" : "sampled",
-            "format"  : "raw_s\\d+_((0\\.)?\\d+)\\.txt",
+            "format"  : "sky_raw_s\\d+_(\\d+).txt",
             "columns" : 1,
-            "label"   : "lambda gs: int(round(float(gs[0])*256))",
             "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
-            "sample_duration" : 256e-6
+            "sample_duration" : 260e-6,
+            "trace_scale"     : 1e3
         },
-        "analog_1px_tt_px" : {
-            "path" : "analog_1px_tt_px",
+        "digital_1px_ss_p" : {
+            "path" : "digital_1px_ss_p",
             "type" : "sampled",
-            "format"  : "raw_s\\d+_((0\\.)?\\d+)\\.txt",
+            "format"  : "sky_raw_s\\d+_(\\d+).txt",
             "columns" : 1,
-            "label"   : "lambda gs: int(round(float(gs[0])*256))",
             "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
-            "sample_duration" : 256e-6
+            "sample_duration" : 260e-6,
+            "trace_scale"     : 1e3
         },
-        "analog_1px_tt_pm" : {
-            "path" : "analog_1px_tt_pm",
+        "digital_1px_tt_r" : {
+            "path" : "digital_1px_tt_r",
             "type" : "sampled",
-            "format"  : "raw_s\\d+_((0\\.)?\\d+)\\.txt",
+            "format"  : "sky_raw_s\\d+_(\\d+).txt",
             "columns" : 1,
-            "label"   : "lambda gs: int(round(float(gs[0])*256))",
             "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
-            "sample_duration" : 256e-6
+            "sample_duration" : 260e-6,
+            "trace_scale"     : 1e3
         },
-        "analog_1px_tt_qx" : {
-            "path" : "analog_1px_tt_qx",
+        "digital_1px_fs_r" : {
+            "path" : "digital_1px_fs_r",
             "type" : "sampled",
-            "format"  : "raw_s\\d+_((0\\.)?\\d+)\\.txt",
+            "format"  : "sky_raw_s\\d+_(\\d+).txt",
             "columns" : 1,
-            "label"   : "lambda gs: int(round(float(gs[0])*256))",
             "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
-            "sample_duration" : 256e-6
+            "sample_duration" : 260e-6,
+            "trace_scale"     : 1e3
         },
-        "analog_1px_tt_rx" : {
-            "path" : "analog_1px_tt_rx",
+        "digital_1px_ss_r" : {
+            "path" : "digital_1px_ss_r",
             "type" : "sampled",
-            "format"  : "raw_s\\d+_((0\\.)?\\d+).txt",
+            "format"  : "sky_raw_s\\d+_(\\d+).txt",
             "columns" : 1,
-            "label"   : "lambda gs: int(round(float(gs[0])*256))",
             "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
-            "sample_duration" : 256e-6
+            "sample_duration" : 260e-6,
+            "trace_scale"     : 1e3
         },
-        "analog_1px_sf_rx" : {
-            "path" : "analog_1px_sf_rx",
+        "digital_5px_fs_p" : {
+            "path" : "digital_5px_fs_p",
             "type" : "sampled",
-            "format"  : "raw_s\\d+_((0\\.)?\\d+).txt",
+            "format"  : "sky_raw_s(\\d+)_(\\d+)_(\\d+)_(\\d+)_(\\d+)_(\\d+).txt",
             "columns" : 1,
-            "label"   : "lambda gs: int(round(float(gs[0])*256))",
+            "label"   : "lambda gs: int(gs[0])",
             "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
-            "sample_duration" : 256e-6
+            "sample_duration" : 260e-6,
+            "trace_scale"     : 1e3
         },
-        "analog_1px_ss_rx" : {
-            "path" : "analog_1px_ss_rx",
+        "digital_1px_tt_3" : {
+            "path" : "digital_1px_tt_3",
             "type" : "sampled",
-            "format"  : "raw_s\\d+_((0\\.)?\\d+).txt",
+            "format"  : "trace_(\\d+)",
             "columns" : 1,
-            "label"   : "lambda gs: int(round(float(gs[0])*256))",
+            "label"   : "lambda gs: int(gs[0])",
             "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
-            "sample_duration" : 256e-6
+            "sample_duration" : 260e-6,
+            "trace_scale"     : 500
         },
-        "analog_1px_tt_rl" : {
-            "path" : "analog_1px_tt_rl",
+        "digital_1px_fs_3" : {
+            "path" : "digital_1px_fs_3",
             "type" : "sampled",
-            "format"  : "raw_s\\d+_((0\\.)?\\d+).txt",
+            "format"  : "trace_(\\d+)",
             "columns" : 1,
-            "label"   : "lambda gs: int(round(float(gs[0])*256))",
+            "label"   : "lambda gs: int(gs[0])",
             "sample_mode"     : ["MIN", "MAX"],
             "sample_interval" : 0.1e-6,
-            "sample_duration" : 256e-6
+            "sample_duration" : 260e-6,
+            "trace_scale"     : 500
+        },
+        "digital_1px_ss_3" : {
+            "path" : "digital_1px_ss_3",
+            "type" : "sampled",
+            "format"  : "trace_(\\d+)",
+            "columns" : 1,
+            "label"   : "lambda gs: int(gs[0])",
+            "sample_mode"     : ["MIN", "MAX"],
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 260e-6,
+            "trace_scale"     : 500
         }
     },
     "tests" : [
         {
-            "desc"          : "Test 0A: Original testcase, based on paper network with linearized datasets",
-            "skip"          : true,
-            "networks"      : ["paper"],
-            "datasets"      : ["linearized3k"],
-            "learning_rate" : [0.0005]
-        },
-        {
-            "desc"          : "Test 0B: Basic paper network on linearized and sampled datasets",
-            "skip"          : true,
-            "networks"      : ["paper"],
-            "datasets"      : ["a1u_tt:lin", "a1u_tt:min", "a1u_tt:max"],
-            "learning_rate" : [0.0005, 0.0001, 0.001]
-        },
-        {
-            "desc"          : "Test 0C: Analog 1px, Bitwise paper network with train/test",
-            "skip"          : true,
-            "networks"      : ["paper"],
-            "datasets"      : ["a1u_ss:max"],
-            "test_dataset"  : "a1u_ff:max",
-            "learning_rate" : [0.0005]
-        },
-        {
-            "desc"          : "Test 0D: Analog 1px, Single-ended paper network with train/test",
-            "skip"          : true,
-            "networks"      : ["paper_se"],
-            "datasets"      : ["a1u_ss:max"],
-            "test_dataset"  :  "a1u_ff:max",
-            "learning_rate" : [0.005, 0.001, 0.0005],
-            "max_epochs"    : 20000
-        },
-        {
-            "desc"          : "Test 1A: D1B paper : unprotected",
-            "skip"          : true,
+            "desc"          : "Table II - Unprotected BW",
+            "skip"          : false,
             "networks"      : ["paper"],
             "datasets"      : ["digital_1px_ff_x:max"],
-            "test_dataset"  : "digital_1px_ss_x:max",
+            "test_dataset"  : ["digital_1px_ss_x:max", "digital_1px_fs_x:max"],
             "learning_rate" : [0.0001],
             "learning_decay": 0.000005,
             "optimizer"     : "Amsgrad"
         },
         {
-            "desc"          : "Test 1B: D1S paper : unprotected",
-            "skip"          : true,
+            "desc"          : "Table II - Unprotected SE",
+            "skip"          : false,
             "networks"      : ["paper_se"],
             "datasets"      : ["digital_1px_ff_x:max"],
-            "test_dataset"  : "digital_1px_ss_x:max",
-            "learning_rate" : [0.0001],
+            "test_dataset"  : ["digital_1px_ss_x:max", "digital_1px_fs_x:max"],
+            "learning_rate" : [0.005],
             "learning_decay": 0.000005,
-            "max_epochs"    : 20000
+            "max_epochs"    : 30000
         },
         {
-            "desc"          : "Test 1A: A1 paper : unprotected",
+            "desc"          : "Table III - Masking Bad BW",
             "skip"          : false,
-            "networks"      : ["paper"],
-            "datasets"      : ["analog_1px_tt_xx:max"],
-            "test_dataset"  : "analog_1px_tt_xm:max",
-            "learning_rate" : [0.0003],
-            "learning_decay": 0.0002,
-            "max_epochs"    : 5000
-        },
-        {
-            "desc"          : "Test 1B: A1 paper_se : unprotected",
-            "skip"          : false,
-            "networks"      : ["paper_se"],
-            "datasets"      : ["analog_1px_tt_xx:max"],
-            "test_dataset"  : "analog_1px_tt_xm:max",
-            "learning_rate" : [0.001],
-            "learning_decay": 0.0005,
-            "max_epochs"    : 20000
-        },
-        {
-            "desc"          : "Test 2A: D1B paper : protected",
-            "skip"          : true,
             "networks"      : ["paper"],
             "datasets"      : ["digital_1px_ff_p:max"],
-            "test_dataset"  : "digital_1px_ss_p:max",
+            "test_dataset"  : ["digital_1px_ss_p:max", "digital_1px_fs_p:max"],
             "learning_rate" : [0.00015],
             "learning_decay": 0.000015,
             "optimizer"     : "Amsgrad"
         },
         {
-            "desc"          : "Test 2B: D1S paper : protected",
-            "skip"          : true,
+            "desc"          : "Table III - Masking Bad SE",
+            "skip"          : false,
             "networks"      : ["paper_se"],
             "datasets"      : ["digital_1px_ff_p:max"],
-            "test_dataset"  : "digital_1px_ss_p:max",
-            "learning_rate" : [0.003],
+            "test_dataset"  : ["digital_1px_ss_p:max", "digital_1px_fs_p:max"],
+            "learning_rate" : [0.0025],
             "learning_decay": 0.000005,
-            "max_epochs"    : 20000
+            "max_epochs"    : 30000
         },
         {
-            "desc"          : "Test 2A: A1 paper : dummy. NOTE: params from se seem to work maybe better",
+            "desc"          : "Table IV - Masking Good BW",
             "skip"          : false,
             "networks"      : ["paper"],
-            "datasets"      : ["analog_1px_tt_px:max"],
-            "test_dataset"  : "analog_1px_tt_pm:max",
+            "datasets"      : ["digital_1px_tt_3:max"],
+            "test_dataset"  : ["digital_1px_ss_3:max", "digital_1px_fs_3:max"],
             "learning_rate" : [0.0003],
-            "learning_decay": 0.0002,
+            "learning_decay": 0.000025,
+            "optimizer"     : "Amsgrad",
             "max_epochs"    : 5000
         },
         {
-            "desc"          : "Test 2B: A1 paper_se : dummy",
+            "desc"          : "Table IV - Masking Good SE",
             "skip"          : false,
             "networks"      : ["paper_se"],
-            "datasets"      : ["analog_1px_tt_px:max"],
-            "test_dataset"  : "analog_1px_tt_pm:max",
-            "learning_rate" : [0.001],
-            "learning_decay": 0.0005,
-            "max_epochs"    : 20000
+            "datasets"      : ["digital_1px_tt_3:max"],
+            "test_dataset"  : ["digital_1px_ss_3:max", "digital_1px_fs_3:max"],
+            "learning_rate" : [0.01],
+            "learning_decay": 0.00002,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 25000
         },
         {
-            "desc"          : "Test 3A: A1 paper : unprotected attack dummy",
+            "desc"          : "Table V - Randomized BW",
             "skip"          : false,
             "networks"      : ["paper"],
-            "datasets"      : ["analog_1px_tt_xx:max"],
-            "test_dataset"  : "analog_1px_tt_px:max",
+            "datasets"      : ["digital_1px_tt_r:max"],
+            "test_dataset"  : ["digital_1px_ss_r:max", "digital_1px_fs_r:max"],
             "learning_rate" : [0.0003],
-            "learning_decay": 0.0002,
-            "max_epochs"    : 5000
+            "learning_decay": 0.000025,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 3000
         },
         {
-            "desc"          : "Test 3B: A1 paper_se : unprotected attack dummy",
+            "desc"          : "Table V - Randomized SE",
             "skip"          : false,
             "networks"      : ["paper_se"],
-            "datasets"      : ["analog_1px_tt_xx:max"],
-            "test_dataset"  : "analog_1px_tt_px:max",
-            "learning_rate" : [0.001],
-            "learning_decay": 0.0005,
-            "max_epochs"    : 20000
-        },
-        {
-            "desc"          : "Test 3C: A1 paper : unprotected attack protect",
-            "skip"          : false,
-            "networks"      : ["paper"],
-            "datasets"      : ["analog_1px_tt_xx:max"],
-            "test_dataset"  : "analog_1px_tt_rx:max",
-            "learning_rate" : [0.0003],
-            "learning_decay": 0.0002,
-            "max_epochs"    : 5000
-        },
-        {
-            "desc"          : "Test 3D: A1 paper_se : unprotected attack protect",
-            "skip"          : false,
-            "networks"      : ["paper_se"],
-            "datasets"      : ["analog_1px_tt_xx:max"],
-            "test_dataset"  : "analog_1px_tt_rx:max",
-            "learning_rate" : [0.001],
-            "learning_decay": 0.0005,
-            "max_epochs"    : 20000
-        },
-        {
-            "desc"          : "Test 4A: A1B paper : random ramp",
-            "skip"          : true,
-            "networks"      : ["paper"],
-            "datasets"      : ["analog_1px_tt_qx:max"],
-            "test_dataset"  : "analog_1px_tt_qx:max",
-            "learning_rate" : [0.0003],
-            "learning_decay": 0.005,
-            "max_epochs"    : 5000,
-            "train_split"   : 0.5
-        },
-        {
-            "desc"          : "Test 4B: A1S paper : random ramp",
-            "skip"          : true,
-            "networks"      : ["paper_se"],
-            "datasets"      : ["analog_1px_tt_qx:max"],
-            "test_dataset"  : "analog_1px_tt_qx:max",
-            "learning_rate" : [0.001],
-            "learning_decay": 0.0005,
-            "max_epochs"    : 20000,
-            "train_split"   : 0.5
-        },
-        {
-            "desc"          : "Test 5A: A1 paper : protected vs self",
-            "skip"          : false,
-            "networks"      : ["paper"],
-            "datasets"      : ["analog_1px_tt_rx:max"],
-            "test_dataset"  : "analog_1px_tt_rx:max",
-            "train_split"   : 0.5,
-            "learning_rate" : [0.0003],
-            "learning_decay": 0.0004,
-            "max_epochs"    : 5000
-        },
-        {
-            "desc"          : "Test 5B: A1 paper : protected vs similar corner",
-            "skip"          : false,
-            "networks"      : ["paper"],
-            "datasets"      : ["analog_1px_tt_rx:max"],
-            "test_dataset"  : "analog_1px_ss_rx:max",
-            "learning_rate" : [0.0003],
-            "learning_decay": 0.0004,
-            "max_epochs"    : 5000
-        },
-        {
-            "desc"          : "Test 5C: A1 paper : protected vs skewed corner",
-            "skip"          : false,
-            "networks"      : ["paper"],
-            "datasets"      : ["analog_1px_tt_rx:max"],
-            "test_dataset"  : "analog_1px_sf_rx:max",
-            "learning_rate" : [0.0003],
-            "learning_decay": 0.0004,
-            "max_epochs"    : 5000
-        },
-        {
-            "desc"          : "Test ??: Trying to get resnet to work",
-            "skip"          : true,
-            "networks"      : ["resnet101"],
-            "datasets"      : ["a1u_tt:lin"],
-            "learning_rate" : [1e-5]
+            "datasets"      : ["digital_1px_tt_r:max"],
+            "test_dataset"  : ["digital_1px_ss_r:max", "digital_1px_fs_r:max"],
+            "learning_rate" : [0.0025],
+            "learning_decay": 0.000005,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 25000
         }
     ],
     "defaults" : {

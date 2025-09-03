@@ -1,3 +1,4 @@
+#!/bin/bash
 # Build seeds
 
 if [ "$1" = "clean" ]; then
@@ -10,11 +11,16 @@ if [ "$1" = "1px" ]; then
     corners=( tt ss ff sf fs )
     seeds=(0)
     args="pixels=eval:1"
-else
+elif [ "$1" = "5px" ]; then
     pixels="5px"
     corners=( sf ss ff fs )
     seeds=(0 128 256 384)
     args="pixels=eval:5"
+elif [ "$1" = "10px" ]; then
+    pixels="10px"
+    corners=( tt )
+    seeds=(0)
+    args="pixels=eval:10"
 fi
 
 args="$args halfcounter="
@@ -23,8 +29,8 @@ if [ -f /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice ]; then
     args="$args foss="
 fi
 
-python ../../script/template_engine.py digital.temp.cir -s $args plot= seed=0            -o demo_${pixels}_tt_x.cir
-python ../../script/template_engine.py digital.temp.cir -s $args plot= seed=0 protected= -o demo_${pixels}_tt_p.cir
+#python ../../script/teng.py digital.temp.cir -o demo_${pixels}_tt_x.cir $args plot= seed=0            
+python ../../script/teng.py digital.temp.cir $args plot= seed=0 protected=V2 > demo_${pixels}_tt_p.cir
 
 if [ "$pixels" = "1px" ]; then
     values=("randvec_1=eval:'compose randvec_1 values '+' '.join(str(i) for i in range(256))")
@@ -44,8 +50,8 @@ for seed in ${seeds[@]}; do
     fi
 
     for corner in ${corners[@]}; do
-        python ../../script/template_engine.py digital.temp.cir -s $args "${values[@]}" seed=$seed outdir=outfiles/digital_${pixels}_${corner}_x              -o runme_${pixels}_${corner}_x_${seed}.cir
-        python ../../script/template_engine.py digital.temp.cir -s $args "${values[@]}" seed=$seed outdir=outfiles/digital_${pixels}_${corner}_p protected=   -o runme_${pixels}_${corner}_p_${seed}.cir
+        python ../../script/template_engine.py digital.temp.cir -s $args "${values[@]}" seed=$seed outdir=outfiles/digital_${pixels}_${corner}_x protected=   -o runme_${pixels}_${corner}_x_${seed}.cir
+        python ../../script/template_engine.py digital.temp.cir -s $args "${values[@]}" seed=$seed outdir=outfiles/digital_${pixels}_${corner}_p protected=V1 -o runme_${pixels}_${corner}_p_${seed}.cir
         python ../../script/template_engine.py digital.temp.cir -s $args "${values[@]}" seed=$seed outdir=outfiles/digital_${pixels}_${corner}_q protected=V2 -o runme_${pixels}_${corner}_q_${seed}.cir
     done
 done

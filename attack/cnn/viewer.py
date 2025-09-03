@@ -1,15 +1,24 @@
+###############################################################################
+# File        : /Users/kareemahmad/Projects/SideChannels/adc-side-channel/attack/cnn/viewer.py
+# Author      : kareemahmad
+# Created     : 
+# Description : Plots traces.
+#               See python viewer.py -h for usage instructions
+###############################################################################
+
+
 import matplotlib.pyplot as plt
 import numpy as np
 
-from regress import argparser, Regression
+from classes import argparser, Regression
 
 FIGX = 8
 FIGY = 6
 
 ## Args + DB Info -----------------------------------
 
-argparser.add_argument("-t", "--traces", type=int, default=[1], nargs="+", help="Trace to plot")
-argparser.add_argument("-d", "--datasets", type=str, default=["a1u_tt:min"], nargs="+", help="Datasets to extract traces for plotting")
+argparser.add_argument("-T", "--traces", type=int, default=[1], nargs="+", help="Trace to plot")
+argparser.add_argument("-D", "--datasets", type=str, default=["a1u_tt:min"], nargs="+", help="Datasets to extract traces for plotting")
 args = argparser.parse_args()
 
 regression = Regression(args)
@@ -32,7 +41,13 @@ for label, ax in zip(args.traces, axs):
     ax.set_title(f"Trace {label}")
 
     for dname in datasets:
-        info = datasets[dname].get_trace(label)
+        try:
+            info = datasets[dname].get_trace(label)
+        except KeyError as e:
+            print(e)
+            print("Listing all labels available")
+            print(datasets[dname].builder.dataset.label_dict.keys())
+            continue
         trace = info.trace
         start = info.start
         stop  = info.stop

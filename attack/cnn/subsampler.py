@@ -2,13 +2,26 @@
 # File        : attack/cnn/subsampler.py
 # Author      : kareemahmad
 # Created     : 
-# Description : Subsample ngspice output file to csv 
+# Description : Subsample ngspice output file
+#               Called independently it uses old parser to write csv
+#               Defines new parser used by new dataset types
 ###############################################################################
 
 import numpy as np
 import matplotlib.pyplot as plt
 
 DTYPE = np.float32
+
+HIWARN = 80e-3
+warn = False
+
+## Helper Functions ----------------------------------------
+
+# ------------------------------------------------
+# func: select_func_gen
+# - Defines interpolation functions 
+# - Used when gap between timesteps is too large
+# ------------------------------------------------
 
 def select_func_gen(mode):
     def bmin(t1, v1, t2, v2, t): return v1
@@ -26,11 +39,25 @@ def select_func_gen(mode):
     elif mode == "LINEAR": return mlin
     else: raise ValueError("Illegal mode selected")
 
+# ------------------------------------------------
+# func: sample_func_gen
+# - Defines reduction functions
+# - Used when gap between timesteps is too small
+# ------------------------------------------------
+
 def sample_func_gen(mode):
     if   mode == 'MIN': return lambda x: np.min(x)
     elif mode == 'MAX': return lambda x: np.max(x)
     elif mode == 'AVG': return lambda x: np.average(x)
     else: raise ValueError("Illegal mode selected")
+
+## Main Parsers --------------------------------------------
+
+# ------------------------------------------------
+# func: sample_file
+# - Currently used parser for *subsampled* traces
+# - See paper for rough description of windowed technique
+# ------------------------------------------------
 
 def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0):
     time_col = column << 1
@@ -66,13 +93,17 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0
             value = DTYPE(value)
 
             if stim >= wtim:
-                val_arr.append(f(val_win))
+                nval = f(val_win)
+                if nval > HIWARN and warn: print(f"High value: Standard, {val_win}")
+                val_arr.append(nval)
                 tim_arr.append(wtim - sample_interval/2)
 
                 # if time is too big a gap:
                 wtim += sample_interval
                 while stim > wtim:
-                    val_arr.append(l(ptim, val_arr[-1], stim, value, (len(val_arr)+0.5)*sample_interval))
+                    nval = l(ptim, val_arr[-1], stim, value, (len(val_arr)+0.5)*sample_interval)
+                    if nval > HIWARN and warn: print(f"High value: Large Timegap, l({ptim}, {val_arr[-1]}, {stim}, {value}, {(len(val_arr)+0.5)*sample_interval})")
+                    val_arr.append(nval)
                     tim_arr.append(wtim - sample_interval/2)
                     wtim += sample_interval
 
@@ -84,7 +115,9 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0
             ptim = stim
 
         if (len(val_arr) < max_samples) and val_win:
-            val_arr.append(f(val_win))
+            nval = f(val_win)
+            if nval > HIWARN and warn: print(f"High value: Normal Timegap, {val_win}")
+            val_arr.append(nval)
             tim_arr.append(ptim)
 
         if len(val_arr) < max_samples:
@@ -96,6 +129,7 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0
             wtim = wtim + sample_interval/2
             for i in range(max_samples - len(val_arr)):
                 val_arr.append(y1:=((wtim - x1)*m+y1))
+                if y1 > HIWARN and warn: print(f"High Value: Win empty, {wtim} {x1} {m} {y1}")
                 tim_arr.append(x1:=wtim)
                 wtim += sample_interval
 
@@ -109,6 +143,13 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0
         tstop = wtim
 
         return val_arr, tstart, tstop
+
+# ------------------------------------------------
+# func: do_parse
+# - Original parser which tries linear 
+#   interpolation only
+# - No longer used
+# ------------------------------------------------
 
 def do_parse(file_in, file_out, interval=1e-6, samples=1000, time=2.5e-4, index=0, sample_mode="LINEAR"):
     col_t = index << 1

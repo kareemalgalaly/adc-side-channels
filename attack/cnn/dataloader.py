@@ -1,3 +1,22 @@
+###############################################################################
+# File        : attack/cnn/dataloader.py
+# Author      : kareemahmad
+# Created     : 
+# Description : Defines dataset related classes
+#   TraceDataset 
+#     - holds labelled processed traces
+#     - is directly consumed by DataLoader()
+#     - defines trace loading (from file), processing, and caching
+#   TraceDatasetBW
+#     - same as TraceDataset but processes labels to extract bit information 
+#       from full digital value
+#   TraceDatasetBuilder
+#     - class that wraps multiple TraceDatasets to build all the sub-datasets
+#       required for a single ADC (eg 1 TraceDataset + 8 TraceDatasetBW for 
+#       simulation of 1 ADC design at a given corner)
+#     - holds dataloaders for the TraceDataset objects
+###############################################################################
+
 from torch.utils.data import Dataset, DataLoader
 from collections import namedtuple
 from subsampler import sample_file

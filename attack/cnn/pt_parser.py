@@ -1,3 +1,10 @@
+###############################################################################
+# File        : attack/cnn/pt_parser.py
+# Author      : 
+# Created     : 
+# Description : Original parsing setup, no longer used
+###############################################################################
+
 import os
 import torch
 from torch.utils.data import Dataset, DataLoader

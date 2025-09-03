@@ -1,6 +1,6 @@
 aalog/adc_obj_dir
 analog/*.h
-attack/cnn/outputs
+attack/cnn/outputs*
 synth/*
 build
 *.swp
@@ -12,5 +12,6 @@ obj_dir
 trained_models*
 outfiles*
 demo*.cir
-runme*.cir
+*runme*.cir
 seeds_*
+temp*txt

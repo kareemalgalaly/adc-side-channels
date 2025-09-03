@@ -12,6 +12,22 @@ argparser.add_argument("outfile", type=str, help="Output file path")
 argparser.add_argument("-f", "--fullpaths", const=True, default=False, action="store_const", help="Use full paths in synthesis output")
 argparser.add_argument("-d", "--debug", const=True, default=False, action="store_const", help="Enable debug printing")
 
+errors = 0
+warns  = 0
+
+def err(*args):
+    print("ERROR:", *args)
+    global errors
+    errors += 1
+
+def warn(*args):
+    print("WARNING:", *args)
+    global warns
+    warns += 1
+
+def info(*args):
+    print("INFO:", *args)
+
 ## JSON Parsing Nets --------------------------------
 
 #bits = set()
@@ -45,16 +61,18 @@ def parse_nets(netname_dict):
                 b = net['bits'][0]
                 if isinstance(b, str):
                     if netname in tieoffs: 
-                        print(f"WARNING: net {netname} already in tieoffs {tieoffs[netname]}. Ignoring additional tie to {b}")
+                        warn(f"net {netname} already in tieoffs {tieoffs[netname]}. Ignoring additional tie to {b}")
                     else:
                         tieoffs[netname] = int(b)
                 else:
                     if b in netnames:
-                        print(f"WARNING: bit {b} already named in netnames as <{netnames[b]}>. Ignoring additional name <{netname}>")
-                        aliases[netname] = netnames[b]
-                        # ALT print(f"WARNING: bit {b} already named in netnames as <{netnames[b]}>. Swapping additional name <{netname}>")
-                        # ALT aliases[netnames[b]] = netname
-                        # ALT netnames[b] = netname
+                        if "." in netname:
+                            info(f"bit {b:4} already named. {netname} => {netnames[b]}")
+                            aliases[netname] = netnames[b]
+                        else:
+                            info(f"bit {b:4} already named. {netnames[b]} => {netname}")
+                            aliases[netnames[b]] = netname
+                            netnames[b] = netname
                     else:
                         netnames[b] = netname
             else:
@@ -63,12 +81,12 @@ def parse_nets(netname_dict):
                     bname = f"{netname}.{i}"
                     if isinstance(b, str):
                         if bname in tieoffs:
-                            print(f"WARNING: net {bname} already in tieoffs {tieoffs[bname]}. Ignoring additional tie to {b}")
+                            warn(f"net {bname} already in tieoffs {tieoffs[bname]}. Ignoring additional tie to {b}")
                         else:
                             tieoffs[bname] = int(b)
                     else:
                         if b in netnames:
-                            print(f"WARNING: bit {b} already named in netnames as <{netnames[b]}>. Ignoring additional name <{bname}>")
+                            warn(f"bit {b} already named in netnames as <{netnames[b]}>. Ignoring additional name <{bname}>")
                             aliases[bname] = netnames[b]
                         else:
                             netnames[b] = bname
@@ -86,6 +104,10 @@ def parse_cells(cell_dict):
 
     for cellname, cell in cell_dict.items():
         type = cell["type"]
+        if type == "$scopeinfo":
+            if len(cell["connections"]) != 0:
+                err(f"$scopeinfo cell {cellname} has defined connections that are being ignored.")
+            continue
         if type not in types: types[type] = {}
 
         if cell["hide_name"]:
@@ -143,6 +165,7 @@ def parse_cell_types(celltypes, cell_path, module_dict):
                         break
 
         for pin in pins:
+            # only available if yosys reads liberty as design file
             if pin not in module_dict[ctype]['ports']:
                 pg.append(1)
                 all_pg_pins.add(pin)
@@ -260,6 +283,8 @@ if __name__ == '__main__':
         file.write("\n")
         gen_spice_ties(tieoffs, "VGND", "VPWR", file)
         file.write("\n.ends\n\n")
+
+    print(f"Completed with {errors} errors and {warns} warnings")
 
 
 #print(netnames)

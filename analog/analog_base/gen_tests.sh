@@ -12,8 +12,10 @@ fi
 
 if [ "$1" = "1px" ]; then
     pixels="1px"
-    corners=( tt ) # ss ff sf fs 
-    flavors=( xl pl ) # xx px xm pm 
+    #corners=( tt ) # ss ff sf fs 
+    #flavors=( xl pl ) # xx px xm pm 
+    corners=( sf ) # ss ff sf fs 
+    flavors=( xl xx ) # xx px xm pm 
     seeds=(0)
     parg="pixels=eval:1"
 elif [ "$1" = "1qx" ]; then

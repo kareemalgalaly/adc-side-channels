@@ -1,17 +1,29 @@
+###############################################################################
+# File        : attack/cnn/cnn_gen.py
+# Author      : kareemahmad
+# Created     : 
+# Description : Defines a generic CNN constructor based on string definitions
+#
+# Format: colon separated string where entries are of the following
+#   F(out_nodes)                     : Fully Connected
+#   C(out_channels, kernel, stride)  : Convolutional
+#   P(kernel, stride)                : Pooling
+#   R                                : ReLU
+#   S                                : Softmax
+###############################################################################
+
+
 import torch.nn as nn
 import re
 from operator import mul
 
-# Description
-# F(out_nodes)                     : Fully Connected
-# C(out_channels, kernel, stride)  : Convolutional
-# P(kernel, stride)                : Pooling
-# R                                : ReLU
-# S                                : Softmax
+## Regex Definitions ---------------------------------------
 
 re_f = re.compile('F\\((\\d+)\\)')
 re_c = re.compile('C\\((\\d+),(\\d+),(\\d+)\\)')
 re_p = re.compile('P\\((\\d+),(\\d+)\\)')
+
+## Helper Functions ----------------------------------------
 
 def get_output_size(w_in, c_in, c_out=None, kernel=3, padding=0, dilation=1, stride=1):
     """
@@ -77,6 +89,8 @@ def build_cnn(definition, debug=False):
     if debug: print(shapes)
     return nn.ModuleList(layers), flatten
 
+## Pytorch class -------------------------------------------
+
 class GenericCNN(nn.Module):
     def __init__(self, definition, debug=False):
         super(GenericCNN, self).__init__()
@@ -95,7 +109,8 @@ class GenericCNN(nn.Module):
             #if self.debug: print(x.shape, layer)
         return x
     
+## Demo example --------------------------------------------
+
 if __name__ == "__main__":
     print(build_cnn("3000,1:C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:F(100):R:F(100):R:F(2):S"))
-
 
