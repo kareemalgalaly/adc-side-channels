@@ -39,8 +39,12 @@ time_arr = np.linspace(info_0.start, info_0.stop, len(info_0.trace), dtype=np.fl
 seed = 0
 pad  = 20
 for label in range(256):
-    info_list_0 = datasets[args.datasets[0]].get_trace(label, index=-1)
-    info_list_1 = datasets[args.datasets[1]].get_trace(label, index=-1)
+    try:
+        info_list_0 = datasets[args.datasets[0]].get_trace(label, index=-1)
+        info_list_1 = datasets[args.datasets[1]].get_trace(label, index=-1)
+    except KeyError as e:
+        print(f"WARNING: One or more datasets missing label {label}")
+        continue
 
     for info_0 in info_list_0:
         for info_1 in info_list_1:
