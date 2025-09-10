@@ -59,10 +59,7 @@ def sample_func_gen(mode):
 # - See paper for rough description of windowed technique
 # ------------------------------------------------
 
-def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0):
-    time_col = column << 1
-    valu_col = time_col + 1
-
+def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG"):
     f = sample_func_gen(sample_mode)
     l = select_func_gen(f'B{sample_mode}')
 
@@ -120,6 +117,7 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", column=0
             val_arr.append(nval)
             tim_arr.append(ptim)
 
+        # TODO why tho
         if len(val_arr) < max_samples:
             # val_win is empty, latest wtim is handled
             x0, x1 = tim_arr[-2:]

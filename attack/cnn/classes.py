@@ -275,9 +275,12 @@ class Dataset(HashableBase):
     
     def get_trace(self, label, index=0, bit=-1):
         dataset = self.builder.dataset if bit == -1 else self.builder.datasets[bit]
+
+        # Specific trace (index = -1 gets all of them)
         if label != -1:
             return dataset.get_by_label(label, index=index)
         
+        # Average trace
         (sum, start, stop), label = dataset.get_item(0)
         for i in range(1, len(dataset)):
             sum += dataset[i][0]

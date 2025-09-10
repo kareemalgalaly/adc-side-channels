@@ -75,6 +75,9 @@ class TraceDataset(Dataset):
         return self.file_list[index]
 
     def get_by_label(self, label, index=0):
+        if index == -1:
+            return [self.get_by_label(label, i) for i in range(len(self.label_dict[label]))]
+
         index = self.label_dict[label][index]
         return self.get_item(index)[0]
 
