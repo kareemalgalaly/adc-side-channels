@@ -24,6 +24,46 @@
         }
     },
     "datasets" : {
+        "stitched_1px_x1" : {
+            "path"        : "stitched_1px_x1",
+            "format"      : "raw_s\\d+_(\\d+).txt",
+            "type"        : "sampled",
+            "sample_mode"     : ["MIN", "MAX"],
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 260e-6,
+            "columns"     : 2,
+            "trace_scale" : 1
+        },
+        "stitched_1px_x2" : {
+            "path"        : "stitched_1px_x2",
+            "format"      : "raw_s\\d+_(\\d+).txt",
+            "type"        : "sampled",
+            "sample_mode"     : ["MIN", "MAX"],
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 260e-6,
+            "columns"     : 2,
+            "trace_scale" : 1
+        },
+        "stitched_1px_p1" : {
+            "path"        : "stitched_1px_p1",
+            "format"      : "raw_s\\d+_(\\d+).txt",
+            "type"        : "sampled",
+            "sample_mode"     : ["MIN", "MAX"],
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 260e-6,
+            "columns"     : 2,
+            "trace_scale" : 1
+        },
+        "stitched_1px_p2" : {
+            "path"        : "stitched_1px_p2",
+            "format"      : "raw_s\\d+_(\\d+).txt",
+            "type"        : "sampled",
+            "sample_mode"     : ["MIN", "MAX"],
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 260e-6,
+            "columns"     : 2,
+            "trace_scale" : 1
+        },
         "digital_1px_ff_x" : {
             "path" : "digital_1px_ff_x",
             "type" : "sampled",
