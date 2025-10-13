@@ -33,6 +33,11 @@ argparser.add_argument("-r", "--repeat", type=int, default=1, help="Rerun traini
 argparser.add_argument("--nndebug", const=True, default=False, action='store_const', help="Print information about cnn creation.")
 args = argparser.parse_args()
 
+def gradient_hook(module_name, grads):
+    def hook(module, grad_in, grad_out):
+        grads.extend(grad_in)
+    return hook
+
 class CNNRegression(Regression):
     def run_all(self):
         # Header
@@ -85,10 +90,11 @@ class CNNRegression(Regression):
                     print(f"{run_hash},{network.name},{dataset.name},{test}")
 
                     if not(self.args.preview):
-                        fig, axs = plt.subplots(2, figsize=(FIGX,FIGY))
+                        fig, axs = plt.subplots(3, figsize=(FIGX,FIGY))
                         fig.suptitle(f"{run_hash}\n{network.name}  -  {dataset.name}  -  {test.optimizer}({test.learning_rate})\n")
                         axs[0].set_title("Loss")
                         axs[1].set_title("Accuracy")
+                        axs[2].set_title("Gradient")
                     else:
                         axs = None
     
@@ -100,12 +106,12 @@ class CNNRegression(Regression):
                                 if run_hash_i in skip_tests: 
                                     print(f"  SKIPPING {run_hash_i}"); continue
                                     skip = True
-                                self.run_eval_cnn(test, network, dataset, device, run_hash_i, axs, bit=i)
+                                self.run_eval_cnn(test, network, dataset, device, run_hash_i, fig, axs, bit=i)
                         elif network.type == 'single_ended':
                             if run_hash in skip_tests: 
                                 print(f"  SKIPPING {run_hash}"); continue
                                 skip = True
-                            self.run_eval_cnn(test, network, dataset, device, run_hash, axs, bit=-1)
+                            self.run_eval_cnn(test, network, dataset, device, run_hash, fig, axs, bit=-1)
                         else:
                             raise RuntimeError(f"Unsupported network type {network.type}")
 
@@ -121,9 +127,9 @@ class CNNRegression(Regression):
                         fig.savefig(f'{self.args.output}/{run_hash}.png')
                         plt.close()
 
-    def run_eval_cnn(self, test, network, dataset, device, run_hash, axs, bit=-1):
-        plot_period = 1 if network.predef else 1000 if device else 10
-        acc_period  = 1 if network.predef else 100  if device else 10
+    def run_eval_cnn(self, test, network, dataset, device, run_hash, fig, axs, bit=-1):
+        plot_period = 1000 # if network.predef else 1000 if device else 10
+        acc_period  = 1 # if network.predef else 100  if device else 10
 
         start_tm = time.monotonic()
     
@@ -142,10 +148,16 @@ class CNNRegression(Regression):
         if (self.args.preview): return
 
         cnn = cnn.to(device)
+        grads = []
+        for name, layer in cnn.named_modules():
+            if any(layer.children()) is False:
+                layer.register_full_backward_hook(gradient_hook(name, grads))
     
         loss_arr = torch.empty(test.max_epochs, device=device)
+        grad_arr = torch.empty(test.max_epochs//acc_period, device=device)
         acc_arr  = torch.empty(test.max_epochs//acc_period, device=device)
         loss_g = None
+        grad_g = None
         acc_g  = None
 
         criterion = test.get_loss(network)
@@ -201,13 +213,26 @@ class CNNRegression(Regression):
                     pacc = max(facc, pacc)
                     progress.update(epoch, loss=round(loss.item(), 6), acc=round(facc,4), pacc=round(pacc,4))
 
+                    # grad_arr[acc_indx] = 
+                    grd = 0
+                    cnt = 0
+                    for gt in grads:
+                        if gt is not None:
+                            grd += gt.abs().sum()
+                            cnt += len(gt)
+                    grad_arr[acc_indx] = grd / cnt
+                    grads.clear()
+
                 if epoch % plot_period == 0:
                     if not self.args.headless:
                         if loss_g: loss_g.remove()
+                        if grad_g: grad_g.remove()
                         if acc_g:  acc_g.remove()
                         loss_g = axs[0].plot(loss_arr.detach().cpu()[:epoch], color='gray', linestyle='dotted')[0]
                         acc_g  = axs[1].plot(acc_arr.cpu()[:acc_indx+1],  color='gray', linestyle='dotted')[0]
-                        plt.pause(0.01)
+                        grad_g = axs[2].plot(grad_arr.cpu()[:acc_indx+1],  color='gray', linestyle='dotted')[0]
+                        # plt.pause(0.01) # update plots and move fig to foreground
+                        fig.canvas.flush_events() # update plots without moving window to foreground
 
                 #if accuracy >= test.learning_decay_start:
                 #    optimizer = test.get_optimizer(cnn, accuracy)
@@ -225,10 +250,13 @@ class CNNRegression(Regression):
         label = f'cnn[{bit}]'
         axs[0].plot(loss_arr.detach().cpu()[:epoch], label=label)
         axs[1].plot(acc_arr.cpu()[:epoch//acc_period+1], label=label)
+        axs[2].plot(grad_arr.cpu()[:epoch//acc_period+1], label=label)
         axs[0].legend()
         axs[1].legend()
+        axs[2].legend()
         if not self.args.headless:
-            plt.pause(5)
+            # plt.pause(5) # update plots and moves fig to foreground
+            fig.canvas.flush_events() # update plots without moving window to foreground
 
         if self.args.nowrite: return
 
