@@ -6,9 +6,9 @@ PROJ_ROOT 		= ${PWD}
 
 # Synthesis ---------------------------------------------
 
-synth/%: ${PROJ_ROOT}/design/%.v ${PROJ_ROOT}/script/synth.tcl
+synth/%: ${PROJ_ROOT}/digital/design/%.v ${PROJ_ROOT}/script/synth.tcl
 	mkdir -p $@
-	SYNTH_VERILOG=${PROJ_ROOT}/design/$*.v SYNTH_PATH=$@ PDK_LIBERTY=${PDK_LIBERTY} PDK_CELL=${PDK_CELL_LIB} yosys -c ${PROJ_ROOT}/script/synth.tcl
+	SYNTH_VERILOG=${PROJ_ROOT}/digital/design/$*.v SYNTH_PATH=$@ PDK_LIBERTY=${PDK_LIBERTY} PDK_CELL=${PDK_CELL_LIB} yosys -c ${PROJ_ROOT}/script/synth.tcl
 
 # Area Calculation --------------------------------------
 
