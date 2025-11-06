@@ -227,7 +227,10 @@ class Dataset(HashableBase):
         self.lblf = eval(info.get("label", "lambda gs: int(gs[0])"), globals(), {})
         self.paths = [path if path.startswith("/") else os.path.join(data_dir, path) for path in info.get('paths', [])]
 
-        self.trace_scale = info.get("trace_scale", defaults["trace_scale"])
+        self.nparams = dict(
+            norm = info.get('normalizer', "scale"),
+            mult = info.get("trace_scale", defaults["trace_scale"])
+        )
 
         if path := info.get('path', None):
             self.paths.append(os.path.join(data_dir, path))
@@ -264,7 +267,13 @@ class Dataset(HashableBase):
 
     def build(self, adc_bitwidth=8, device=None):
         if self.builder: return self.builder
-        self.builder = TraceDatasetBuilder(adc_bitwidth=adc_bitwidth, mult=self.trace_scale, cache=True, device=device, cols=self.cols)
+
+        self.builder = TraceDatasetBuilder(
+            adc_bitwidth = adc_bitwidth,
+            cols         = self.cols,
+            nparams      = self.nparams,
+            device       = device
+        )
         return self.builder
 
     # --------------------------------------------
@@ -281,7 +290,7 @@ class Dataset(HashableBase):
             return dataset.get_by_label(label, index=index)
         
         # Average trace
-        (sum, start, stop), label = dataset.get_item(0)
+        (sum, start, stop), label = dataset.get_info(0)
         for i in range(1, len(dataset)):
             sum += dataset[i][0]
         return TraceInfo(sum / len(dataset), start, stop)

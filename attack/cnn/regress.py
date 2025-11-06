@@ -34,6 +34,7 @@ argparser.add_argument("-t", "--test", type=str, default="", help="Limit run tes
 argparser.add_argument("-r", "--repeat", type=int, default=1, help="Rerun training/test this many times. requires -f flag to work properly")
 argparser.add_argument("--nndebug", const=True, default=False, action='store_const', help="Print information about cnn creation.")
 argparser.add_argument("--seed", type=int, default=None, help="Override random seed")
+argparser.add_argument("--gradplot", action="store_true", help="Plot gradient")
 args = argparser.parse_args()
 
 def gradient_hook(module_name, grads):
@@ -51,7 +52,7 @@ class CNNRegression(Regression):
                     file.write("Run ID,Network,Network ID,Network Type,Definition,Inputs,Dataset,Datset ID,")
                     file.write("Type,Path,Dataset Cols,Datset Info,Test ID,Learning Rate,LR Decay,Max LR,")
                     file.write("Optimizer,Batch Size,Max Epochs,Target Accuracy,Target Loss,Test Dataset,Split,")
-                    file.write("Bit,Accuracy,Peak Accuracy,Test Accuracy,Loss,Epoch,Runtime,Job Timestamp\n")
+                    file.write("Bit,Accuracy,Peak Accuracy,Test Accuracy,Loss,Epoch,Runtime,Job Timestamp,Seed\n")
 
         # Skipped tests
 
@@ -93,11 +94,14 @@ class CNNRegression(Regression):
                     print(f"{run_hash},{network.name},{dataset.name},{test}")
 
                     if not(self.args.preview):
-                        fig, axs = plt.subplots(3, figsize=(FIGX,FIGY))
-                        fig.suptitle(f"{run_hash}\n{network.name}  -  {dataset.name}  -  {test.optimizer}({test.learning_rate})\n")
+                        if self.args.gradplot:
+                            fig, axs = plt.subplots(3, figsize=(FIGX,FIGY))
+                            axs[2].set_title("Gradient")
+                        else:
+                            fig, axs = plt.subplots(2, figsize=(FIGX,FIGY))
+                        fig.suptitle(f"{run_hash} ({seed})\n{network.name}  -  {dataset.name}  -  {test.optimizer}({test.learning_rate})\n")
                         axs[0].set_title("Loss")
                         axs[1].set_title("Accuracy")
-                        axs[2].set_title("Gradient")
                     else:
                         axs = None
     
@@ -140,7 +144,7 @@ class CNNRegression(Regression):
         dataloader  = dataset.builder.dataloader if bit == -1 else dataset.builder.dataloaders[bit]
         batch_count = -(len(dataset.builder.dataset) // -test.batch_size)
     
-        if args.seed: set_seed(args.seed)
+        set_seed(seed)
         cnn = network.create(dataset.len, dataset.cols)
         bit = "_" if bit == -1 else bit
 
@@ -152,17 +156,19 @@ class CNNRegression(Regression):
         if (self.args.preview): return
 
         cnn = cnn.to(device)
-        grads = []
-        for name, layer in cnn.named_modules():
-            if any(layer.children()) is False:
-                layer.register_full_backward_hook(gradient_hook(name, grads))
     
         loss_arr = torch.empty(test.max_epochs, device=device)
-        grad_arr = torch.empty(test.max_epochs//acc_period, device=device)
         acc_arr  = torch.empty(test.max_epochs//acc_period, device=device)
         loss_g = None
-        grad_g = None
         acc_g  = None
+
+        if self.args.gradplot:
+            grads = []
+            for name, layer in cnn.named_modules():
+                if any(layer.children()) is False:
+                    layer.register_full_backward_hook(gradient_hook(name, grads))
+            grad_arr = torch.empty(test.max_epochs//acc_period, device=device)
+            grad_g = None
 
         criterion = test.get_loss(network)
         optimizer = test.get_optimizer(cnn, accuracy=0)
@@ -217,24 +223,25 @@ class CNNRegression(Regression):
                     pacc = max(facc, pacc)
                     progress.update(epoch, loss=round(loss.item(), 6), acc=round(facc,4), pacc=round(pacc,4))
 
-                    # grad_arr[acc_indx] = 
-                    grd = 0
-                    cnt = 0
-                    for gt in grads:
-                        if gt is not None:
-                            grd += gt.abs().sum()
-                            cnt += len(gt)
-                    grad_arr[acc_indx] = grd / cnt
-                    grads.clear()
+                    if self.args.gradplot:
+                        grd = 0
+                        cnt = 0
+                        for gt in grads:
+                            if gt is not None:
+                                grd += gt.abs().sum()
+                                cnt += len(gt)
+                        grad_arr[acc_indx] = grd / cnt
+                        grads.clear()
 
                 if epoch % plot_period == 0:
                     if not self.args.headless:
                         if loss_g: loss_g.remove()
-                        if grad_g: grad_g.remove()
                         if acc_g:  acc_g.remove()
                         loss_g = axs[0].plot(loss_arr.detach().cpu()[:epoch], color='gray', linestyle='dotted')[0]
                         acc_g  = axs[1].plot(acc_arr.cpu()[:acc_indx+1],  color='gray', linestyle='dotted')[0]
-                        grad_g = axs[2].plot(grad_arr.cpu()[:acc_indx+1],  color='gray', linestyle='dotted')[0]
+                        if self.args.gradplot:
+                            if grad_g: grad_g.remove()
+                            grad_g = axs[2].plot(grad_arr.cpu()[:acc_indx+1],  color='gray', linestyle='dotted')[0]
                         # plt.pause(0.01) # update plots and move fig to foreground
                         fig.canvas.flush_events() # update plots without moving window to foreground
 
@@ -254,10 +261,11 @@ class CNNRegression(Regression):
         label = f'cnn[{bit}]'
         axs[0].plot(loss_arr.detach().cpu()[:epoch], label=label)
         axs[1].plot(acc_arr.cpu()[:epoch//acc_period+1], label=label)
-        axs[2].plot(grad_arr.cpu()[:epoch//acc_period+1], label=label)
         axs[0].legend()
         axs[1].legend()
-        axs[2].legend()
+        if self.args.gradplot:
+            axs[2].plot(grad_arr.cpu()[:epoch//acc_period+1], label=label)
+            axs[2].legend()
         if not self.args.headless:
             # plt.pause(5) # update plots and moves fig to foreground
             fig.canvas.flush_events() # update plots without moving window to foreground
@@ -300,8 +308,10 @@ class CNNRegression(Regression):
             progress.stop(epoch+1)
 
             with open(self.csv, "a") as file:
-                file.write(f"{run_hash},{network.name},{network},{dataset.name},{dataset},{test.hash()},{test.get_csv(ti)},{bit},{facc},{pacc},{test_accuracy},{loss},{epoch},{runtime},{job_launch_time}\n")
+                file.write(f"{run_hash},{network.name},{network},{dataset.name},{dataset},{test.hash()},{test.get_csv(ti)},{bit},{facc},{pacc},{test_accuracy},{loss},{epoch},{runtime},{job_launch_time},{seed}\n")
 
+
+seed = int.from_bytes(os.urandom(4))
 
 def set_seed(seed):
     random.seed(seed)
@@ -316,8 +326,8 @@ def set_seed(seed):
 if __name__  == '__main__':
     args = argparser.parse_args()
 
-    if args.seed:
-        set_seed(args.seed)
+    if args.seed: seed = args.seed
+    print("Running with seed:", seed)
 
     if not args.nowrite:
         os.makedirs(args.output, exist_ok=True)
