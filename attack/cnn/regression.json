@@ -125,6 +125,17 @@
             "sample_duration" : 260e-6,
             "trace_scale"     : 500
         },
+        "digital_1px_tt_3b" : {
+            "path" : "digital_1px_tt_3",
+            "type" : "sampled",
+            "format"  : "trace_(\\d+)",
+            "columns" : 1,
+            "label"   : "lambda gs: int(gs[0])",
+            "sample_mode"     : ["MIN", "MAX"],
+            "sample_interval" : 0.3e-6,
+            "sample_duration" : 260e-6,
+            "trace_scale"     : 500
+        },
         "digital_1px_fs_3" : {
             "path" : "digital_1px_fs_3",
             "type" : "sampled",
@@ -160,10 +171,21 @@
         },
         {
             "desc"          : "Table IV - Masking Good BW",
-            "skip"          : true,
+            "skip"          : false,
             "networks"      : ["paper"],
             "datasets"      : ["digital_1px_tt_3:max"],
-            "test_dataset"  : ["digital_1px_fs_3:max"],
+            "test_dataset"  : ["digital_1px_tt_3:max"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.000025,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "Table IV - Masking Good BW",
+            "skip"          : false,
+            "networks"      : ["paper"],
+            "datasets"      : ["digital_1px_tt_3b:max"],
+            "test_dataset"  : ["digital_1px_tt_3b:max"],
             "learning_rate" : [0.0003],
             "learning_decay": 0.000025,
             "optimizer"     : "Amsgrad",
@@ -214,7 +236,7 @@
         },
         {
             "desc"          : "Stitch Unprotected SE",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["twocol_se"],
             "datasets"      : ["stitched_1px_x1:max"],
             "test_dataset"  : ["stitched_1px_x2:max"],

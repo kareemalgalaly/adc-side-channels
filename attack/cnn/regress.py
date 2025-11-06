@@ -11,8 +11,10 @@ import json
 import re
 import os
 import time
+import random
 
 import torch
+import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 
@@ -138,6 +140,7 @@ class CNNRegression(Regression):
         dataloader  = dataset.builder.dataloader if bit == -1 else dataset.builder.dataloaders[bit]
         batch_count = -(len(dataset.builder.dataset) // -test.batch_size)
     
+        if args.seed: set_seed(args.seed)
         cnn = network.create(dataset.len, dataset.cols)
         bit = "_" if bit == -1 else bit
 
@@ -314,7 +317,7 @@ if __name__  == '__main__':
     args = argparser.parse_args()
 
     if args.seed:
-        set_seed(seed)
+        set_seed(args.seed)
 
     if not args.nowrite:
         os.makedirs(args.output, exist_ok=True)
