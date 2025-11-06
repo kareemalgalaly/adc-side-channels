@@ -52,12 +52,20 @@ for label, ax in zip(args.traces, axs):
         start = info.start
         stop  = info.stop
 
+        time = None
         if datasets[dname].type == 'timed':
             time, trace = trace
-        else:
-            time = np.linspace(start, stop, num=len(trace))
 
-        ax.plot(time, trace, alpha=0.5, label=dname, linestyle='solid')
+        if datasets[dname].cols == 1:
+            if time is None:
+                time = np.linspace(start, stop, num=len(trace))
+            ax.plot(time, trace, alpha=0.5, label=dname, linestyle='solid')
+        else:
+            if time is None:
+                time = np.linspace(start, stop, num=len(trace[0]))
+            for i, trace_i in enumerate(trace):
+                print(i, trace_i)
+                ax.plot(time, trace_i, alpha=0.5, label=f"{dname}[{i}]", linestyle='solid')
     ax.legend()
 
 plt.show()

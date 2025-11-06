@@ -59,7 +59,7 @@ def sample_func_gen(mode):
 # - See paper for rough description of windowed technique
 # ------------------------------------------------
 
-def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG"):
+def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", cols=1):
     f = sample_func_gen(sample_mode)
     l = select_func_gen(f'B{sample_mode}')
 
@@ -70,72 +70,82 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG"):
         header = file.readline()
 
         tim_arr = [] # For debugging
-        val_arr = []
-        val_win = []
+        val_arr = [[] for i in range(cols)]
+        val_win = [[] for i in range(cols)]
 
-        stim, value = file.readline().strip().split()
+        stim, *value = file.readline().strip().split()
         stim = DTYPE(stim)
         tstart = stim
-        value = DTYPE(value)
+        value = [DTYPE(v) for v in value]
         ptim = stim
         wtim = stim + sample_interval
-        val_win.append(value)
-        val_arr.append(value)
+        for i, v in enumerate(value):
+            val_win[i].append(v)
+            val_arr[i].append(v)
         tim_arr.append(ptim)
 
         for line in file.readlines():
-            if len(val_arr) == max_samples: break
-            stim, value = line.strip().split()
+            if len(val_arr[0]) == max_samples: break
+            stim, *value = line.strip().split()
             stim  = DTYPE(stim)
-            value = DTYPE(value)
+            value = [DTYPE(v) for v in value]
 
             if stim >= wtim:
-                nval = f(val_win)
-                if nval > HIWARN and warn: print(f"High value: Standard, {val_win}")
-                val_arr.append(nval)
+                for i in range(cols):
+                    nval = f(val_win[i])
+                    if nval > HIWARN and warn:
+                        print(f"High value: Standard, {val_win}")
+                    val_arr[i].append(nval)
                 tim_arr.append(wtim - sample_interval/2)
 
                 # if time is too big a gap:
                 wtim += sample_interval
                 while stim > wtim:
-                    nval = l(ptim, val_arr[-1], stim, value, (len(val_arr)+0.5)*sample_interval)
-                    if nval > HIWARN and warn: print(f"High value: Large Timegap, l({ptim}, {val_arr[-1]}, {stim}, {value}, {(len(val_arr)+0.5)*sample_interval})")
-                    val_arr.append(nval)
+                    for i in range(cols):
+                        nval = l(ptim, val_arr[i][-1], stim, value[i], (len(val_arr[i])+0.5)*sample_interval)
+                        if nval > HIWARN and warn: 
+                            print(f"High value: Large Timegap, l({ptim}, {val_arr[-1]}, {stim}, {value[i]}, {(len(val_arr)+0.5)*sample_interval})")
+                        val_arr[i].append(nval)
                     tim_arr.append(wtim - sample_interval/2)
                     wtim += sample_interval
 
-                val_win = [value]
+                val_win = [[v] for v in value]
 
             else:
-                val_win.append(value)
+                for i, v in enumerate(value):
+                    val_win[i].append(v)
 
             ptim = stim
 
-        if (len(val_arr) < max_samples) and val_win:
-            nval = f(val_win)
-            if nval > HIWARN and warn: print(f"High value: Normal Timegap, {val_win}")
-            val_arr.append(nval)
+        if (len(val_arr[0]) < max_samples) and val_win[0]:
+            for i in range(cols):
+                nval = f(val_win[i])
+                if nval > HIWARN and warn: print(f"High value: Normal Timegap, {val_win[i]}")
+                val_arr[i].append(nval)
             tim_arr.append(ptim)
 
         # TODO why tho
         if len(val_arr) < max_samples:
             # val_win is empty, latest wtim is handled
             x0, x1 = tim_arr[-2:]
-            y0, y1 = val_arr[-2:]
-            m = (y1 - y0)/(x1 - x0)
+            m = [(y1 - y0)/(x1 - x0) for *_, y0, y1 in val_arr]
+            # y0, y1 = val_arr[-2:]
+            # m = (y1 - y0)/(x1 - x0)
 
             wtim = wtim + sample_interval/2
-            for i in range(max_samples - len(val_arr)):
-                val_arr.append(y1:=((wtim - x1)*m+y1))
-                if y1 > HIWARN and warn: print(f"High Value: Win empty, {wtim} {x1} {m} {y1}")
+            for i in range(cols):
+                for j in range(max_samples - len(val_arr[i])):
+                    val_arr[i].append(y1:=((wtim - x1)*m[i]+val_arr[i][-1]))
+                    if y1 > HIWARN and warn: print(f"High Value: Win empty, {wtim} {x1} {m} {y1}")
+                    wtim += sample_interval
                 tim_arr.append(x1:=wtim)
-                wtim += sample_interval
 
-        if len(val_arr) < max_samples:
+        if len(val_arr[0]) < max_samples:
+            print("Post-subsample, did not reach enough samples")
             for i in range(40):
-                print(i, tim_arr[i], val_arr[i], sep="\t")
+                print(i, tim_arr[i], val_arr[0][i], sep="\t")
             for i in range(40, 0, -1):
-                print(-i, tim_arr[-i], val_arr[-i], sep="\t")
+                print(-i, tim_arr[-i], val_arr[0][-i], sep="\t")
             exit()
 
         tstop = wtim

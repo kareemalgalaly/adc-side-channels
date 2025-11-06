@@ -31,6 +31,7 @@ argparser.add_argument("-x", "--headless", const=True, default=False, action='st
 argparser.add_argument("-t", "--test", type=str, default="", help="Limit run tests to those whose description matches the specified regex")
 argparser.add_argument("-r", "--repeat", type=int, default=1, help="Rerun training/test this many times. requires -f flag to work properly")
 argparser.add_argument("--nndebug", const=True, default=False, action='store_const', help="Print information about cnn creation.")
+argparser.add_argument("--seed", type=int, default=None, help="Override random seed")
 args = argparser.parse_args()
 
 def gradient_hook(module_name, grads):
@@ -128,8 +129,8 @@ class CNNRegression(Regression):
                         plt.close()
 
     def run_eval_cnn(self, test, network, dataset, device, run_hash, fig, axs, bit=-1):
-        plot_period = 1000 # if network.predef else 1000 if device else 10
-        acc_period  = 1 # if network.predef else 100  if device else 10
+        plot_period = 10 if network.predef else 1000 if device else 10
+        acc_period  = 1  if network.predef else 100  if device else 10
 
         start_tm = time.monotonic()
     
@@ -298,10 +299,22 @@ class CNNRegression(Regression):
             with open(self.csv, "a") as file:
                 file.write(f"{run_hash},{network.name},{network},{dataset.name},{dataset},{test.hash()},{test.get_csv(ti)},{bit},{facc},{pacc},{test_accuracy},{loss},{epoch},{runtime},{job_launch_time}\n")
 
+
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
 # Main ###########################################
 
 if __name__  == '__main__':
     args = argparser.parse_args()
+
+    if args.seed:
+        set_seed(seed)
 
     if not args.nowrite:
         os.makedirs(args.output, exist_ok=True)

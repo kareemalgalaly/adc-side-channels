@@ -187,7 +187,7 @@ class Network(HashableBase):
         else:
             desc = f"{input_len},{input_ch}:{self.definition}"
             try:
-                return GenericCNN(desc, debug=self.args.nndebug)
+                return GenericCNN(desc, self.inputs, debug=self.args.nndebug)
             except Exception as e:
                 print("Failed to create:", desc)
                 print(e)
@@ -264,7 +264,7 @@ class Dataset(HashableBase):
 
     def build(self, adc_bitwidth=8, device=None):
         if self.builder: return self.builder
-        self.builder = TraceDatasetBuilder(adc_bitwidth=adc_bitwidth, mult=self.trace_scale, cache=True, device=device)
+        self.builder = TraceDatasetBuilder(adc_bitwidth=adc_bitwidth, mult=self.trace_scale, cache=True, device=device, cols=self.cols)
         return self.builder
 
     # --------------------------------------------
