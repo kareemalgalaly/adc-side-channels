@@ -75,6 +75,13 @@ class TraceCache:
         for i in range(len(self)):
             yield self.get_raw(i)
 
+    def retrain(self, trainer=None):
+        self.nrm_cache = [None] * len(self.file_list)
+        if trainer:
+            self.normalizer.load_training(trainer.norm)
+        else:
+            self.normalizer.train()
+
     def load_trace(self, fpath, sample_info):
         sample_mode, sample_int, max_sample = sample_info
 

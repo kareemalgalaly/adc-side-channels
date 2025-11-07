@@ -257,7 +257,8 @@ class Dataset(HashableBase):
     # --------------------------------------------
 
     def get_csv(self):
-        return f"{self.type},{';'.join(os.path.basename(path) for path in self.paths)},{self.cols}"
+        npstr = ";".join(f"{k}:{v}" for k,v in self.nparams.items())
+        return f"{self.type},{';'.join(os.path.basename(path) for path in self.paths)},{self.cols},{npstr}"
 
     # --------------------------------------------
     # func: build

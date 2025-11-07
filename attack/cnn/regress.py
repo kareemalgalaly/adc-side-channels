@@ -50,7 +50,7 @@ class CNNRegression(Regression):
             if not(os.path.isfile(self.csv)):
                 with open(self.csv, "w") as file:
                     file.write("Run ID,Network,Network ID,Network Type,Definition,Inputs,Dataset,Datset ID,")
-                    file.write("Type,Path,Dataset Cols,Datset Info,Test ID,Learning Rate,LR Decay,Max LR,")
+                    file.write("Type,Path,Dataset Cols,Normalizer,Datset Info,Test ID,Learning Rate,LR Decay,Max LR,")
                     file.write("Optimizer,Batch Size,Max Epochs,Target Accuracy,Target Loss,Test Dataset,Split,")
                     file.write("Bit,Accuracy,Peak Accuracy,Test Accuracy,Loss,Epoch,Runtime,Job Timestamp,Seed\n")
 
@@ -86,6 +86,10 @@ class CNNRegression(Regression):
 
             for dataset in test.datasets:
                 self.build_datasets(dataset, device=device)
+                dataset.builder.cache.retrain()
+                for test_dataset in test.test_dataset:
+                    if test_dataset is not dataset:
+                        test_dataset.builder.cache.retrain(dataset.builder.cache)
 
                 for network in test.networks:
                     assert network.inputs == dataset.cols
@@ -131,7 +135,7 @@ class CNNRegression(Regression):
                         exit()
 
                     if not(self.args.preview or self.args.nowrite or skip):
-                        fig.savefig(f'{self.args.output}/{run_hash}.png')
+                        fig.savefig(f'{self.args.output}/{run_hash}:{seed}.png')
                         plt.close()
 
     def run_eval_cnn(self, test, network, dataset, device, run_hash, fig, axs, bit=-1):
