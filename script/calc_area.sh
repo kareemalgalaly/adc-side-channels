@@ -1,3 +1,5 @@
+#!/bin/bash
+
 D1=analog/ece_1px
 D2=analog/digital_v2
 D1LIB=$D1/lib
@@ -17,14 +19,12 @@ between() {
     stop=$2
     file=$3
     cat $file | awk -v start="$start" -v stop="$stop" 'BEGIN {disp=0} $0~start {disp=2} $0~stop {disp=0} $0 {if (disp>1) {disp=1} else if (disp) print($0)}'
-
 }
 
 echo "--------------------------------------------------"
 echo "-- Digital Components                           --"
 echo "--------------------------------------------------"
 
-#counter_half=$(measure2 $D2LIB/counter_half.spice)
 counter_half=$(measure2 <(between 'lib synth$' 'endl synth$' $D2LIB/counter_half.spice))
 echo -e "\ncounter_half        $counter_half"
 

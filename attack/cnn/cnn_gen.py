@@ -92,15 +92,18 @@ def build_cnn(definition, debug=False):
 ## Pytorch class -------------------------------------------
 
 class GenericCNN(nn.Module):
-    def __init__(self, definition, debug=False):
+    def __init__(self, definition, cols=1, debug=False):
         super(GenericCNN, self).__init__()
         self.layers, self.flatten = build_cnn(definition, debug)
         self.debug = debug
+        self.cols  = cols
 
     def forward(self, x):
         #if self.debug: print(x.shape, "input")
-        x = x.unsqueeze(1)
+        if self.cols == 1:
+            x = x.unsqueeze(1) 
         #if self.debug: print(x.shape, "unsqueeze")
+
         for i, layer in enumerate(self.layers):
             if i == self.flatten:
                 x = x.view(x.size(0), -1)

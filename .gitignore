@@ -1,4 +1,4 @@
-aalog/adc_obj_dir
+analog/adc_obj_dir
 analog/*.h
 attack/cnn/outputs*
 synth/*
