@@ -1,22 +1,22 @@
 {
     "networks" : {
         "paper" : {
-            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:F(100):R:F(100):R:F(2):S",
+            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:BN1:F(100):R:BN1:F(100):R:BN1:F(2):S",
             "type"       : "bitwise",
             "inputs"     : 1
         },
         "paper_se" : {
-            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:F(100):R:F(100):R:F(1)",
+            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:BN1:F(100):R:BN1:F(100):R:BN1:F(1)",
             "type"       : "single_ended",
             "inputs"     : 1
         },
         "twocol" : {
-            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:F(100):R:F(100):R:F(2):S",
+            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:BN1:F(100):R:BN1:F(100):R:BN1:F(2):S",
             "type"       : "bitwise",
             "inputs"     : 2
         },
         "twocol_se" : {
-            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:F(100):R:F(100):R:F(1)",
+            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:BN1:F(100):R:BN1:F(100):R:BN1:F(1)",
             "type"       : "single_ended",
             "inputs"     : 2
         },
@@ -173,10 +173,11 @@
         },
         {
             "desc"          : "Table IV - Masking Good BW",
-            "skip"          : true,
+            "skip"          : false,
             "networks"      : ["paper"],
             "datasets"      : ["digital_1px_tt_3:max"],
-            "test_dataset"  : ["digital_1px_tt_3:max", "digital_1px_fs_3:max"],
+            "test_dataset"  : ["digital_1px_tt_3:max"],
+            "comment" : ["digital_1px_fs_3:max"],
             "learning_rate" : [0.0003],
             "learning_decay": 0.000025,
             "optimizer"     : "Amsgrad",
@@ -195,7 +196,7 @@
         },
         {
             "desc"          : "Table IV - Masking Good SE",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["paper_se"],
             "datasets"      : ["digital_1px_tt_3b:max"],
             "test_dataset"  : ["digital_1px_tt_3b:max"],
