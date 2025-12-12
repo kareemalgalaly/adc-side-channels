@@ -10,7 +10,7 @@ This repo contains the designs and experiments used for the following papers:
 - ngspice (version 44 or later)
 - verilator
 - yosys
-- x-server (XQuartz or Xpra on Mac)
+- x-server (XQuartz or Xpra on Mac) or a linux machine
 - python (version 3.10 or later)
   - pytorch
 - bash
