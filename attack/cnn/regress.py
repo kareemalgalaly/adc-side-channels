@@ -1,11 +1,12 @@
 ###############################################################################
-# File        : /Users/kareemahmad/Projects/SideChannels/adc-side-channel/attack/cnn/regress.py
+# File        : attack/cnn/regress.py
 # Author      : kareemahmad
 # Created     : 
 # Description : __main__ equivalent. Handles CNN training and testing
 ###############################################################################
 
-from classes import argparser, Regression, ProgressBar, base36hash
+from classes import argparser, Regression
+from utils import ProgressBar, base36hash
 import json
 
 import re
@@ -60,6 +61,12 @@ class CNNRegression(Regression):
         self.get_device()
 
         for test in self.tests:
+            if test is None: 
+                if not self.args.seed:
+                    self.seed = int.from_bytes(os.urandom(4))
+                    print("Running with seed:", self.seed)
+                continue
+
             self.prepare_datasets(test)
 
             for dataset in test.datasets:
@@ -71,7 +78,7 @@ class CNNRegression(Regression):
                     run_hash = base36hash(network.get_csv() + dataset.get_csv() + test.get_csv())
                     print(f"{run_hash},{network.name},{dataset.name},{test}")
 
-                    self.prepare_figure(f"{run_hash} ({seed})\n{network.name}  -  {dataset.name}  -  {test.optimizer}({test.learning_rate})\n")
+                    self.prepare_figure(f"{run_hash} ({self.seed})\n{network.name}  -  {dataset.name}  -  {test.optimizer}({test.learning_rate})\n")
                     skip = True
     
                     try:
@@ -95,7 +102,7 @@ class CNNRegression(Regression):
                         exit()
 
                     if not(self.args.preview or self.args.nowrite or skip):
-                        self.fig.savefig(f'{self.args.output}/{run_hash}:{seed}.png')
+                        self.fig.savefig(f'{self.args.output}/{run_hash}:{self.seed}.png')
                         plt.close()
 
     # --------------------------------------------
@@ -130,7 +137,9 @@ class CNNRegression(Regression):
                         self.skip_tests.add(line.partition(",")[0])
 
         self.tests = [t for t in self.tests if re.match(args.test, t.description)]
-        self.tests *= self.args.repeat
+        if self.args.repeat > 1:
+            self.tests.append(None)
+            self.tests *= self.args.repeat
 
     # --------------------------------------------
     # func: get_device
@@ -196,7 +205,7 @@ class CNNRegression(Regression):
         ## Basic parameters --------------------------------
 
         plot_period = 10 if self.args.fineplot else 100 if self.device else 10
-        acc_period  = 1  if self.args.fineplot else 10  if self.device else 10
+        acc_period  = 1  if self.args.fineplot else 100 if self.device else 10
 
         self.set_seed()
         start_tm = time.monotonic()

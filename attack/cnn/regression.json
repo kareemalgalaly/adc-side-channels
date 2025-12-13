@@ -6,7 +6,7 @@
             "inputs"     : 1
         },
         "paper_se" : {
-            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:BN1:F(100):R:BN1:F(100):R:BN1:F(1)",
+            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:BN1:F(100):R:BN1:F(1)",
             "type"       : "single_ended",
             "inputs"     : 1
         },
@@ -40,6 +40,7 @@
             "type"        : "raw",
             "len"         : 2600,
             "columns"     : 2,
+            "normalizer"  : "robust",
             "trace_scale" : 1
         },
         "stitched_1px_p2:max" : {
@@ -48,6 +49,7 @@
             "type"        : "raw",
             "len"         : 2600,
             "columns"     : 2,
+            "normalizer"  : "robust",
             "trace_scale" : 1
         },
         "digital_1px_tt_3" : {

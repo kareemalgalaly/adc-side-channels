@@ -1,5 +1,5 @@
 ###############################################################################
-# File        : normalizer.py
+# File        : attack/cnn/normalizer.py
 # Author      : kareem
 # Created     : 2025 Nov 06
 # Description : Normalizing structure (and also trace cache)
@@ -7,6 +7,7 @@
 
 import numpy as np
 from sklearn.preprocessing import RobustScaler
+from utils import ProgressBar
 
 ## Generic Constructor -------------------------------------
 
@@ -89,7 +90,16 @@ class RobustNormalizer(Normalizer):
         self.fitted = False
 
     def train(self):
-        traces = np.array([tinf.trace for tinf in self.cache.iter_raw()])
+        progress = ProgressBar(f_start=f"{{state}} {self.cache.name} ", max_val=len(self.cache))
+        progress.start(state="Loading Dataset")
+
+        traces = []
+        for i, tinf in enumerate(self.cache.iter_raw()):
+            traces.append(tinf.trace)
+            progress.update(i)
+        traces = np.array(traces)
+
+        progress.update(i, state="Fitting Dataset")
 
         if self.cols == 1:
             scaler = RobustScaler(quantile_range=(10, 90))
@@ -98,7 +108,7 @@ class RobustNormalizer(Normalizer):
             # print(scaler.center_, scaler.scale_)
 
         else:
-            self.fchanls = []
+            fchanls = []
             self.scalers = []
             for c in range(self.cols):
                 scaler = RobustScaler(quantile_range=(10, 90))
@@ -111,6 +121,7 @@ class RobustNormalizer(Normalizer):
         
         self.trained = True
         self.fit_all()
+        progress.stop(i+1)
 
     def load_training(self, them):
         super().load_training(them)
@@ -119,7 +130,16 @@ class RobustNormalizer(Normalizer):
         self.fitted = False
 
     def fit_all(self):
-        traces = np.array([tinf.trace for tinf in self.cache.iter_raw()])
+        progress = ProgressBar(f_start=f"{{state}} {self.cache.name} ", max_val=len(self.cache))
+        progress.start(state="Loading Dataset")
+        
+        traces = []
+        for i, tinf in enumerate(self.cache.iter_raw()):
+            traces.append(tinf.trace)
+            progress.update(i)
+        traces = np.array(traces)
+
+        progress.update(i, state="Fitting Dataset")
 
         if self.cols == 1:
             self.cache.nrm_cache = self.scalers[0].transform(traces)
@@ -132,6 +152,7 @@ class RobustNormalizer(Normalizer):
             self.cache.nrm_cache = ftraces
 
         self.fitted = True
+        progress.stop(i+1)
 
     def do_fit(self, index):
         return self.cache.nrm_cache[index]

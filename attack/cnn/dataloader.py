@@ -35,7 +35,8 @@ DTYPE = np.float32
 ## Trace Cache ---------------------------------------------
 
 class TraceCache:
-    def __init__(self, file_list, label_dict, cols=1, nparams={}):
+    def __init__(self, name, file_list, label_dict, cols=1, nparams={}):
+        self.name       = name
         self.file_list  = file_list
         self.label_dict = label_dict
         self.raw_cache  = [None] * len(file_list) # list of trace info (w/ raw trace)
@@ -198,7 +199,8 @@ class TraceDatasetBW(TraceDataset):
         return 1 if label & self.bit_mask else 0
 
 class TraceDatasetBuilder:
-    def __init__(self, adc_bitwidth=8, cols=1, nparams={}, device=None):
+    def __init__(self, name, adc_bitwidth=8, cols=1, nparams={}, device=None):
+        self.name       = name
         self.file_list  = []
         self.label_dict = {}
         self.cols       = cols
@@ -245,7 +247,7 @@ class TraceDatasetBuilder:
                 i += 1
 
     def build(self):
-        self.cache   = TraceCache(self.file_list, self.label_dict, self.cols, self.nparams)
+        self.cache   = TraceCache(self.name, self.file_list, self.label_dict, self.cols, self.nparams)
         self.dataset = TraceDataset(self.file_list, self.label_dict, self.cache, cols=self.cols, device=self.device)
         for b in range(self.adc_bits):
             self.datasets.append(TraceDatasetBW(self.file_list, self.label_dict, self.cache, b, cols=self.cols, device=self.device))
@@ -268,7 +270,7 @@ if __name__ == '__main__':
     #pwd = os.path.dirname(os.path.abspath(__file__))
     pwd = "/Users/kareemahmad/Projects/SideChannels/SingleSlopeADC_Mixed/analog/outfiles/sky"
 
-    bld = TraceDatasetBuilder(8, cache=False)
+    bld = TraceDatasetBuilder('test', 8, cache=False)
     bld.add_files(pwd, format="sky_d(\\d+)_.*\\.txt")
     bld.build()
 
