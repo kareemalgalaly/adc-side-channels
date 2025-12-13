@@ -12,6 +12,9 @@ from classes import argparser, Regression
 ## Arguments -----------------------------------------------
 
 argparser.add_argument("-D", "--datasets", type=str, nargs=2, help="Datasets to cache together")
+argparser.add_argument("-M", "--mode", type=str, default="zip")
+argparser.add_argument("-C", "--cross", dest="mode", action="store_const", const="cross")
+argparser.add_argument("-Z", "--zip",   dest="mode", action="store_const", const="zip")
 args = argparser.parse_args()
 
 try:
@@ -19,6 +22,7 @@ try:
 except FileExistsError:
     pass
 
+print("Loading definitions")
 regression = Regression(args)
 regression.load()
 
@@ -36,6 +40,14 @@ time_arr = np.linspace(info_0.start, info_0.stop, len(info_0.trace), dtype=np.fl
 
 ## Construct Files -----------------------------------------
 
+def merge_info(label, seed, info_0, info_1):
+    with open(f"{args.output}/raw_s{seed}_{label}.txt", "w") as file:
+        file.write(f"{'time'.ljust(pad)} {args.datasets[0].ljust(pad)} {args.datasets[0].ljust(pad)}\n")
+
+        for t, i0, i1 in zip(time_arr, info_0.trace, info_1.trace):
+            file.write(f"{str(t).ljust(pad)} {str(i0).ljust(pad)} {str(i1).ljust(pad)}\n")
+
+
 seed = 0
 pad  = 20
 for label in range(256):
@@ -46,13 +58,15 @@ for label in range(256):
         print(f"WARNING: One or more datasets missing label {label}")
         continue
 
-    for info_0 in info_list_0:
-        for info_1 in info_list_1:
-            with open(f"{args.output}/raw_s{seed}_{label}.txt", "w") as file:
-                file.write(f"{'time'.ljust(pad)} {args.datasets[0].ljust(pad)} {args.datasets[0].ljust(pad)}\n")
+    match args.mode:
+        case "cross":
+            for info_0 in info_list_0:
+                for info_1 in info_list_1:
+                    merge_info(label, seed, info_0, info_1)
+                    seed += 1
 
-                for t, i0, i1 in zip(time_arr, info_0.trace, info_1.trace):
-                    file.write(f"{str(t).ljust(pad)} {str(i0).ljust(pad)} {str(i1).ljust(pad)}\n")
-
-            seed += 1
+        case "zip":
+            for info_0, info_1 in zip(info_list_0, info_list_1):
+                merge_info(label, seed, info_0, info_1)
+                seed += 1
 

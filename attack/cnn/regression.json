@@ -1,22 +1,22 @@
 {
     "networks" : {
         "paper" : {
-            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:F(100):R:F(100):R:F(2):S",
+            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:BN1:F(100):R:BN1:F(100):R:BN1:F(2):S",
             "type"       : "bitwise",
             "inputs"     : 1
         },
         "paper_se" : {
-            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:F(100):R:F(100):R:F(1)",
+            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:BN1:F(100):R:BN1:F(100):R:BN1:F(1)",
             "type"       : "single_ended",
             "inputs"     : 1
         },
         "twocol" : {
-            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:F(100):R:F(100):R:F(2):S",
+            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:BN1:F(100):R:BN1:F(100):R:BN1:F(2):S",
             "type"       : "bitwise",
             "inputs"     : 2
         },
         "twocol_se" : {
-            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:F(100):R:F(100):R:F(1)",
+            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:BN1:F(100):R:BN1:F(1)",
             "type"       : "single_ended",
             "inputs"     : 2
         },
@@ -34,43 +34,19 @@
         }
     },
     "datasets" : {
-        "stitched_1px_x1" : {
-            "path"        : "stitched_1px_x1",
+        "stitched_1px_p1:max" : {
+            "path"        : "ant_dmc",
             "format"      : "raw_s\\d+_(\\d+).txt",
-            "type"        : "sampled",
-            "sample_mode"     : ["MIN", "MAX"],
-            "sample_interval" : 0.1e-6,
-            "sample_duration" : 260e-6,
+            "type"        : "raw",
+            "len"         : 2600,
             "columns"     : 2,
             "trace_scale" : 1
         },
-        "stitched_1px_x2" : {
-            "path"        : "stitched_1px_x2",
+        "stitched_1px_p2:max" : {
+            "path"        : "att_dcs",
             "format"      : "raw_s\\d+_(\\d+).txt",
-            "type"        : "sampled",
-            "sample_mode"     : ["MIN", "MAX"],
-            "sample_interval" : 0.1e-6,
-            "sample_duration" : 260e-6,
-            "columns"     : 2,
-            "trace_scale" : 1
-        },
-        "stitched_1px_p1" : {
-            "path"        : "stitched_1px_p1",
-            "format"      : "raw_s\\d+_(\\d+).txt",
-            "type"        : "sampled",
-            "sample_mode"     : ["MIN", "MAX"],
-            "sample_interval" : 0.1e-6,
-            "sample_duration" : 260e-6,
-            "columns"     : 2,
-            "trace_scale" : 1
-        },
-        "stitched_1px_p2" : {
-            "path"        : "stitched_1px_p2",
-            "format"      : "raw_s\\d+_(\\d+).txt",
-            "type"        : "sampled",
-            "sample_mode"     : ["MIN", "MAX"],
-            "sample_interval" : 0.1e-6,
-            "sample_duration" : 260e-6,
+            "type"        : "raw",
+            "len"         : 2600,
             "columns"     : 2,
             "trace_scale" : 1
         },
@@ -110,73 +86,113 @@
             "sample_duration" : 260e-6,
             "normalizer"      : "robust",
             "trace_scale"     : 1
+        },
+        "analog_1_tt_p" : {
+            "path" : "analog_1_tt1_x",
+            "paths" : ["analog_1_tt2_x"],
+            "type" : "sampled",
+            "format"  : "raw_s\\d+_((0\\.)?\\d+).txt",
+            "columns" : 1,
+            "label"   : "lambda gs: int(math.floor(float(gs[0])*256))",
+            "sample_mode"     : ["MAX"],
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 260e-6,
+            "normalizer"      : "robust",
+            "trace_scale"     : 1
+        },
+        "analog_1_nt_p" : {
+            "path" : "analog_1_ss_x",
+            "paths" : ["analog_1_sf_x"],
+            "type" : "sampled",
+            "format"  : "raw_s\\d+_((0\\.)?\\d+).txt",
+            "columns" : 1,
+            "label"   : "lambda gs: int(math.floor(float(gs[0])*256))",
+            "sample_mode"     : ["MAX"],
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 260e-6,
+            "normalizer"      : "robust",
+            "trace_scale"     : 1
+        },
+        "analog_1_cs_p" : {
+            "path" : "analog_1_tt1_x",
+            "paths" : ["analog_1_tt2_x", "analog_1_ss_x", "analog_1_sf_x"],
+            "type" : "sampled",
+            "format"  : "raw_s\\d+_((0\\.)?\\d+).txt",
+            "columns" : 1,
+            "label"   : "lambda gs: int(math.floor(float(gs[0])*256))",
+            "sample_mode"     : ["MAX"],
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 260e-6,
+            "normalizer"      : "robust",
+            "trace_scale"     : 1
         }
     },
     "tests" : [
         {
-            "desc"          : "Digital Masked BW",
-            "skip"          : true,
-            "networks"      : ["paper"],
-            "datasets"      : ["digital_1px_cs_3:max"],
-            "test_dataset"  : ["digital_1px_mc_3:max"],
-            "train_split"   : 0.5,
+            "desc"          : "Stitched Prot BW",
+            "skip"          : false,
+            "networks"      : ["twocol"],
+            "datasets"      : ["stitched_1px_p1:max"],
+            "test_dataset"  : ["stitched_1px_p2:max"],
             "learning_rate" : [0.0003],
             "learning_decay": 0.000025,
             "optimizer"     : "Amsgrad",
             "max_epochs"    : 5000
         },
         {
-            "desc"          : "Table IV - Masking Good SE",
+            "desc"          : "Stitched Prot SE",
             "skip"          : false,
+            "networks"      : ["twocol_se"],
+            "datasets"      : ["stitched_1px_p1:max"],
+            "test_dataset"  : ["stitched_1px_p2:max"],
+            "learning_rate" : [0.02],
+            "learning_decay": 0.00002,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 25000
+        },
+        {
+            "desc"          : "Digital Masked BW",
+            "skip"          : true,
+            "networks"      : ["paper"],
+            "datasets"      : ["digital_1px_cs_3:max"],
+            "test_dataset"  : ["digital_1px_mc_3:max"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.000025,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "Digital Masked SE",
+            "skip"          : true,
             "networks"      : ["paper_se"],
-            "datasets"      : ["digital_1px_tt_3b:max"],
-            "test_dataset"  : ["digital_1px_tt_3b:max"],
+            "datasets"      : ["digital_1px_cs_3:max"],
+            "test_dataset"  : ["digital_1px_mc_3:max"],
             "learning_rate" : [0.01],
             "learning_decay": 0.00002,
             "optimizer"     : "Amsgrad",
             "max_epochs"    : 25000
         },
         {
-            "desc"          : "Table V - Randomized BW",
+            "desc"          : "Analog Randomized BW",
             "skip"          : true,
             "networks"      : ["paper"],
-            "datasets"      : ["digital_1px_tt_r:max"],
-            "test_dataset"  : ["digital_1px_fs_r:max"],
+            "datasets"      : ["analog_1_cs_p:max"],
+            "test_dataset"  : ["analog_1_cs_p:max"],
+            "train_split"   : 0.5,
             "learning_rate" : [0.0003],
-            "learning_decay": 0.000025,
-            "optimizer"     : "Amsgrad",
-            "max_epochs"    : 3000
+            "learning_decay": 0.0004,
+            "max_epochs"    : 5000
         },
         {
-            "desc"          : "Table V - Randomized SE",
+            "desc"          : "Analog Randomized SE",
             "skip"          : true,
             "networks"      : ["paper_se"],
-            "datasets"      : ["digital_1px_tt_r:max"],
-            "test_dataset"  : ["digital_1px_fs_r:max"],
-            "learning_rate" : [0.0025],
-            "learning_decay": 0.000005,
-            "optimizer"     : "Amsgrad",
-            "max_epochs"    : 25000
-        },
-        {
-            "desc"          : "Stitch Unprotected",
-            "skip"          : true,
-            "networks"      : ["twocol"],
-            "datasets"      : ["stitched_1px_x1:max"],
-            "test_dataset"  : ["stitched_1px_x2:max"],
-            "learning_rate" : [0.0001],
-            "learning_decay": 0.000005,
-            "optimizer"     : "Amsgrad"
-        },
-        {
-            "desc"          : "Stitch Unprotected SE",
-            "skip"          : true,
-            "networks"      : ["twocol_se"],
-            "datasets"      : ["stitched_1px_x1:max"],
-            "test_dataset"  : ["stitched_1px_x2:max"],
-            "learning_rate" : [0.005],
-            "learning_decay": 0.000005,
-            "max_epochs"    : 30000
+            "datasets"      : ["analog_1_cs_p:max"],
+            "test_dataset"  : ["analog_1_cs_p:max"],
+            "train_split"   : 0.5,
+            "learning_rate" : [0.01],
+            "learning_decay": 0.0002,
+            "max_epochs"    : 20000
         }
     ],
     "defaults" : {
@@ -189,7 +205,7 @@
         "max_epochs"    : 5000,
         "max_accuracy"  : 0.99,
         "max_loss"      : 0.0,
-        "batch_size"    : 256,
+        "batch_size"    : -1,
         "train_split"   : 1,
         "trace_scale"   : 1e4
     }

@@ -73,7 +73,7 @@ class ScaleNormalizer(Normalizer):
 
     def load_training(self, them):
         super().load_training(them)
-        self.mult = params["mult"]
+        self.mult = them.mult
 
     def do_fit(self, index): return self.cache.raw_cache[index].trace * self.mult
 

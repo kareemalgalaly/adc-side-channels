@@ -19,9 +19,11 @@ from operator import mul
 
 ## Regex Definitions ---------------------------------------
 
-re_f = re.compile('F\\((\\d+)\\)')
-re_c = re.compile('C\\((\\d+),(\\d+),(\\d+)\\)')
-re_p = re.compile('P\\((\\d+),(\\d+)\\)')
+re_f  = re.compile('F\\((\\d+)\\)')
+re_c  = re.compile('C\\((\\d+),(\\d+),(\\d+)\\)')
+re_c2 = re.compile('C2\\((\\d+),(\\d+),(\\d+)\\)') # in progress
+re_b  = re.compile('BN([12])')
+re_p  = re.compile('P\\((\\d+),(\\d+)\\)')
 
 ## Helper Functions ----------------------------------------
 
@@ -38,6 +40,10 @@ def flatten_shape(shape):
     ret = shape[0]
     for i in shape[1:]: ret *= i
     return ret
+
+# @dataclass 
+# class regex_match:
+#     ;
 
 def build_cnn(definition, debug=False):
     tokens = definition.replace(" ", "").split(":")
@@ -66,6 +72,15 @@ def build_cnn(definition, debug=False):
 
             layers.append(nn.Conv1d(in_channels=c_in, out_channels=c_out, kernel_size=kernel, stride=stride))
             shapes.append(out_shape)
+
+        elif m := re_b.match(token):
+            gs = m.groups()
+            dim = int(gs[0])
+            cin = shapes[-1][0]
+            match dim:
+                case 1 : layers.append(nn.BatchNorm1d(cin))
+                # case 2 : layers.append(nn.BatchNorm2d(cin))
+                case _ : raise RuntimeError("Unsupported dimensionality")
 
         elif m := re_p.match(token):
             gs = m.groups()

@@ -78,7 +78,7 @@ class TraceCache:
     def retrain(self, trainer=None):
         self.nrm_cache = [None] * len(self.file_list)
         if trainer:
-            self.normalizer.load_training(trainer.norm)
+            self.normalizer.load_training(trainer.normalizer)
         else:
             self.normalizer.train()
 
@@ -123,7 +123,7 @@ class TraceCache:
                 for line in file.readlines():
                     tcurr, *val = line.strip().split()
                     for i, v in enumerate(val):
-                        valu_arr[i].append(DTYPE(val))
+                        valu_arr[i].append(DTYPE(v))
                 tstop = DTYPE(tcurr)
 
                 if self.cols == 1:
@@ -173,11 +173,18 @@ class TraceDataset(Dataset):
         return self
 
     def set_prop_range(self, test, proportion):
+        self.prop = proportion
         width = int(len(self.file_list) * proportion)
         start = len(self.file_list) - width if test else 0
         stop  = start + width
         self.set_range(start, stop)
         return self
+
+    def set_test(self):
+        self.set_prop_range(1, self.prop)
+
+    def set_train(self):
+        self.set_prop_range(0, self.prop)
  
     def process_label(self, label): 
         return DTYPE(label)
@@ -206,6 +213,9 @@ class TraceDatasetBuilder:
         self.dataloaders = []
 
         self.trace_cache = {}
+
+    def __len__(self):
+        return len(self.file_list)
 
     def add_files(self, directory, format, label_func=lambda gs: int(gs[0]), sample_mode=None, sample_int=0.1e-6, sample_time=300e-6, max_sample=None):
         ''' Builds list of powertrace files
@@ -240,11 +250,19 @@ class TraceDatasetBuilder:
         for b in range(self.adc_bits):
             self.datasets.append(TraceDatasetBW(self.file_list, self.label_dict, self.cache, b, cols=self.cols, device=self.device))
 
-    def build_dataloaders(self, test=0, proportion=1, **kwargs): # batch_size=256, shuffle=True
+    def build_dataloaders(self, proportion=1, **kwargs): # batch_size=256, shuffle=True
         if self.device and 'pin_memory' not in kwargs: kwargs['pin_memory'] = True
 
-        self.dataloader = DataLoader(self.dataset.set_prop_range(test, proportion), **kwargs)
-        self.dataloaders = [DataLoader(dataset.set_prop_range(test, proportion), **kwargs) for dataset in self.datasets]
+        self.dataloader = DataLoader(self.dataset.set_prop_range(0, proportion), **kwargs)
+        self.dataloaders = [DataLoader(dataset.set_prop_range(0, proportion), **kwargs) for dataset in self.datasets]
+
+    def set_train(self):
+        self.dataset.set_train()
+        for dataset in self.datasets: dataset.set_train()
+
+    def set_test(self):
+        self.dataset.set_test()
+        for dataset in self.datasets: dataset.set_test()
 
 if __name__ == '__main__':
     #pwd = os.path.dirname(os.path.abspath(__file__))
