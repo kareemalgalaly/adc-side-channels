@@ -1,0 +1,77 @@
+* File to measure impedance
+
+{if 0}
+* Arguments             default                     type
+*   circuit             double_rate_sampler         str
+*   path                lib/{circuit}               str
+*   model               synth                       str
+*   corner              tt                          str in (tt, ss, sf, fs, ff, ...)
+*   ports               ...                         list of str
+
+{endif}
+{default circuit  "double_rate_sampler"}
+{default path     "lib/" + circuit + ".lib"}
+{default model    "synth"}
+{default corner   "tt"}
+{default vdd      1.8}
+{default aca      0.1}
+
+{default portbus "clk rst comp compn counter.0 counter.1 counter.2 counter.3 counter.4 counter.5 counter.6 counter.7 count_true.0 count_true.1 count_true.2 count_true.3 count_true.4 count_true.5 count_true.6 count_true.7 count_false.0 count_false.1 count_false.2 count_false.3 count_false.4 count_false.5 count_false.6 count_false.7"} 
+{default ports portbus.split()}
+
+{ifxst /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice}
+.lib "/foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice" {corner}
+.include "/foss/pdk/sky130A/libs.ref/sky130_fd_sc_hs/spice/sky130_fd_sc_hs.spice"
+{else}
+.lib "models/sky130.lib.spice" {corner}
+.include cells/a211oi/sky130_fd_sc_hs__a211oi_1.spice
+.include cells/a21oi/sky130_fd_sc_hs__a21oi_1.spice
+.include cells/and2/sky130_fd_sc_hs__and2_1.spice
+.include cells/and3/sky130_fd_sc_hs__and3_1.spice
+.include cells/and4/sky130_fd_sc_hs__and4_1.spice
+.include cells/dfxtp/sky130_fd_sc_hs__dfxtp_1.spice
+.include cells/inv/sky130_fd_sc_hs__inv_1.spice
+.include cells/mux2i/sky130_fd_sc_hs__mux2i_1.spice
+.include cells/mux2/sky130_fd_sc_hs__mux2_1.spice
+.include cells/nand2b/sky130_fd_sc_hs__nand2b_1.spice
+.include cells/nor2b/sky130_fd_sc_hs__nor2b_1.spice
+.include cells/nor2/sky130_fd_sc_hs__nor2_1.spice
+.include cells/nor3b/sky130_fd_sc_hs__nor3b_1.spice
+.include cells/nor3/sky130_fd_sc_hs__nor3_1.spice
+.include cells/nor4b/sky130_fd_sc_hs__nor4b_1.spice
+.include cells/o21a/sky130_fd_sc_hs__o21a_1.spice
+.include cells/o21bai/sky130_fd_sc_hs__o21bai_1.spice
+.include cells/o21ba/sky130_fd_sc_hs__o21ba_1.spice
+.include cells/or2/sky130_fd_sc_hs__or2_1.spice
+.include cells/or3b/sky130_fd_sc_hs__or3b_1.spice
+.include cells/xor2/sky130_fd_sc_hs__xor2_1.spice
+{endif}
+
+.lib {path} {model}
+
+* VGND VNB VPB VPWR
+vdd vdd gnd {vdd}
+
+xinst {portbus} 0 0 vdd vdd {circuit}
+
+{for port in ports}
+    ; v{port} v{port} 0 dc {eval vdd/2} ac {aca}
+    v{port} v{port} 0 PWL(0 0 0.2f {vdd})
+    r{port} v{port} {port} 1
+{endfor}
+
+.control
+    ; ac dec 5 1k 1000G
+    ; plot i(vcounter.0) i(vcounter.4) i(vclk) i(vcomp) ; i(vcount_false.0) 
+    ; plot db(counter.0/0.1)
+    ; let vec=db(counter.0/0.1)
+    ; meas AC val WHEN vec=-20 FALL=0
+
+    tran 1f 500f
+    plot vcounter.0 counter.0
+    ; t = C 
+    {for port in ports}
+    meas TRAN c_{port} TRIG v{port} VAL={eval vdd/2} RISE=1 TARG {port} VAL={eval vdd*0.632} RISE=1
+    {endfor}
+.endc
+
