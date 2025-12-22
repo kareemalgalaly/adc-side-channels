@@ -197,14 +197,19 @@ class DataIn(Data):
         super().__init__(bits)
 
     def read(self):
+        ptime = self.time
+
+        # some cases where same time is sent multiple times
+        # while self.time == ptime: 
+        #if True:
         data = self.pipein.read(self.nbytes+8)
         if len(data) != self.nbytes + 8: 
             #printf(len(self.data), self.data, self.nbytes + 8)
-            return 0
+            return -1
 
         self.time = struct.unpack("d", data[:8])[0]
         self.data = data[8:]
-        return 1
+        return self.time != ptime
     #return super().read(self.pipein)
 
 # ------------------------------------------------
@@ -232,9 +237,10 @@ class DProcess:
         self.dout     = self.data_out.bits
         self.computef = None
 
-    def set_compute(self, f, obj_mode=False):
+    def set_compute(self, f, obj_mode=False, report_tick=False):
         self.computef = f
         self.obj_mode = obj_mode
+        self.report_tick = report_tick
 
     def get_data_in(self):
         return self.data_in
@@ -242,34 +248,29 @@ class DProcess:
     def get_data_out(self):
         return self.data_out
 
-    def compute(self, data_in, data_out, time):
+    def compute(self, data_in, data_out, time, tick):
         if self.obj_mode:
-            return self.computef(data_in, data_out, time)
+            args = [data_in, data_out, time]
+            if self.report_tick: args.append(tick)
+            return self.computef(*args)
 
         try:
+            args = [data_in.get_all(), time]
+            if self.report_tick: args.append(tick)
             data_out.set_all(self.computef(data_in.get_all(), time))
             return 1
+
         except Exception as e:
             printf("computef() raised exception:", e)
             return 0
-        #v = bytes([0xd0])
-        #if self.din: v = data_in.get_all()
-
-        #for i in range(min(len(data_in), len(data_out))):
-        #    data_out[i] = data_in[i]
-
-        #for i in range(len(data_in), len(data_out)):
-        #    data_out[i] = time
-
-        #return 1
 
     def main(self):
         if not init_d(self.data_in, self.data_out): return -1
 
         try:
             i = 0
-            while (self.data_in.read()):
-                if not self.compute(self.data_in, self.data_out, self.data_in.time):
+            while (tick:=self.data_in.read()) != -1:
+                if not self.compute(self.data_in, self.data_out, self.data_in.time, tick):
                     printf("Error: Compute Failed")
                     return 1
                 i += 1

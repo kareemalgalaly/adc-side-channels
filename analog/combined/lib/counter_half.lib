@@ -12,22 +12,22 @@
 
 .subckt counter_half clk rst en count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 overflow VGND VNB VPB VPWR
 
-c_clk       clk         VGND    1.686351e-14
-c_rst       rst         VGND    1.438102e-14
+* c_clk       clk         VGND    1.686351e-14
+* c_rst       rst         VGND    1.438102e-14
 c_en        en          VGND    2.487087e-15
-c_count.0   count.0     VGND    2.697051e-15
-c_count.1   count.1     VGND    3.843487e-15
-c_count.2   count.2     VGND    3.890245e-15
-c_count.3   count.3     VGND    3.891570e-15
-c_count.4   count.4     VGND    3.891586e-15
-c_count.5   count.5     VGND    3.891727e-15
-c_count.6   count.6     VGND    3.894910e-15
-c_count.7   count.7     VGND    3.955484e-15
-c_overflow  overflow    VGND    2.024035e-16
+* c_count.0   count.0     VGND    2.697051e-15
+* c_count.1   count.1     VGND    3.843487e-15
+* c_count.2   count.2     VGND    3.890245e-15
+* c_count.3   count.3     VGND    3.891570e-15
+* c_count.4   count.4     VGND    3.891586e-15
+* c_count.5   count.5     VGND    3.891727e-15
+* c_count.6   count.6     VGND    3.894910e-15
+* c_count.7   count.7     VGND    3.955484e-15
+* c_overflow  overflow    VGND    2.024035e-16
 
-abridgea [rst clk] [dreset dclk] atod 
+abridgea [rst clk en] [dreset dclk den] atod 
 abridged [dcount.0 dcount.1 dcount.2 dcount.3 dcount.4 dcount.5 dcount.6 dcount.7] [count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7] dtoa 
-acounter null dclk dreset [dcount.0 dcount.1 dcount.2 dcount.3 dcount.4 dcount.5 dcount.6 dcount.7] proc_counter
+acounter [den] dclk dreset [dcount.0 dcount.1 dcount.2 dcount.3 dcount.4 dcount.5 dcount.6 dcount.7] proc_counter
 .model atod adc_bridge(in_low=0.2 in_high=1.6)
 .model dtoa dac_bridge(out_low=0 out_high=1.8)
 .model proc_counter d_process (process_file="/home/kareem/miniconda3/envs/pykit/bin/python" process_params=["lib/counter.py"])

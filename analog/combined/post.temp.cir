@@ -1,9 +1,28 @@
 * Post process script for template_batch.cir
-* nothing here
+
+{default mode     "a"} ; analog, digital, 
+{default pixels   1}
+{default seed     0}
+{default dvals    [seed % 256]}
+{default ddir     "outfiles/combined_"+corner+"_"+str(pixels)}
+{default pfile    "ptrace_"+mode+"_"+str(seed)+"_d"+"_".join([str(d) for d in dvals])}
+{default afile    "atrace_"+str(seed)}
+
 .control
-    echo starting
-    load {rawfile}
-    wrdata {outfile} -I(vdd)
-    exit
+echo starting
+{if mode == "a"}
+    load   {ddir}/rawfile_a_{seed}
+    wrdata {ddir}/{pfile} -I(vdda)
+    {for p in range(1, pixels+1)}
+        wrdata {ddir}/{afile}_{p} compp_p{p} compp_n{p} compn_p{p} compn_n{p}
+    {endfor}
+{else}{if mode == "d"}
+    load   {ddir}/rawfile_d_{seed}
+    wrdata {ddir}/{pfile} -I(vddd)
+{else}
+    load   {ddir}/rawfile_c_{seed}
+    wrdata {ddir}/{pfile} -I(vdda) -I(vddd)
+{endif}{endif}
+exit
 .endc
 .end

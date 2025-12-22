@@ -1,7 +1,30 @@
-* design - only spice components
+* wrappers and design-only spice components
 
-** Inverted Random Ramp (Kareem Version) -------------------
+** Ramp Generators =========================================
 
+* Ramp Generator with Fixed Slope
+.subckt ramp_generator_fixed vref out vdd gnd reset c=20p r=12.7Meg
+    C1  vx   out  {c} m=1
+    R1  vref vx   {r} m=1
+    XMR out  reset vx vx sky130_fd_pr__nfet_01v8 L=0.15 W=10 nf=1 ad='int((nf+1)/2) * W/nf * 0.29' as='int((nf+2)/2) * W/nf * 0.29'
+    + pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)' nrd='0.29 / W' nrs='0.29 / W'
+    + sa=0 sb=0 sd=0 mult=1 m=1
+    xopamp vdd vx gnd out gnd opamp
+.ends
+
+* Positive Random Ramp
+.subckt ramp_generator vref vc0 vc1 vc2 vc3 vc4 ramp vdd gnd reset
+    xrladder vref vx vc0 vc1 vc2 vc3 vc4 vdd gnd rladdern
+    xopamp vdd vx gnd ramp gnd opamp
+    C1 vx vc 20p m=1
+    vim ramp vc 0
+
+    XMR ramp reset vx vx sky130_fd_pr__nfet_01v8 L=0.15 W=10 nf=1 ad='int((nf+1)/2) * W/nf * 0.29' as='int((nf+2)/2) * W/nf * 0.29'
+    + pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)' nrd='0.29 / W' nrs='0.29 / W'
+    + sa=0 sb=0 sd=0 mult=1 m=1
+.ends
+
+* Inverted Random Ramp (Kareem Version)
 .subckt ramp_generator_init_k vref vini vc0 vc1 vc2 vc3 vc4 ramp vdd gnd reset
     xrladder vref vx vc0 vc1 vc2 vc3 vc4 vdd gnd rladdern2
     xopamp vdd vx gnd ramp gnd opamp
@@ -18,49 +41,75 @@
     + sa=0 sb=0 sd=0 mult=1 m=1
 .ends
 
-** Inverted Random Ramp (Ceyda version) --------------------
-* includes voltage source which is not practically feasible
+* IDAC Positive Random Ramp
+.subckt ramp_generator_idac iref vini b0 b1 b2 b3 b4 ramp vdd gnd reset c=20p
+    xinv0 b0 vss vss vddd vddd b0i sky130_fd_sc_hs__inv_1
+    xinv1 b1 vss vss vddd vddd b1i sky130_fd_sc_hs__inv_1
+    xinv2 b2 vss vss vddd vddd b2i sky130_fd_sc_hs__inv_1
+    xinv3 b3 vss vss vddd vddd b3i sky130_fd_sc_hs__inv_1
+    xinv4 b4 vss vss vddd vddd b4i sky130_fd_sc_hs__inv_1
+    xidac b0 b1 b2 b3 b4 b0i b1i b2i b3i b4i vx vx_ign iref vdd gnd idac
 
-.subckt ramp_generator_init_c vref vini vc0 vc1 vc2 vc3 vc4 ramp vdd gnd reset
-    xrladder vref vx vc0 vc1 vc2 vc3 vc4 vdd gnd rladdern2
     xopamp vdd vx gnd ramp gnd opamp
-    C1 vx vc 20p m=1
-    V1 net3 net4 1
-    vim vc ramp 0
+    C1 vx ramp {c} m=1
 
-    XM2 net3 reset ramp gnd sky130_fd_pr__nfet_01v8 L=0.15 W=10 nf=1 ad='int((nf+1)/2) * W/nf * 0.29'
-    + as='int((nf+2)/2) * W/nf * 0.29' pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)'
-    + nrd='0.29 / W' nrs='0.29 / W' sa=0 sb=0 sd=0 mult=1 m=1
-    XM3 net4 reset vx gnd sky130_fd_pr__nfet_01v8 L=0.15 W=10 nf=1 ad='int((nf+1)/2) * W/nf * 0.29' as='int((nf+2)/2) * W/nf * 0.29'
+    ; short cap
+    xm1 ramp reset vx vx sky130_fd_pr__nfet_01v8 L=0.15 W=10 nf=1 ad='int((nf+1)/2) * W/nf * 0.29' as='int((nf+2)/2) * W/nf * 0.29'
     + pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)' nrd='0.29 / W' nrs='0.29 / W'
     + sa=0 sb=0 sd=0 mult=1 m=1
+
+    ; set vx
+    xm2 vini reset vx vx sky130_fd_pr__nfet_01v8 L=0.15 W=10 nf=1 ad='int((nf+1)/2) * W/nf * 0.29' as='int((nf+2)/2) * W/nf * 0.29'
+    + pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)' nrd='0.29 / W' nrs='0.29 / W'
+    + sa=0 sb=0 sd=0 mult=1 m=1
+
 .ends
 
-** Positive Random Ramp ------------------------------------
+* IDAC Negative Random Ramp
+.subckt ramp_generator_idaci iref vini b0 b1 b2 b3 b4 ramp vdd gnd reset c=20p
+    xinv0 b0 vss vss vddd vddd b0i sky130_fd_sc_hs__inv_1
+    xinv1 b1 vss vss vddd vddd b1i sky130_fd_sc_hs__inv_1
+    xinv2 b2 vss vss vddd vddd b2i sky130_fd_sc_hs__inv_1
+    xinv3 b3 vss vss vddd vddd b3i sky130_fd_sc_hs__inv_1
+    xinv4 b4 vss vss vddd vddd b4i sky130_fd_sc_hs__inv_1
+    xidac b0 b1 b2 b3 b4 b0i b1i b2i b3i b4i vx_ign vx iref vdd gnd
 
-.subckt ramp_generator vref vc0 vc1 vc2 vc3 vc4 ramp vdd gnd reset
-    xrladder vref vx vc0 vc1 vc2 vc3 vc4 vdd gnd rladdern
     xopamp vdd vx gnd ramp gnd opamp
-    C1 vx vc 20p m=1
-    vim ramp vc 0
+    C1 vx ramp {c} m=1
 
+    ; short cap
     XMR ramp reset vx vx sky130_fd_pr__nfet_01v8 L=0.15 W=10 nf=1 ad='int((nf+1)/2) * W/nf * 0.29' as='int((nf+2)/2) * W/nf * 0.29'
     + pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)' nrd='0.29 / W' nrs='0.29 / W'
     + sa=0 sb=0 sd=0 mult=1 m=1
+
+    ; set vx
+    XMR vini reset vx vx sky130_fd_pr__pfet_01v8 L=0.15 W=10 nf=1 ad='int((nf+1)/2) * W/nf * 0.29' as='int((nf+2)/2) * W/nf * 0.29'
+    + pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)' nrd='0.29 / W' nrs='0.29 / W'
+    + sa=0 sb=0 sd=0 mult=1 m=1
+
 .ends
 
-** Ramp Generator with Fixed Slope -------------------------
 
-.subckt ramp_generator_fixed vref out vdd gnd reset c=20p r=12.7Meg
-   C1  vx   out  {c} m=1
-   R1  vref vx   {r} m=1
-   XMR out  reset vx vx sky130_fd_pr__nfet_01v8 L=0.15 W=10 nf=1 ad='int((nf+1)/2) * W/nf * 0.29' as='int((nf+2)/2) * W/nf * 0.29'
-   + pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)' nrd='0.29 / W' nrs='0.29 / W'
-   + sa=0 sb=0 sd=0 mult=1 m=1
-   xopamp vdd vx gnd out gnd opamp
+
+** Comparator Wrappers =====================================
+
+.subckt comparator_wrap_mismatch inp inn clk outp outn vdd gnd mismatch=1m
+    vmis  inn inn_m {mismatch}
+    xcomp inp inn_m clk outp outn vdd gnd comparator_wrap
 .ends
 
-** Resistive ladder for configurable ramp_generators -------
+.subckt comparator_wrap inp inn clk outp outn vdd gnd
+    iref  irf gnd 10u
+    xcomp vdd inp clk outp inn outn irf gnd comparator
+.ends
+
+.subckt comparator vdd inp ck outp inn outn iref vss
+    x1 vdd ck outp outn net1 net2 vss latch
+    x2 vdd inp inn net1 net2 iref vss preamp
+.ends
+
+
+** Resistive ladders =======================================
 
 .subckt rladdern va vb vc0 vc1 vc2 vc3 vc4 vdd gnd
     RS va vm 7.5Meg m=1
