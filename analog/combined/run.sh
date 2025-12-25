@@ -26,7 +26,7 @@ shift $((OPTIND - 1))
 
 if [ "$outdir" = "" ]; then
     outdir="outfiles/dataset_${*/ /_}"
-    outdir="${outfiles/=/:}"
+    outdir="${outdir/=/:}"
 fi
 
 # Environment Variable Defaults
