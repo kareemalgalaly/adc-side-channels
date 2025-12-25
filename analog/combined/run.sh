@@ -26,8 +26,13 @@ shift $((OPTIND - 1))
 
 if [ "$outdir" = "" ]; then
     outdir="outfiles/dataset_${*/ /_}"
-    outdir="${outfiles/=/:}"
+    outdir="${outdir/=/:}"
 fi
+if [ "$SCRATCH" != "" ]; then
+    outdir="$SCRATCH/$outdir"
+fi
+
+echo "Dumping outputs to $outdir"
 
 # Environment Variable Defaults
 
@@ -40,7 +45,6 @@ NGBATCH="ngspice -b -r $outdir/rawfile"
 # Main
 
 echo "#!/bin/bash" > jobs.sh
-mkdir -p $outdir
 
 for s in $(seq $sstart $sstop); do echo "${NGBATCH}_a_${s} <($SMAIN 'seed=eval:$s' 'ddir=$outdir' 'dmode=model')" >> jobs.sh; done
 for s in $(seq $sstart $sstop); do echo "ngspice <($SPOST 'seed=eval:$s' 'ddir=$outdir' 'mode=a')"                >> jobs.sh; done
@@ -49,6 +53,7 @@ for s in $(seq $sstart $sstop); do echo "ngspice <($SPOST 'seed=eval:$s' 'ddir=$
 
 echo "Generated jobs.sh"
 if ! [ "$norun" ]; then
+    mkdir -p $outdir
     echo "Batching with NUM_SIMULTANEOUS_JOBS=$queue"
     cat jobs.sh      | xargs -I cmd -P $queue bash -c "echo 'Running cmd'; eval 'cmd'"
     echo "Done"
