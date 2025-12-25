@@ -9,7 +9,7 @@ sstart=0
 sstop=256
 queue=1
 norun=""
-outdir="outfiles/dataset"
+outdir=""
 
 while getopts "o:s:S:q:N" opt
 do
@@ -23,6 +23,11 @@ do
 done
 
 shift $((OPTIND - 1))
+
+if [ "$outdir" = "" ]; then
+    outdir="outfiles/dataset_${*/ /_}"
+    outdir="${outfiles/=/:}"
+fi
 
 # Environment Variable Defaults
 
@@ -42,7 +47,7 @@ for s in $(seq $sstart $sstop); do echo "ngspice <($SPOST 'seed=eval:$s' 'ddir=$
 for s in $(seq $sstart $sstop); do echo "${NGBATCH}_d_${s} <($SMAIN 'seed=eval:$s' 'ddir=$outdir' 'amode=model')" >> jobs.sh; done
 for s in $(seq $sstart $sstop); do echo "ngspice <($SPOST 'seed=eval:$s' 'ddir=$outdir' 'mode=d')"                >> jobs.sh; done
 
-echo "Generated jobs.sh, jobs_post.sh"
+echo "Generated jobs.sh"
 if ! [ "$norun" ]; then
     echo "Batching with NUM_SIMULTANEOUS_JOBS=$queue"
     cat jobs.sh      | xargs -I cmd -P $queue bash -c "echo 'Running cmd'; eval 'cmd'"
