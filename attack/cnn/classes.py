@@ -229,7 +229,7 @@ class RawDataset(Dataset):
         assert info['type'] == 'raw'
         super().__init__(name, info, defaults)
 
-        self.len  = info['len']
+        self.len  = info.get('len', 2600)
 
     def get_csv(self):
         return f"{super().get_csv()},{self.len}"

@@ -174,6 +174,7 @@ class TraceDataset(Dataset):
         return self
 
     def set_prop_range(self, test, proportion):
+        if len(self.file_list) == 0: raise RuntimeError("File list is empty")
         self.prop = proportion
         width = int(len(self.file_list) * proportion)
         start = len(self.file_list) - width if test else 0

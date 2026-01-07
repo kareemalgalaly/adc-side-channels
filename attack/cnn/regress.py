@@ -199,7 +199,7 @@ class CNNRegression(Regression):
     def run_single_test(self, test, network, dataset, run_hash, bit=-1):
         if (self.args.preview): return True
         if run_hash in self.skip_tests: 
-            print(f"  SKIPPING {run_hash_i}"); return True
+            print(f"  SKIPPING {run_hash}"); return True
 
 
         ## Basic parameters --------------------------------
