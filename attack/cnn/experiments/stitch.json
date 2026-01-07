@@ -1,0 +1,61 @@
+{
+    "networks" : {},
+    "datasets" : {
+        "dig_p_tt": {
+            "path" : "/home/kareem/Projects/adc-side-channels/analog/combined/outfiles/dataset_corner:tt_arch:prot",
+            "format"  : "ptrace_d_\\d+_d(\\d+)"
+        },
+        "dig_p_ss": {
+            "path" : "/home/kareem/Projects/adc-side-channels/analog/combined/outfiles/dataset_corner:ss_arch:prot",
+            "format"  : "ptrace_d_\\d+_d(\\d+)"
+        },
+        "dig_p_fs": {
+            "path" : "/home/kareem/Projects/adc-side-channels/analog/combined/outfiles/dataset_corner:fs_arch:prot",
+            "format"  : "ptrace_d_\\d+_d(\\d+)"
+        },
+        "dig_x_tt": {
+            "path" : "/home/kareem/Projects/adc-side-channels/analog/combined/outfiles/dataset_corner:tt_arch:uprot",
+            "format"  : "ptrace_d_\\d+_d(\\d+)"
+        },
+        "dig_x_ss": {
+            "path" : "/home/kareem/Projects/adc-side-channels/analog/combined/outfiles/dataset_corner:ss_arch:uprot",
+            "format"  : "ptrace_d_\\d+_d(\\d+)"
+        },
+        "dig_x_fs": {
+            "path" : "/home/kareem/Projects/adc-side-channels/analog/combined/outfiles/dataset_corner:fs_arch:uprot",
+            "format"  : "ptrace_d_\\d+_d(\\d+)"
+        },
+        "nlg_p_tt": {
+            "path" : "/home/kareem/Projects/adc-side-channels/analog/combined/outfiles/dataset_corner:tt_arch:prot",
+            "format"  : "ptrace_a_\\d+_d(\\d+)"
+        },
+        "nlg_p_ss": {
+            "path" : "/home/kareem/Projects/adc-side-channels/analog/combined/outfiles/dataset_corner:ss_arch:prot",
+            "format"  : "ptrace_a_\\d+_d(\\d+)"
+        },
+        "nlg_p_fs": {
+            "path" : "/home/kareem/Projects/adc-side-channels/analog/combined/outfiles/dataset_corner:fs_arch:prot",
+            "format"  : "ptrace_a_\\d+_d(\\d+)"
+        },
+        "nlg_x_tt": {
+            "path" : "/home/kareem/Projects/adc-side-channels/analog/combined/outfiles/dataset_corner:tt_arch:uprot",
+            "format"  : "ptrace_a_\\d+_d(\\d+)"
+        },
+        "nlg_x_ss": {
+            "path" : "/home/kareem/Projects/adc-side-channels/analog/combined/outfiles/dataset_corner:ss_arch:uprot",
+            "format"  : "ptrace_a_\\d+_d(\\d+)"
+        },
+        "nlg_x_fs": {
+            "path" : "/home/kareem/Projects/adc-side-channels/analog/combined/outfiles/dataset_corner:fs_arch:uprot",
+            "format"  : "ptrace_a_\\d+_d(\\d+)"
+        }
+    },
+    "tests" : [],
+    "defaults" : {
+        "sample_mode"     : ["MAX"],
+        "sample_interval" : 0.1e-6,
+        "sample_duration" : 260e-6,
+        "columns"         : 1
+    }
+}
+

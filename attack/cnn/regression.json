@@ -52,6 +52,26 @@
             "normalizer"  : "robust",
             "trace_scale" : 1
         },
+        "comb_dig_v1": {
+            "path" : "/home/kareem/Projects/adc-side-channels/analog/combined/outfiles/protected_1/dataset_corner:tt",
+            "type" : "sampled",
+            "format"  : "ptrace_d_\\d+_d(\\d+)",
+            "columns" : 1,
+            "label"   : "lambda gs: int(gs[0])",
+            "sample_mode"     : ["MAX"],
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 260e-6
+        },
+        "comb_dig_v2": {
+            "path" : "/home/kareem/Projects/adc-side-channels/analog/combined/outfiles/dataset_",
+            "type" : "sampled",
+            "format"  : "ptrace_d_\\d+_d(\\d+)",
+            "columns" : 1,
+            "label"   : "lambda gs: int(gs[0])",
+            "sample_mode"     : ["MAX"],
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 260e-6
+        },
         "digital_1px_tt_3" : {
             "path" : "digital_1px_tt_3",
             "type" : "sampled",
@@ -126,6 +146,30 @@
             "sample_interval" : 0.1e-6,
             "sample_duration" : 260e-6,
             "normalizer"      : "robust",
+            "trace_scale"     : 1
+        },
+        "combined_live_d" : {
+            "path" : "/home/kareem/Projects/adc-side-channels/analog/combined/outfiles/dataset",
+            "type" : "sampled",
+            "format"  : "ptrace_d_\\d+_d(\\d+)",
+            "columns" : 1,
+            "label"   : "lambda gs: int(gs[0])",
+            "sample_mode"     : ["MAX"],
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 260e-6,
+            "#normalizer"      : "robust",
+            "trace_scale"     : 1
+        },
+        "combined_live_a" : {
+            "path" : "/home/kareem/Projects/adc-side-channels/analog/combined/outfiles/dataset",
+            "type" : "sampled",
+            "format"  : "ptrace_a_\\d+_d(\\d+)",
+            "columns" : 1,
+            "label"   : "lambda gs: int(gs[0])",
+            "sample_mode"     : ["MAX"],
+            "sample_interval" : 0.1e-6,
+            "sample_duration" : 260e-6,
+            "#normalizer"      : "robust",
             "trace_scale"     : 1
         }
     },

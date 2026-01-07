@@ -144,13 +144,13 @@ class Dataset(HashableBase):
         self.name = name
         self.type = info['type']
         self.frmt = info['format']
-        self.cols = info['columns']
+        self.cols = info.get('columns', 1)
         self.lblf = eval(info.get("label", "lambda gs: int(gs[0])"), globals(), {})
         self.paths = [path if path.startswith("/") else os.path.join(data_dir, path) for path in info.get('paths', [])]
 
         self.nparams = dict(
-            norm = info.get('normalizer', "scale"),
-            mult = info.get("trace_scale", defaults["trace_scale"])
+            norm = info.get('normalizer', defaults.get("normalizer", "scale")),
+            mult = info.get("trace_scale", defaults.get("trace_scale", 1))
         )
 
         if path := info.get('path', None):
@@ -254,8 +254,8 @@ class SampledDataset(Dataset):
         super().__init__(name, info, defaults)
 
         self.mode     =  info['sample_mode']
-        self.interval =  info['sample_interval']
-        self.duration =  info['sample_duration']
+        self.interval =  info.get('sample_interval', defaults.get('sample_interval', 260e-6))
+        self.duration =  info.get('sample_duration', defaults.get('sample_duration', 0.1e-6))
         self.len      = int(self.duration / self.interval)
 
     def get_csv(self):
@@ -311,17 +311,17 @@ class Test(HashableBase):
         else:
             self.test_dataset = [self.datasets[0]]
         self.skip          = info.get('skip',           False)
-        self.learning_rate = info.get('learning_rate',  defaults['learning_rate'])
-        self.learning_decay= info.get('learning_decay', defaults['learning_decay'])
-        self.max_learn_rate= info.get('max_learn_rate', defaults['max_learn_rate'])
-        self.optimizer     = info.get('optimizer',      defaults['optimizer'])
-        self.loss          = info.get('loss',           defaults['loss'])
-        self.loss_se       = info.get('loss_se',        defaults['loss_se'])
-        self.max_epochs    = info.get('max_epochs',     defaults['max_epochs'])
-        self.max_accuracy  = info.get('max_accuracy',   defaults['max_accuracy'])
-        self.max_loss      = info.get('max_loss',       defaults['max_loss'])
-        self.batch_size    = info.get('batch_size',     defaults['batch_size'])
-        self.train_split   = info.get('train_split',    defaults['train_split'])
+        self.optimizer     = info.get('optimizer',      defaults.get('optimizer'      , "Adam"))
+        self.loss          = info.get('loss',           defaults.get('loss'           , "CrossEntropyLoss"))
+        self.loss_se       = info.get('loss_se',        defaults.get('loss_se'        , "MSELoss"))
+        self.learning_rate = info.get('learning_rate',  defaults.get('learning_rate'  , 5e-4))
+        self.learning_decay= info.get('learning_decay', defaults.get('learning_decay' ,    0))
+        self.max_learn_rate= info.get('max_learn_rate', defaults.get('max_learn_rate' , 5e-2))
+        self.max_epochs    = info.get('max_epochs',     defaults.get('max_epochs'     , 5000))
+        self.max_accuracy  = info.get('max_accuracy',   defaults.get('max_accuracy'   , 0.99))
+        self.max_loss      = info.get('max_loss',       defaults.get('max_loss'       ,    0))
+        self.batch_size    = info.get('batch_size',     defaults.get('batch_size'     ,   -1))
+        self.train_split   = info.get('train_split',    defaults.get('train_split'    ,    1))
         self.test_split    = 1 - self.train_split if self.train_split != 1 else 1
 
         #if not isinstance(self.learning_rate, list): self.learning_rate = [self.learning_rate]
@@ -429,6 +429,8 @@ class Regression:
         self.datasets = {}
 
         for name, info in dict.items():
+            if 'type' not in info: info['type'] = 'sampled'
+            if 'sample_mode' not in info: info['sample_mode'] = self.defaults.get('sample_mode', "MAX")
             if info['type'] == 'sampled' and isinstance(info['sample_mode'], list):
                 for mode in info['sample_mode']:
                     inf = info.copy()
