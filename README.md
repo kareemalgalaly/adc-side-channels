@@ -13,6 +13,8 @@ This repo contains the designs and experiments used for the following papers:
 - x-server (XQuartz or Xpra on Mac) or a linux machine
 - python (version 3.10 or later)
   - pytorch
+  - numpy
+  - matplotlib
 - bash
 
 Tools have been tested on MacOS Sequoia (arm), Debian 12 Bookwork (amd64), and Fedora 42 (amd64). Shell scripts are written for bash.
