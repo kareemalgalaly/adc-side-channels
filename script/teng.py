@@ -8,6 +8,7 @@
 import os
 import re
 import sys
+import importlib
 import argparse
 import traceback
 
@@ -80,7 +81,7 @@ def build_mapping(format_list, mapping={}):
 
                 continue
             try:
-                k, v = fmt.split("=", maxsplit=1)
+                k, v = fmt.split("=")
                 if v and v[0] in ("'", '"', "/") and v[-1] != v[0]:
                     pend = v[1:]
                     end  = v[0]
@@ -208,7 +209,10 @@ class TEngine:
                 return self.eval_expr(args[0], env)
 
             case "import":
-                return self.eval_expr(f"exec('import {args[0]}')", env)
+                # return self.exec_expr(f"import {args[0]}", env)
+                match args[0]:
+                    case "math": env["math"] = importlib.import_module("math")
+                    case _: error(f"Unsupported library <{args[0]}>")
 
             case "default":
                 if args[0] not in env:
@@ -243,6 +247,18 @@ class TEngine:
             else:
                 error(f"Exception occurred while evaluating expression\n  Expression: {expr}\n  Exception : {e}\n{traceback.format_exc()}")
                 # error(f"Exception occurred while evaluating expression\n  Expression: {expr}\n  Exception : {e}\n  Env : {env}\n{traceback.format_exc()}")
+
+    def exec_expr(self, expr, env):
+        if args.safe: 
+            warn(f"Safe Mode: Skipping evaluated expression <{expr}>")
+            return None
+        try:
+            return exec(expr, env, get_globals())
+        except Exception as e:
+            if isinstance(e, NameError):
+                error(f"Undefined variable in expression {expr}: {e}")
+            else:
+                error(f"Exception occurred while evaluating expression\n  Expression: {expr}\n  Exception : {e}\n{traceback.format_exc()}")
 
         
 ## main ----------------------------------------------------

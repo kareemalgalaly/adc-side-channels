@@ -107,12 +107,13 @@ class Network(HashableBase):
             return network
         else:
             desc = f"{input_len},{input_ch}:{self.definition}"
-            try:
-                return GenericCNN(desc, self.inputs, debug=self.args.nndebug)
-            except Exception as e:
-                print("Failed to create:", desc)
-                print(e)
-                return None
+            return GenericCNN(desc, self.inputs, debug=self.args.nndebug)
+           #try:
+           #    return GenericCNN(desc, self.inputs, debug=self.args.nndebug)
+           #except Exception as e:
+           #    print("Failed to create:", desc)
+           #    print(e)
+           #    return None
 
 # Dataset ########################################
 
