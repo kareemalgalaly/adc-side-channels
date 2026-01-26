@@ -9,8 +9,10 @@ SUPPRESS_WARNINGS = $(addprefix -Wno-, $(IGNORED_WARNINGS))
 #	vvp build/count_tb
 
 counter:
+	mkdir -p build
 	verilator --binary tb/counter_tb.v tb/tb_lib.v design/counters/* --top-module 'counter_tb' --timing -Itb ${SUPPRESS_WARNINGS} --trace
 	./obj_dir/Vcounter_tb
+	gtkwave build/*vcd
 
 sampler:
 	verilator --binary tb/sampler_tb.v tb/tb_lib.v design/samplers/* --top-module 'sampler_tb' --timing -Itb ${SUPPRESS_WARNINGS} --trace --clk sampler_tb.clk

@@ -8,6 +8,7 @@
 import os
 import re
 import sys
+import importlib
 import argparse
 import traceback
 
@@ -19,8 +20,11 @@ argparser.add_argument("-s", "--safe",           action="store_true", help="Disa
 argparser.add_argument(      "--strict",         action="store_true", help="Error if a substitution fails")
 argparser.add_argument("-e", "--env",            action="store_true", help="Allow pulling values from environment variables")
 argparser.add_argument("-d", "--debug",          action="store_true", help="Debug output")
+argparser.add_argument(      "--show-env",       action="store_true", help="Print Env")
 argparser.add_argument("-A", "--start",  type=str, default="{", help="Start string for format token. Default is {")
 argparser.add_argument("-B", "--stop",   type=str, default="}", help="End   string for format token. Default is }")
+#argparser.add_argument("-c", "--clean",        action="store_true", dest="clean", help="Clean tokens on separate lines.")
+argparser.add_argument("-C", "--noclean",        action="store_false", dest="clean", help="Don't clean tokens on separate lines.")
 argparser.add_argument("--test",         type=str, help="Debug regex matching")
 argparser.add_argument("vars", nargs=argparse.REMAINDER, help="List of variable definitions")
 
@@ -60,10 +64,28 @@ def warn(*msg, **kwargs):
 ## --------------------------------------------------
 
 def build_mapping(format_list, mapping={}):
+    pend = ""
+    end  = ""
     for fmt in format_list:
         if fmt:
+            if pend:
+                if fmt[-1] == end:
+                    pend = pend + " " + fmt[:-1]
+
+                    if pend.startswith("eval:"):
+                        pend = eval(pend[5:], mapping, get_globals())
+                    mapping[k] = pend
+                    pend = ""
+                else:
+                    pend = pend + " " + fmt
+
+                continue
             try:
                 k, v = fmt.split("=")
+                if v and v[0] in ("'", '"', "/") and v[-1] != v[0]:
+                    pend = v[1:]
+                    end  = v[0]
+                    continue
                 if v.startswith("eval:"):
                     v = eval(v[5:], mapping, get_globals())
                 mapping[k] = v
@@ -86,9 +108,9 @@ class TEngine:
         i = iter(self.tokens)
         try:
             while True:
-                yield next(i)
-                yield next(i)#[start_i:stop_i]
-                next(i)
+                yield next(i) # non-token (static)
+                yield next(i) # token #[start_i:stop_i]
+                next(i)       # token internal subgroup
         except StopIteration:
             return
         
@@ -113,7 +135,11 @@ class TEngine:
         elif (m := ifinl_re.fullmatch(token)) and include: yield m.groups()[2] if (m.groups()[0] == "n") ^ (m.groups()[1] in env) else m.groups()[4] or ""
         elif m := ifdef_re.fullmatch(token): yield from self.handle_cond(m.groups()[0],                m.groups()[3],       env, tokens, include)
         elif include == False: return
-        elif m := var___re.fullmatch(token): yield self.lookup(m.groups()[0], env, default=m.groups()[2]) or (f_unstrict_mode and token_start + token + token_stop) or ""
+        elif m := var___re.fullmatch(token): 
+            val = self.lookup(m.groups()[0], env, default=m.groups()[2])
+            if val is None:
+                val = (f_unstrict_mode and token_start + token + token_stop) or ""
+            yield val
         elif m := decl1_re.fullmatch(token): yield self.handle_decl(m.groups(), env)
         elif m := decl2_re.fullmatch(token): self.handle_decl(m.groups(), env)
         elif m := func__re.fullmatch(token): yield self.eval_expr(token, env) # [1:-1]
@@ -183,7 +209,10 @@ class TEngine:
                 return self.eval_expr(args[0], env)
 
             case "import":
-                return self.eval_expr(f"exec('import {args[0]}')", env)
+                # return self.exec_expr(f"import {args[0]}", env)
+                match args[0]:
+                    case "math": env["math"] = importlib.import_module("math")
+                    case _: error(f"Unsupported library <{args[0]}>")
 
             case "default":
                 if args[0] not in env:
@@ -216,7 +245,20 @@ class TEngine:
             if isinstance(e, NameError):
                 error(f"Undefined variable in expression {expr}: {e}")
             else:
-                error(f"Exception occurred while evaluating expression\n  Expression: {expr}\n  Exception : {e}\n  Env : {env}\n{traceback.format_exc()}")
+                error(f"Exception occurred while evaluating expression\n  Expression: {expr}\n  Exception : {e}\n{traceback.format_exc()}")
+                # error(f"Exception occurred while evaluating expression\n  Expression: {expr}\n  Exception : {e}\n  Env : {env}\n{traceback.format_exc()}")
+
+    def exec_expr(self, expr, env):
+        if args.safe: 
+            warn(f"Safe Mode: Skipping evaluated expression <{expr}>")
+            return None
+        try:
+            return exec(expr, env, get_globals())
+        except Exception as e:
+            if isinstance(e, NameError):
+                error(f"Undefined variable in expression {expr}: {e}")
+            else:
+                error(f"Exception occurred while evaluating expression\n  Expression: {expr}\n  Exception : {e}\n{traceback.format_exc()}")
 
         
 ## main ----------------------------------------------------
@@ -245,7 +287,21 @@ if __name__ == "__main__":
     env = build_mapping(args.vars, mapping=dict(os.environ) if args.env else {})
 
     with open(args.template, "r") as file:
-        engine = TEngine(file.read())
+        if args.clean:
+            clean_re = re.compile(f"^\\s*({start_re}(((?!{start_re}|{stop_re}).)+){stop_re})\\s*$")
+            data = []
+            for line in file.readlines():
+                if m := clean_re.fullmatch(line):
+                    # print(m.groups()[0])
+                    data.append(m.groups()[0])
+                else:
+                    data.append(line)
+            data = "".join(data)
+
+        else:
+            data = file.read()
+
+        engine = TEngine(data)
         
     if args.output:
         with open(args.output, "w") as file:
@@ -265,3 +321,5 @@ if __name__ == "__main__":
             if token is not None:
                 print(token, end="")
 
+    if args.show_env:
+        print(env)

@@ -1,5 +1,5 @@
 ###############################################################################
-# File        : /Users/kareemahmad/Projects/SideChannels/adc-side-channel/attack/cnn/classes.py
+# File        : attack/cnn/classes.py
 # Author      : kareemahmad
 # Created     :
 # Description : python class definitions for types in regression.json
@@ -9,16 +9,16 @@
 
 
 import os
-import sys
 import json
+import math
 import argparse
 import datetime
 
 import torch.nn as nn
 import torch.optim as optim
 
+from utils import base36hash
 from copy import copy
-from hashlib import shake_128
 
 from dataloader import TraceDatasetBuilder, TraceInfo
 from cnn_gen import GenericCNN
@@ -34,85 +34,6 @@ argparser.add_argument("-o", "--output", type=str, default='outputs', help="Dire
 pwd      = os.path.dirname(os.path.abspath(__file__))
 proj_dir = os.path.dirname(os.path.dirname(pwd))
 data_dir = os.path.join(proj_dir, 'analog', 'outfiles')
-
-# Helpers ########################################
-
-class ProgressBar:
-    def __init__(self, f_start="", f_end="", bar_len=20, bar_chr='X', max_val=1, out=sys.stdout):
-        self.out     = out
-        self.f_start = f_start
-        self.f_end   = f_end
-        self.bar_len = bar_len
-        self.bar_chr = bar_chr
-        self.max_val = max_val
-
-        self.val_len = len(str(max_val))
-        #self.start_args = None
-        #self.stop_args = None
-        self.kwargs = {}
-
-        self.running = False
-
-    def start(self, **kwargs):
-        self.kwargs = kwargs
-        self.running = True
-        self.update(0)
-
-    def update(self, value, **kwargs):
-        if not(self.running): return
-
-        done = int(self.bar_len * value / self.max_val)
-        remn = self.bar_len - done
-
-        if kwargs is not {}: self.kwargs.update(kwargs)
-
-        print(f"{self.f_start.format(**self.kwargs)}[{self.bar_chr*done}{('-'*(remn))}] {value:{self.val_len}}/{self.max_val} {self.f_end.format(**self.kwargs)}", end='\r', file=self.out, flush=True)
-
-    def stop(self, value=-1):
-        if not(self.running): return
-        if value == -1: value = self.max_val
-
-        print(f"{self.f_start.format(**self.kwargs)}[{self.bar_chr*self.bar_len}] {value:{self.val_len}}/{self.max_val} {self.f_end.format(**self.kwargs)}", file=self.out, flush=True)
-
-        self.kwargs = {}
-        self.running = False
-
-# Base36 Hash ####################################
-
-base36char = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-def base36(number):
-    result = ""
-    number = abs(number)
-    while number != 0:
-        number, remainder = divmod(number, 36)
-        result += base36char[remainder]
-    return result or base36char[0]
-
-def base36hash(string):
-    o = shake_128(string.encode('ascii'))
-    b = o.digest(9)
-    h = ""
-
-    for i in range(0, len(b), 9):
-        v = 0
-        m = 1
-
-        for j in range(0, 9):
-            if i+j < len(b):
-                #print("byte", j+i, b[i+j], m)
-                v += b[j] * m
-            else:
-                break
-            m = m << 8
-
-        h += base36(v).rjust(14,"0")
-        #print(h)
-        #print(o.hexdigest(16))
-    return h
-
-    # 36 ^ 7 > 16 ^ 9
-    # 36 ^ 14 > 16 ^ 18
 
 # Base ###########################################
 
@@ -186,12 +107,13 @@ class Network(HashableBase):
             return network
         else:
             desc = f"{input_len},{input_ch}:{self.definition}"
-            try:
-                return GenericCNN(desc, debug=self.args.nndebug)
-            except Exception as e:
-                print("Failed to create:", desc)
-                print(e)
-                return None
+            return GenericCNN(desc, self.inputs, debug=self.args.nndebug)
+           #try:
+           #    return GenericCNN(desc, self.inputs, debug=self.args.nndebug)
+           #except Exception as e:
+           #    print("Failed to create:", desc)
+           #    print(e)
+           #    return None
 
 # Dataset ########################################
 
@@ -223,11 +145,14 @@ class Dataset(HashableBase):
         self.name = name
         self.type = info['type']
         self.frmt = info['format']
-        self.cols = info['columns']
+        self.cols = info.get('columns', 1)
         self.lblf = eval(info.get("label", "lambda gs: int(gs[0])"), globals(), {})
         self.paths = [path if path.startswith("/") else os.path.join(data_dir, path) for path in info.get('paths', [])]
 
-        self.trace_scale = info.get("trace_scale", defaults["trace_scale"])
+        self.nparams = dict(
+            norm = info.get('normalizer', defaults.get("normalizer", "scale")),
+            mult = info.get("trace_scale", defaults.get("trace_scale", 1))
+        )
 
         if path := info.get('path', None):
             self.paths.append(os.path.join(data_dir, path))
@@ -254,7 +179,8 @@ class Dataset(HashableBase):
     # --------------------------------------------
 
     def get_csv(self):
-        return f"{self.type},{';'.join(os.path.basename(path) for path in self.paths)},{self.cols}"
+        npstr = ";".join(f"{k}:{v}" for k,v in self.nparams.items())
+        return f"{self.type},{';'.join(os.path.basename(path) for path in self.paths)},{self.cols},{npstr}"
 
     # --------------------------------------------
     # func: build
@@ -264,7 +190,14 @@ class Dataset(HashableBase):
 
     def build(self, adc_bitwidth=8, device=None):
         if self.builder: return self.builder
-        self.builder = TraceDatasetBuilder(adc_bitwidth=adc_bitwidth, mult=self.trace_scale, cache=True, device=device)
+
+        self.builder = TraceDatasetBuilder(
+            name         = self.name,
+            adc_bitwidth = adc_bitwidth,
+            cols         = self.cols,
+            nparams      = self.nparams,
+            device       = device
+        )
         return self.builder
 
     # --------------------------------------------
@@ -275,10 +208,13 @@ class Dataset(HashableBase):
     
     def get_trace(self, label, index=0, bit=-1):
         dataset = self.builder.dataset if bit == -1 else self.builder.datasets[bit]
+
+        # Specific trace (index = -1 gets all of them)
         if label != -1:
             return dataset.get_by_label(label, index=index)
         
-        (sum, start, stop), label = dataset.get_item(0)
+        # Average trace
+        (sum, start, stop), label = dataset.get_info(0)
         for i in range(1, len(dataset)):
             sum += dataset[i][0]
         return TraceInfo(sum / len(dataset), start, stop)
@@ -294,7 +230,7 @@ class RawDataset(Dataset):
         assert info['type'] == 'raw'
         super().__init__(name, info, defaults)
 
-        self.len  = info['len']
+        self.len  = info.get('len', 2600)
 
     def get_csv(self):
         return f"{super().get_csv()},{self.len}"
@@ -319,8 +255,8 @@ class SampledDataset(Dataset):
         super().__init__(name, info, defaults)
 
         self.mode     =  info['sample_mode']
-        self.interval =  info['sample_interval']
-        self.duration =  info['sample_duration']
+        self.interval =  info.get('sample_interval', defaults.get('sample_interval', 260e-6))
+        self.duration =  info.get('sample_duration', defaults.get('sample_duration', 0.1e-6))
         self.len      = int(self.duration / self.interval)
 
     def get_csv(self):
@@ -376,17 +312,17 @@ class Test(HashableBase):
         else:
             self.test_dataset = [self.datasets[0]]
         self.skip          = info.get('skip',           False)
-        self.learning_rate = info.get('learning_rate',  defaults['learning_rate'])
-        self.learning_decay= info.get('learning_decay', defaults['learning_decay'])
-        self.max_learn_rate= info.get('max_learn_rate', defaults['max_learn_rate'])
-        self.optimizer     = info.get('optimizer',      defaults['optimizer'])
-        self.loss          = info.get('loss',           defaults['loss'])
-        self.loss_se       = info.get('loss_se',        defaults['loss_se'])
-        self.max_epochs    = info.get('max_epochs',     defaults['max_epochs'])
-        self.max_accuracy  = info.get('max_accuracy',   defaults['max_accuracy'])
-        self.max_loss      = info.get('max_loss',       defaults['max_loss'])
-        self.batch_size    = info.get('batch_size',     defaults['batch_size'])
-        self.train_split   = info.get('train_split',    defaults['train_split'])
+        self.optimizer     = info.get('optimizer',      defaults.get('optimizer'      , "Adam"))
+        self.loss          = info.get('loss',           defaults.get('loss'           , "CrossEntropyLoss"))
+        self.loss_se       = info.get('loss_se',        defaults.get('loss_se'        , "MSELoss"))
+        self.learning_rate = info.get('learning_rate',  defaults.get('learning_rate'  , 5e-4))
+        self.learning_decay= info.get('learning_decay', defaults.get('learning_decay' ,    0))
+        self.max_learn_rate= info.get('max_learn_rate', defaults.get('max_learn_rate' , 5e-2))
+        self.max_epochs    = info.get('max_epochs',     defaults.get('max_epochs'     , 5000))
+        self.max_accuracy  = info.get('max_accuracy',   defaults.get('max_accuracy'   , 0.99))
+        self.max_loss      = info.get('max_loss',       defaults.get('max_loss'       ,    0))
+        self.batch_size    = info.get('batch_size',     defaults.get('batch_size'     ,   -1))
+        self.train_split   = info.get('train_split',    defaults.get('train_split'    ,    1))
         self.test_split    = 1 - self.train_split if self.train_split != 1 else 1
 
         #if not isinstance(self.learning_rate, list): self.learning_rate = [self.learning_rate]
@@ -494,6 +430,8 @@ class Regression:
         self.datasets = {}
 
         for name, info in dict.items():
+            if 'type' not in info: info['type'] = 'sampled'
+            if 'sample_mode' not in info: info['sample_mode'] = self.defaults.get('sample_mode', "MAX")
             if info['type'] == 'sampled' and isinstance(info['sample_mode'], list):
                 for mode in info['sample_mode']:
                     inf = info.copy()

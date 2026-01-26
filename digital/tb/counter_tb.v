@@ -1,5 +1,7 @@
 `include "tb_lib.v"
 
+`define BEHAV
+
 module counter_tb;
     wire clk, rst;
     wire overflow;

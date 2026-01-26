@@ -7,6 +7,7 @@
 # Format: colon separated string where entries are of the following
 #   F(out_nodes)                     : Fully Connected
 #   C(out_channels, kernel, stride)  : Convolutional
+#   BN1                              : Batch Norm
 #   P(kernel, stride)                : Pooling
 #   R                                : ReLU
 #   S                                : Softmax
@@ -19,9 +20,12 @@ from operator import mul
 
 ## Regex Definitions ---------------------------------------
 
-re_f = re.compile('F\\((\\d+)\\)')
-re_c = re.compile('C\\((\\d+),(\\d+),(\\d+)\\)')
-re_p = re.compile('P\\((\\d+),(\\d+)\\)')
+re_f  = re.compile('F\\((\\d+)\\)') # out dim
+re_c  = re.compile('C\\((\\d+),(\\d+),(\\d+)\\)') # ch_out, size, stride
+re_c2 = re.compile('C\\((\\d+),(\\d+),(\\d+),(\\d+),(\\d+)\\)') # ch_out, size_x, size_y, stride_x, stride_y 
+re_b  = re.compile('BN([12])')
+re_p  = re.compile('P\\((\\d+),(\\d+)\\)')
+re_p2 = re.compile('P\\((\\d+),(\\d+),(\\d+),(\\d+)\\)')
 
 ## Helper Functions ----------------------------------------
 
@@ -38,6 +42,10 @@ def flatten_shape(shape):
     ret = shape[0]
     for i in shape[1:]: ret *= i
     return ret
+
+# @dataclass 
+# class regex_match:
+#     ;
 
 def build_cnn(definition, debug=False):
     tokens = definition.replace(" ", "").split(":")
@@ -59,7 +67,11 @@ def build_cnn(definition, debug=False):
         elif m := re_c.match(token):
             gs    = m.groups()
             c_out = int(gs[0])
-            w_in, c_in = shapes[-1]
+            try:
+                w_in, c_in = shapes[-1]
+            except:
+                w_in, h_in, c_in = shapes[-1]
+                assert h_in == 1
             kernel = int(gs[1])
             stride = int(gs[2])
             out_shape = get_output_size(w_in, c_in, c_out, kernel=kernel, stride=stride)
@@ -67,14 +79,55 @@ def build_cnn(definition, debug=False):
             layers.append(nn.Conv1d(in_channels=c_in, out_channels=c_out, kernel_size=kernel, stride=stride))
             shapes.append(out_shape)
 
+        elif m := re_c2.match(token):
+            gs    = m.groups()
+            c_out = int(gs[0])
+            print(shapes)
+            try:
+                w_in, h_in, c_in = shapes[-1]
+            except:
+                w_in, h_in = shapes[-1]
+                c_in = 1
+            kernel = (int(gs[1]), int(gs[2]))
+            stride = (int(gs[3]), int(gs[4]))
+            out_shape = (get_output_size(w_in, c_in, c_out, kernel=kernel[0], stride=stride[0])[0],
+                        *get_output_size(h_in, c_in, c_out, kernel=kernel[1], stride=stride[1]))
+
+            layers.append(nn.Conv2d(in_channels=c_in, out_channels=c_out, kernel_size=kernel, stride=stride))
+            shapes.append(out_shape)
+
+        elif m := re_b.match(token):
+            gs = m.groups()
+            dim = int(gs[0])
+            cin = shapes[-1][0]
+            match dim:
+                case 1 : layers.append(nn.BatchNorm1d(cin))
+                # case 2 : layers.append(nn.BatchNorm2d(cin))
+                case _ : raise RuntimeError("Unsupported dimensionality")
+
         elif m := re_p.match(token):
             gs = m.groups()
-            w_in, c_in = shapes[-1]
+            try:
+                w_in, c_in = shapes[-1]
+            except:
+                w_in, h_in, c_in = shapes[-1]
+                assert h_in == 1
             kernel = int(gs[0])
             stride = int(gs[1])
             out_shape = get_output_size(w_in, c_in, kernel=kernel, stride=stride)
 
             layers.append(nn.MaxPool1d(kernel_size=kernel, stride=stride))
+            shapes.append(out_shape)
+
+        elif m := re_p2.match(token):
+            gs = m.groups()
+            w_in, h_in, c_in = shapes[-1]
+            kernel = (int(gs[0]), int(gs[1])) 
+            stride = (int(gs[2]), int(gs[3]))
+            out_shape = (get_output_size(w_in, c_in, c_out, kernel=kernel[0], stride=stride[0])[0],
+                        *get_output_size(h_in, c_in, c_out, kernel=kernel[1], stride=stride[1]))
+
+            layers.append(nn.MaxPool2d(kernel_size=kernel, stride=stride))
             shapes.append(out_shape)
 
         elif token == 'R':
@@ -92,15 +145,18 @@ def build_cnn(definition, debug=False):
 ## Pytorch class -------------------------------------------
 
 class GenericCNN(nn.Module):
-    def __init__(self, definition, debug=False):
+    def __init__(self, definition, cols=1, debug=False):
         super(GenericCNN, self).__init__()
         self.layers, self.flatten = build_cnn(definition, debug)
         self.debug = debug
+        self.cols  = cols
 
     def forward(self, x):
         #if self.debug: print(x.shape, "input")
-        x = x.unsqueeze(1)
+        if self.cols == 1:
+            x = x.unsqueeze(1) 
         #if self.debug: print(x.shape, "unsqueeze")
+
         for i, layer in enumerate(self.layers):
             if i == self.flatten:
                 x = x.view(x.size(0), -1)

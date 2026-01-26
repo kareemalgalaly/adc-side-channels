@@ -1,0 +1,243 @@
+Simulation of digital adc
+{if 0}
+* Arguments             default         type
+*   pixels              1               int > 0
+*   arch                prot            str in (prot, uprot)
+*   corner              tt              str in (tt, ss, sf, fs, ff, ...)
+*   dvals               [30]*pixels     list(int)
+*   amode               design          str in (model, design, layout)
+*   dmode               synth           str in (model, synth, layout)
+*   python              /usr/bin/python str
+*   mainramprand        -
+*   interactive         - 
+{endif}
+{default seed     1}
+{default corner   "tt"}
+{default pixels   1}
+{assert  pixels > 0}
+{if pixels == 1}
+    {default dvals    [seed % 256]}
+{else}
+    {default dvals    [30]*pixels}
+{endif}
+{default arch     "prot"}
+{assert  arch in ('prot', 'uprot')}
+{default amode    "design"}
+{default dmode    "synth"}
+{default ddir     "outfiles/dataset_"+arch+":"+arch+"_"+corner+":"+str(pixels)}
+{default mode     "a" if dmode == "model" else "d" if amode == "model" else "c"}
+{default pfile    "ptrace_"+mode+"_"+str(seed)+"_d"+"_".join([str(d) for d in dvals])}
+{default afile    "atrace_"+str(seed)}
+{default python "/usr/bin/python3"}
+{define  getbus func:name,suffix=".",r=(8,): " ".join(name+str(suffix)+str(i) for i in range(*r))}
+{define  dplot  func:vars: " ".join(var+"/2+"+str(i) for i, var in enumerate(vars.split()))}
+{define  dbus   func:name,suffix=".",r=(8,): "+".join(name+str(suffix)+str(i)+"/"+str(1 << (8-i)) for i in range(*r))}
+
+** Libraries --------------------------------------------------
+
+{ifxst /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice}
+.lib "/foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice" {corner}
+.include "/foss/pdk/sky130A/libs.ref/sky130_fd_sc_hs/spice/sky130_fd_sc_hs.spice"
+{else}
+.lib "models/sky130.lib.spice" {corner}
+.include cells/a211oi/sky130_fd_sc_hs__a211oi_1.spice
+.include cells/a21oi/sky130_fd_sc_hs__a21oi_1.spice
+.include cells/and2/sky130_fd_sc_hs__and2_1.spice
+.include cells/and3/sky130_fd_sc_hs__and3_1.spice
+.include cells/and4/sky130_fd_sc_hs__and4_1.spice
+.include cells/dfxtp/sky130_fd_sc_hs__dfxtp_1.spice
+.include cells/inv/sky130_fd_sc_hs__inv_1.spice
+.include cells/mux2i/sky130_fd_sc_hs__mux2i_1.spice
+.include cells/mux2/sky130_fd_sc_hs__mux2_1.spice
+.include cells/nand2b/sky130_fd_sc_hs__nand2b_1.spice
+.include cells/nor2b/sky130_fd_sc_hs__nor2b_1.spice
+.include cells/nor2/sky130_fd_sc_hs__nor2_1.spice
+.include cells/nor3b/sky130_fd_sc_hs__nor3b_1.spice
+.include cells/nor3/sky130_fd_sc_hs__nor3_1.spice
+.include cells/nor4b/sky130_fd_sc_hs__nor4b_1.spice
+.include cells/o21a/sky130_fd_sc_hs__o21a_1.spice
+.include cells/o21bai/sky130_fd_sc_hs__o21bai_1.spice
+.include cells/o21ba/sky130_fd_sc_hs__o21ba_1.spice
+.include cells/or2/sky130_fd_sc_hs__or2_1.spice
+.include cells/or3b/sky130_fd_sc_hs__or3b_1.spice
+.include cells/xor2/sky130_fd_sc_hs__xor2_1.spice
+{endif}
+
+.lib lib/counter_half.lib          {dmode}
+.lib lib/double_rate_sampler.lib   {dmode}
+{if dmode != "model"}
+.lib lib/digital.lib               {dmode}
+{endif}
+{if amode != "model"}
+.lib lib/analog.lib                {amode}
+{endif}
+
+* TODO ADD IDAC
+
+
+** Digital =================================================
+
+** Shared Digital Modules ----------------------------------
+
+xcounter clk rst cen {getbus("count")} overflow vss vss vddd vddd counter_half 
+* cen = delayed inverted rst
+xcen    rst vss vss vddd vddd cen_d sky130_fd_sc_hs__inv_1
+xcen_ff clk cen_d vss vss vddd vddd cen sky130_fd_sc_hs__dfxtp_1
+
+
+** Per Pixel Digital Modules -------------------------------
+
+{for p in range(1, pixels+1)}
+{if arch == "prot"}
+xsamplep_{p} clk2 rst compp_p{p} compp_n{p} 
++           {getbus("count")} {getbus("pixel",p)} {getbus("pixeld",p)} 
++           vss vss vddd vddd double_rate_sampler
+{endif}
+{if arch == "prot_old"} ; does this help ?
+xsamplen_{p} clk2 rst compn_p{p} compn_n{p} 
++           {getbus("count")} {getbus("dpixel",p)} {getbus("dpixeld",p)} 
++           vss vss vddd vddd double_rate_sampler
+{endif}
+{if arch == "base"}
+xedge_detector_{p} clk reset comp.{p}_buffered enable vss vss vdd vdd negedge_detector
+xregister_array_{p} clk reset enable {getbus(count)} {getbus("dpixel",p)} vss vss vdd vdd register_array
+{endif}
+{endfor}
+
+
+** Analog ==================================================
+
+{if amode == "model"}
+
+{for p in range(1, pixels+1)}
+{if arch=="prot"}
+acmp{p} %v([compp_p{p} compp_n{p} compn_p{p} compn_n{p}]) filesrc_cmp{p}
+.model filesrc_cmp{p} filesource (file="{ddir}/{afile}_{p}" amploffset=[0 0 0 0] amplscale=[1 1 1 1] timeoffset=0 timescale=1)
+{else}
+acmp{p} %v([compp_p{p} compp_n{p}]) filesrc_cmp{p}
+.model filesrc_cmp{p} filesource (file="{ddir}/{afile}_{p}" amploffset=[0 0] amplscale=[1 1] timeoffset=0 timescale=1)
+{endif}
+{endfor}
+
+{else}
+
+** Shared Analog Modules -----------------------------------
+
+{ifdef mainramprand}
+xrmpp vrefp      {getbus("vrc", r=(5,))} rampp vdda vss rst  ramp_generator
+{else}
+xrmpp vrefp                              rampp vdda vss rst  ramp_generator_fixed c=20p r=12.7Meg ; c=5p r=3.17Meg 
+{endif}
+{if arch == "prot"}
+xrmpn vrefn vdda {getbus("vrc", r=(5,))} rampn vdda vss rst  ramp_generator_init_k
+
+abridgea [rst clk] [dreset dclk] atod 
+abridged [{getbus("drc", r=(5,))}] [{getbus("vrc", r=(5,))}] dtoa 
+acounter null dclk dreset [{getbus("drc", r=(5,))}] proc_counter
+.model atod adc_bridge(in_low={vss+0.2} in_high={vdd-0.2})
+.model dtoa dac_bridge(out_low={vss} out_high={vdd})
+.model proc_counter d_process (process_file="{python}" process_params=["lib/rampctrlgen.py" "{seed}"])
+{endif}
+
+
+** Per Pixel Analog Modules --------------------------------
+
+{for p in range(1, pixels+1)}
+xcmpp{p} rampp pix{p} clk compp_p{p} compp_n{p} vdda vss comparator_wrap
+{if arch == "prot"}
+xcmpn{p} rampn pix{p} clk compn_p{p} compn_n{p} vdda vss comparator_wrap
+{endif}
+{endfor}
+
+{endif}
+
+
+** Global IO ===============================================
+
+* Power Rails
+
+.param vdd=1.8
+.param vss=0
+Vddd vddd 0 {vdd}
+Vdda vdda 0 {vdd}
+Vss  vss  0 {vss}
+
+* Clock and Reset (1MHz clock)
+
+Vrst    rst     0   pulse   {vss}   {vdd}   0u     0.1n  0.1n     2u    260u
+Vclk    clk     0   pulse   {vss}   {vdd}   1u     0.1n  0.1n   0.5u      1u
+Vclk2   clk2    0   pulse   {vss}   {vdd}   1.25u  0.1n  0.1n  0.25u    0.5u
+
+* Reference Voltages
+
+vrfp  gnd   vrefp 1
+vrfn  vrefn gnd   1
+
+* Pixel values
+
+{for p in range(1, pixels+1)}
+vpixel{p} pix{p} vss {eval dvals[p-1]/256}
+{endfor}
+
+** Simulation Control --------------------------------------
+
+.option method=Gear
+
+{ifndef interactive}
+.save {getbus("count")} rst clk 
++ {if dmode != "model"}
++     I(vddd) 
++ {endif}
++ {if amode != "model"}
++     I(vdda)
++     {for p in range(1, pixels+1)}compp_p{p} compp_n{p} {if arch=="prot"}compn_p{p} compn_n{p}{endif}{endfor}
++ {endif}
++     rst cen clk clk2  rampp rampn
++     {getbus("vrc", r=(5,))}
++     {for p in range(1, pixels+1)}
++       pix{p} {getbus("pixel"+str(p))} {getbus("pixeld"+str(p))} 
++     {endfor}
+{endif}
+
+*.tran 1n 260u uic
+.tran 50n 260u uic
+;.set color0=white
+;set color1=rgb:50/50/50
+
+{ifdef interactive}
+.control 
+    shell mkdir -p {ddir}
+
+    set wr_singlescale
+
+    run
+    plot (-i(vddd)) (-i(vdda))
+    let count = {dbus("count")}
+    {for p in range(1, pixels+1)}
+        let dpixel{p} = {dbus("pixel", p)}
+        plot count dpixel{p} clk*0.1-0.2
+
+        {if amode != "model"}
+            plot rampp compp_p{p} pix{p}
+            plot rampn compn_n{p} pix{p}
+            wrdata {ddir}/{afile}_{p} compp_p{p} compp_n{p} compn_p{p} compn_n{p}
+        {else}
+            plot compp_p{p} pix{p}
+            plot compn_n{p} pix{p}
+        {endif}
+    {endfor}
+    {if amode != "model"}
+        {if dmode != "model"}
+            wrdata {ddir}/{pfile}_c -I(vdda) -I(vddd)
+        {else}
+            wrdata {ddir}/{pfile}_a -I(vdda)
+        {endif}
+    {else}
+        wrdata {ddir}/{pfile}_d -I(vddd)
+    {endif}
+
+.endc
+{endif}
+
+.END
+

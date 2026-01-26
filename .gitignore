@@ -1,11 +1,13 @@
-aalog/adc_obj_dir
+analog/adc_obj_dir
 analog/*.h
 attack/cnn/outputs*
+attack/cnn/archive*
 synth/*
 build
 *.swp
 *.so
 *.log
+*.ods
 __pycache__
 .DS_Store
 obj_dir
@@ -15,3 +17,4 @@ demo*.cir
 *runme*.cir
 seeds_*
 temp*txt
+jobs*
