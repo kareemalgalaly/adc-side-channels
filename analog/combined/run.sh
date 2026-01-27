@@ -6,7 +6,7 @@
 # local interactive dvalue pixels seed corner numsim norun
 
 sstart=0
-sstop=256
+sstop=255
 queue=1
 norun=""
 outdir=""
