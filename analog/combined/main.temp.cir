@@ -33,6 +33,16 @@ Simulation of digital adc
 {define  dplot  func:vars: " ".join(var+"/2+"+str(i) for i, var in enumerate(vars.split()))}
 {define  dbus   func:name,suffix=".",r=(8,): "+".join(name+str(suffix)+str(i)+"/"+str(1 << (8-i)) for i in range(*r))}
 
+{import math}
+{define subseed eval:seed//256}
+{if subseed > 0}
+{define frac_offset_den eval:2**math.floor(math.log2(subseed))}
+{define frac_offset_num eval:(subseed - frac_offset_den)*2 + 1}
+{define frac_offset     eval:frac_offset_num / (frac_offset_den*2)}
+{else}
+{define frac_offset     eval:0}
+{endif}
+
 ** Libraries --------------------------------------------------
 
 {ifxst /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice}
@@ -176,7 +186,7 @@ vrfn  vrefn gnd   1
 * Pixel values
 
 {for p in range(1, pixels+1)}
-vpixel{p} pix{p} vss {eval dvals[p-1]/256}
+vpixel{p} pix{p} vss {eval (dvals[p-1] + frac_offset)/256}
 {endfor}
 
 ** Simulation Control --------------------------------------
