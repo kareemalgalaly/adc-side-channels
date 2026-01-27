@@ -15,7 +15,7 @@ This repo contains the designs and experiments used for the following papers:
   - pytorch
 - bash
 
-Tools have been tested on MacOS Sequoia (arm), Debian 12 Bookwork (amd64), and Fedora 42 (amd64). Shell scripts are written for bash.
+Tools have been tested on MacOS Sequoia, Tahoe (arm64), Debian 12 Bookworm (amd64), and Fedora 42, 43 (amd64). Shell scripts are written for bash.
 
 ## Toolchain Setup (Spice Simulations and CNN Attack)
 
