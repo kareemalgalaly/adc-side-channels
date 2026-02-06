@@ -7,6 +7,7 @@
 
 import os
 import numpy as np
+from utils import ProgressBar
 from classes import argparser, Regression
 
 ## Arguments -----------------------------------------------
@@ -47,10 +48,13 @@ def merge_info(label, seed, info_0, info_1):
         for t, i0, i1 in zip(time_arr, info_0.trace, info_1.trace):
             file.write(f"{str(t).ljust(pad)} {str(i0).ljust(pad)} {str(i1).ljust(pad)}\n")
 
+progress = ProgressBar(f_start="Parsing: ", max_val=256)
+progress.start()
 
 seed = 0
 pad  = 20
 for label in range(256):
+    progress.update(label)
     try:
         info_list_0 = datasets[args.datasets[0]].get_trace(label, index=-1)
         info_list_1 = datasets[args.datasets[1]].get_trace(label, index=-1)
@@ -70,3 +74,4 @@ for label in range(256):
                 merge_info(label, seed, info_0, info_1)
                 seed += 1
 
+progress.stop()

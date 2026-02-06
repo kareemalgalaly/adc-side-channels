@@ -13,10 +13,11 @@ from utils import ProgressBar
 
 def build_normalizer(cache, nparams):
     match nparams['norm']:
-        case None     : return NOPNormalizer(cache, nparams)
-        case "scale"  : return ScaleNormalizer(cache, nparams)
-        case "robust" : return RobustNormalizer(cache, nparams)
-        case _        : raise NotImplementedError(f"Unknown normalization technique {nparams['norm']}")
+        case None       : return NOPNormalizer(cache, nparams)
+        case "scale"    : return ScaleNormalizer(cache, nparams)
+        case "autoscale": return AutoscaleNormalizer(cache, nparams)
+        case "robust"   : return RobustNormalizer(cache, nparams)
+        case _          : raise NotImplementedError(f"Unknown normalization technique {nparams['norm']}")
 
 ## Normalizers ---------------------------------------------
 
@@ -77,6 +78,38 @@ class ScaleNormalizer(Normalizer):
         self.mult = them.mult
 
     def do_fit(self, index): return self.cache.raw_cache[index].trace * self.mult
+
+# ------------------------------------------------
+# class: AutoscaleNormalizer
+# - A normalizer that uniformly scales all traces
+# - to achieve average value of params[mult]
+# ------------------------------------------------
+
+class AutoscaleNormalizer(ScaleNormalizer):
+    def __init__(self, cache, params):
+        super().__init__(cache, params)
+        self.average = params["mult"]
+        self.mult = None
+
+    def train(self):
+        progress = ProgressBar(f_start=f"{{state}} {self.cache.name} ", max_val=len(self.cache))
+        progress.start(state="Loading Dataset")
+
+        ctot = 0
+        for i, tinf in enumerate(self.cache.iter_raw()):
+            ctot += np.sum(tinf.trace)
+            progress.update(i)
+        tnum = float((i+1) * np.prod(tinf.trace.shape))
+
+        average = ctot / tnum
+        self.mult = self.average / average
+
+        progress.stop(i+1)
+        # print("Average Value:", average)
+        # print("Target Value:", self.average)
+        # print("Scaling Factor:", self.mult)
+
+
 
 # ------------------------------------------------
 # class: RobustNormalizer

@@ -120,6 +120,7 @@ class TraceCache:
             with open(fpath, 'r') as file:
                 header = file.readline()
                 tstart, *val = file.readline().strip().split()
+                tstart = DTYPE(tstart)
                 valu_arr = [[DTYPE(v)] for v in val]
                 for line in file.readlines():
                     tcurr, *val = line.strip().split()

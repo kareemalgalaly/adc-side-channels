@@ -78,7 +78,8 @@ for label, ax in zip(args.traces, axs):
                 ax.plot(time, trace, alpha=0.5, label=dname, linestyle='solid')
             else:
                 if time is None:
-                    time = np.linspace(start, stop, num=len(trace[0]))
+                    print(type(start), type(stop))
+                    time = np.linspace(start, stop, num=trace.shape[1])
                 for i, trace_i in enumerate(trace):
                     print(i, trace_i)
                     ax.plot(time, trace_i, alpha=0.5, label=f"{dname}[{i}]", linestyle='solid')

@@ -10,13 +10,53 @@
             "type"       : "single_ended",
             "inputs"     : 1
         },
+        "tc_cjn" : {
+            "definition" : "C(10,5,1,1):R:P(5,5):C(10,3,1,1):R:P(2,2):F(200):R:F(200):R:F(2):S",
+            "type"       : "bitwise",
+            "inputs"     : 2
+        },
+        "tc_csp" : {
+            "definition" : "C(10,5,1,2):R:P(5,5):C(10,3,1,2):R:P(2,2):F(200):R:F(200):R:F(2):S",
+            "type"       : "bitwise",
+            "inputs"     : 2
+        },
+        "tc_cjn_fbn" : {
+            "definition" : "C(10,5,1,1):R:P(5,5):C(10,3,1,1):R:P(2,2):F(200):R:BN1:F(200):R:BN1:F(2):S",
+            "type"       : "bitwise",                                                          
+            "inputs"     : 2                                                                   
+        },                                                                                     
+        "tc_csp_fbn" : {                                                                       
+            "definition" : "C(10,5,1,2):R:P(5,5):C(10,3,1,2):R:P(2,2):F(200):R:BN1:F(200):R:BN1:F(2):S",
+            "type"       : "bitwise",
+            "inputs"     : 2
+        },
+        "tc_cjn_20" : {
+            "definition" : "C(20,5,1,1):R:P(5,5):C(10,3,1,1):R:P(2,2):F(200):R:F(200):R:F(2):S",
+            "type"       : "bitwise",
+            "inputs"     : 2
+        },
+        "tc_csp_20" : {
+            "definition" : "C(20,5,1,2):R:P(5,5):C(10,3,1,2):R:P(2,2):F(200):R:F(200):R:F(2):S",
+            "type"       : "bitwise",
+            "inputs"     : 2
+        },
+        "tc_cjn_fbn_20" : {
+            "definition" : "C(20,5,1,1):R:P(5,5):C(10,3,1,1):R:P(2,2):F(200):R:BN1:F(200):R:BN1:F(2):S",
+            "type"       : "bitwise",                                                          
+            "inputs"     : 2                                                                   
+        },                                                                                     
+        "tc_csp_fbn_20" : {                                                                    
+            "definition" : "C(20,5,1,2):R:P(5,5):C(10,3,1,2):R:P(2,2):F(200):R:BN1:F(200):R:BN1:F(2):S",
+            "type"       : "bitwise",
+            "inputs"     : 2
+        },
         "twocol" : {
-            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:BN1:F(100):R:BN1:F(100):R:BN1:F(2):S",
+            "definition" : "C(10,5,1,1):R:P(5,5):C(10,3,1,1):R:P(2,2):F(200):R:F(200):R:F(2):S",
             "type"       : "bitwise",
             "inputs"     : 2
         },
         "twocol_se" : {
-            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:BN1:F(100):R:BN1:F(1)",
+            "definition" : "C(5,5,2,1,1):R:P(5,1,5,1):C(5,3,2,1,1):R:P(2,1,2,1):F(100):R:BN1:F(100):R:BN1:F(1)",
             "type"       : "single_ended",
             "inputs"     : 2
         }
@@ -93,7 +133,7 @@
     "tests" : [
         {
             "desc"          : "Combined Prot BW",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["twocol"],
             "datasets"      : ["cmb_p_tt"],
             "test_dataset"  : ["cmb_p_ss"],
@@ -104,7 +144,7 @@
         },
         {
             "desc"          : "Combined Prot SE",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["twocol_se"],
             "datasets"      : ["cmb_p_tt"],
             "test_dataset"  : ["cmb_p_ss"],
@@ -116,7 +156,7 @@
         {
             "desc"          : "Combined UProt BW",
             "skip"          : false,
-            "networks"      : ["twocol"],
+            "networks"      : ["tc_cjn_20", "tc_csp_20", "tc_cjn_fbn_20", "tc_csp_fbn_20"],
             "datasets"      : ["cmb_x_tt"],
             "test_dataset"  : ["cmb_x_ss"],
             "learning_rate" : [0.0003],
@@ -126,7 +166,7 @@
         },
         {
             "desc"          : "Combined UProt SE",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["twocol_se"],
             "datasets"      : ["cmb_x_tt"],
             "test_dataset"  : ["cmb_x_ss"],
@@ -185,7 +225,7 @@
         "sample_interval" : 0.1e-6,
         "sample_duration" : 260e-6,
         "columns"         : 1,
-        "normalizer"      : "scale",
+        "normalizer"      : "autoscale",
         "trace_scale"     : 1,
         "optimizer"       : "Adam",
         "loss"            : "CrossEntropyLoss",
