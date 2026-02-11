@@ -31,7 +31,12 @@ regression.load()
 ## Datasets -----------------------------------------
 
 traces   = [args.trace1, args.trace2]
-datasets = [regression.datasets[args.dataset1], regression.datasets[args.dataset2]]
+try:
+    datasets = [regression.datasets[args.dataset1], regression.datasets[args.dataset2]]
+except KeyError:
+    print("Available Datasets:")
+    print(*regression.datasets.keys())
+    exit(1)
 
 assert (len(args.prompt) % 4) == 0, "Additional arguments must be divisible by 4"
 for i in range(0, len(args.prompt), 4):
@@ -65,8 +70,8 @@ for i in range(0, len(datasets), 2):
         trace1 = trace1[:mlen]
         trace2 = trace2[:mlen]
 
-    power_t1 = trace1.sum() / dataset1.trace_scale
-    power_t2 = trace2.sum() / dataset2.trace_scale
+    power_t1 = trace1.sum() # / dataset1.trace_scale
+    power_t2 = trace2.sum() # / dataset2.trace_scale
     print(f"Power {dataset1.name[:-4]} : {power_t1}")
     print(f"Power {dataset2.name[:-4]} : {power_t2}")
 

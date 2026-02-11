@@ -24,6 +24,7 @@ re_f  = re.compile('F\\((\\d+)\\)')
 re_c  = re.compile('C\\((\\d+),(\\d+),(\\d+)(,\\d+)?\\)')
 # re_c2 = re.compile('C\\((\\d+),(\\d+),(\\d+),(\\d+),(\\d+)\\)') # ch_out, size_x, size_y, stride_x, stride_y 
 re_b  = re.compile('BN([12])')
+# re_b  = re.compile('BN([12])(\(\d+\))?')
 re_p  = re.compile('P\\((\\d+),(\\d+)\\)')
 # re_p2 = re.compile('P\\((\\d+),(\\d+),(\\d+),(\\d+)\\)')
 
@@ -100,7 +101,8 @@ def build_cnn(definition, debug=False):
         elif m := re_b.match(token):
             gs = m.groups()
             dim = int(gs[0])
-            cin = shapes[-1][0]
+            cin = shapes[-1][-1]
+            # print(f"BatchNorm1({cin}) <- {shapes}")
             match dim:
                 case 1 : layers.append(nn.BatchNorm1d(cin))
                 # case 2 : layers.append(nn.BatchNorm2d(cin))

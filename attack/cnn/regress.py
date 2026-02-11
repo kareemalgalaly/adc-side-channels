@@ -115,7 +115,7 @@ class CNNRegression(Regression):
             if not(os.path.isfile(self.csv)):
                 with open(self.csv, "w") as file:
                     file.write("Run ID,Network,Network ID,Network Type,Definition,Inputs,Dataset,Datset ID,")
-                    file.write("Type,Path,Dataset Cols,Normalizer,Datset Info,Test ID,Learning Rate,LR Decay,Max LR,")
+                    file.write("Type,Path,Dataset Cols,Format,Normalizer,Datset Info,Test ID,Learning Rate,LR Decay,Max LR,")
                     file.write("Optimizer,Batch Size,Max Epochs,Target Accuracy,Target Loss,Test Dataset,Split,")
                     file.write("Bit,Accuracy,Peak Accuracy,Test Accuracy,Loss,Epoch,Runtime,Job Timestamp,Seed\n")
 

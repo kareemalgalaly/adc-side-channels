@@ -180,7 +180,11 @@ class Dataset(HashableBase):
 
     def get_csv(self):
         npstr = ";".join(f"{k}:{v}" for k,v in self.nparams.items())
-        return f"{self.type},{';'.join(os.path.basename(path) for path in self.paths)},{self.cols},{npstr}"
+        return f"{self.type},{';'.join(os.path.basename(path) for path in self.paths)},{self.cols},{self.frmt},{npstr}"
+
+    def chash(self):
+        npstr = ";".join(f"{k}:{v}" for k,v in self.nparams.items())
+        return base36hash(self.get_csv().replace(npstr, ""))
 
     # --------------------------------------------
     # func: build
@@ -193,6 +197,7 @@ class Dataset(HashableBase):
 
         self.builder = TraceDatasetBuilder(
             name         = self.name,
+            id           = self.chash(),
             adc_bitwidth = adc_bitwidth,
             cols         = self.cols,
             nparams      = self.nparams,
@@ -282,7 +287,7 @@ class TimedDataset(Dataset):
         super().__init__(name, info, defaults)
 
     def get_csv(self):
-        return f"{super().get_csv()},{self.mode};{self.interval};{self.duration}"
+        return f"{super().get_csv()},none"
 
     def build(self, adc_bitwidth=8, device=None):
         if self.builder: return self.builder

@@ -35,14 +35,17 @@ DTYPE = np.float32
 ## Trace Cache ---------------------------------------------
 
 class TraceCache:
-    def __init__(self, name, file_list, label_dict, cols=1, nparams={}):
+    def __init__(self, name, id, file_list, label_dict, cols=1, nparams={}):
         self.name       = name
+        self.id         = id
         self.file_list  = file_list
         self.label_dict = label_dict
         self.raw_cache  = [None] * len(file_list) # list of trace info (w/ raw trace)
         self.nrm_cache  = [None] * len(file_list) # list of normalized traces
         self.cols       = cols
         self.normalizer = build_normalizer(self, nparams)
+        
+        # print(f"cache path for {self.name} : cache/{self.id}")
 
     def __len__(self):
         return len(self.file_list)
@@ -68,7 +71,16 @@ class TraceCache:
     def get_raw(self, index):
         if (tinf:=self.raw_cache[index]) is None:
             fname, fpath, label, sample_info = self.file_list[index]
-            tinf = self.load_trace(fpath, sample_info)
+            sample_mode, sample_int, max_sample = sample_info
+            
+            cpath = f"cache/{self.id}/{str(index).rjust(4,"0")}"
+            if os.path.exists(cpath):
+                tinf = self.load_trace(cpath, ("", sample_int, max_sample))
+            else:
+                tinf = self.load_trace(fpath, sample_info)
+                if sample_mode and sample_mode != "timed" and self.cols == 1:
+                    self.write_trace(cpath, tinf)
+
             self.raw_cache[index] = tinf
         return tinf
 
@@ -134,6 +146,19 @@ class TraceCache:
                     trace = np.stack([np.array(va, dtype=DTYPE) for va in valu_arr], axis=0)[:, :max_sample]
 
         return TraceInfo(trace, tstart, tstop)
+
+    def write_trace(self, cpath, tinf):
+        os.makedirs(os.path.dirname(cpath), exist_ok=True)
+        pad = 20
+        tln = tinf.trace.shape[0]
+
+        if self.cols > 1: raise NotImplementedError # Multicolumn caching is unsupported
+
+        with open(cpath, "w") as file:
+            file.write(f"{'time'.ljust(pad)} {self.name}\n")
+            for t, e in zip(np.linspace(tinf.start, tinf.stop, len(tinf.trace), dtype=np.float32),
+                            tinf.trace):
+                file.write(f"{str(t).ljust(pad)} {str(e).ljust(pad)}\n")
 
 
 class TraceDataset(Dataset):
@@ -201,8 +226,9 @@ class TraceDatasetBW(TraceDataset):
         return 1 if label & self.bit_mask else 0
 
 class TraceDatasetBuilder:
-    def __init__(self, name, adc_bitwidth=8, cols=1, nparams={}, device=None):
+    def __init__(self, name, id, adc_bitwidth=8, cols=1, nparams={}, device=None):
         self.name       = name
+        self.id         = id
         self.file_list  = []
         self.label_dict = {}
         self.cols       = cols
@@ -215,8 +241,6 @@ class TraceDatasetBuilder:
         self.dataloader = None
         self.datasets   = []
         self.dataloaders = []
-
-        self.trace_cache = {}
 
     def __len__(self):
         return len(self.file_list)
@@ -249,7 +273,7 @@ class TraceDatasetBuilder:
                 i += 1
 
     def build(self):
-        self.cache   = TraceCache(self.name, self.file_list, self.label_dict, self.cols, self.nparams)
+        self.cache   = TraceCache(self.name, self.id, self.file_list, self.label_dict, self.cols, self.nparams)
         self.dataset = TraceDataset(self.file_list, self.label_dict, self.cache, cols=self.cols, device=self.device)
         for b in range(self.adc_bits):
             self.datasets.append(TraceDatasetBW(self.file_list, self.label_dict, self.cache, b, cols=self.cols, device=self.device))
@@ -272,7 +296,7 @@ if __name__ == '__main__':
     #pwd = os.path.dirname(os.path.abspath(__file__))
     pwd = "/Users/kareemahmad/Projects/SideChannels/SingleSlopeADC_Mixed/analog/outfiles/sky"
 
-    bld = TraceDatasetBuilder('test', 8, cache=False)
+    bld = TraceDatasetBuilder('test', 'null', 8, cache=False)
     bld.add_files(pwd, format="sky_d(\\d+)_.*\\.txt")
     bld.build()
 

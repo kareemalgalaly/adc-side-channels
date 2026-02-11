@@ -1,60 +1,135 @@
 {
-    "networks" : {},
+    "networks" : {
+        "paper" : {
+            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:F(100):R:F(100):R:F(2):S",
+            "type"       : "bitwise",
+            "inputs"     : 1
+        },
+        "paper_cbn1" : {
+            "definition" : "C(5,5,1):R:BN1:P(5,5):C(5,3,1):R:P(2,2):F(100):R:F(100):R:F(100):R:F(2):S",
+            "type"       : "bitwise",
+            "inputs"     : 1
+        },
+        "paper_cbn2" : {
+            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:BN1:P(2,2):F(100):R:F(100):R:F(100):R:F(2):S",
+            "type"       : "bitwise",
+            "inputs"     : 1
+        },
+        "paper_cbn" : {
+            "definition" : "C(5,5,1):R:BN1:P(5,5):C(5,3,1):R:BN1:P(2,2):F(100):R:F(100):R:F(100):R:F(2):S",
+            "type"       : "bitwise",
+            "inputs"     : 1
+        },
+        "paper_fbn" : {
+            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:BN1:F(100):R:BN1:F(100):R:BN1:F(2):S",
+            "type"       : "bitwise",
+            "inputs"     : 1
+        },
+        "paper_se" : {
+            "definition" : "C(5,5,1):R:BN1:P(5,5):C(5,3,1):R:P(2,2):F(100):BN1:R:F(100):R:F(100):R:F(1)",
+            "type"       : "single_ended",
+            "inputs"     : 1
+        }
+    },
     "datasets" : {
         "dig_p_tt": {
             "path" : "dataset_corner:tt_arch:prot",
+            "label"   : "lambda gs: int(gs[0])",
             "format"  : "ptrace_d_\\d+_d(\\d+)"
         },
         "dig_p_ss": {
             "path" : "dataset_corner:ss_arch:prot",
+            "label"   : "lambda gs: int(gs[0])",
             "format"  : "ptrace_d_\\d+_d(\\d+)"
         },
         "dig_p_fs": {
             "path" : "dataset_corner:fs_arch:prot",
+            "label"   : "lambda gs: int(gs[0])",
             "format"  : "ptrace_d_\\d+_d(\\d+)"
         },
         "dig_x_tt": {
             "path" : "dataset_corner:tt_arch:uprot",
+            "label"   : "lambda gs: int(gs[0])",
             "format"  : "ptrace_d_\\d+_d(\\d+)"
         },
         "dig_x_ss": {
             "path" : "dataset_corner:ss_arch:uprot",
+            "label"   : "lambda gs: int(gs[0])",
             "format"  : "ptrace_d_\\d+_d(\\d+)"
         },
         "dig_x_fs": {
             "path" : "dataset_corner:fs_arch:uprot",
+            "label"   : "lambda gs: int(gs[0])",
             "format"  : "ptrace_d_\\d+_d(\\d+)"
         },
         "nlg_p_tt": {
             "path" : "dataset_corner:tt_arch:prot",
+            "label"   : "lambda gs: int(gs[0])",
             "format"  : "ptrace_a_\\d+_d(\\d+)"
         },
         "nlg_p_ss": {
             "path" : "dataset_corner:ss_arch:prot",
+            "label"   : "lambda gs: int(gs[0])",
             "format"  : "ptrace_a_\\d+_d(\\d+)"
         },
         "nlg_p_fs": {
             "path" : "dataset_corner:fs_arch:prot",
+            "label"   : "lambda gs: int(gs[0])",
             "format"  : "ptrace_a_\\d+_d(\\d+)"
         },
         "nlg_x_tt": {
             "path" : "dataset_corner:tt_arch:uprot",
+            "label"   : "lambda gs: int(gs[0])",
             "format"  : "ptrace_a_\\d+_d(\\d+)"
         },
         "nlg_x_ss": {
             "path" : "dataset_corner:ss_arch:uprot",
+            "label"   : "lambda gs: int(gs[0])",
             "format"  : "ptrace_a_\\d+_d(\\d+)"
         },
         "nlg_x_fs": {
             "path" : "dataset_corner:fs_arch:uprot",
+            "label"   : "lambda gs: int(gs[0])",
             "format"  : "ptrace_a_\\d+_d(\\d+)"
+        },
+        "atrace_x_tt": {
+            "path" : "dataset_corner:tt_arch:uprot",
+            "label"   : "lambda gs: int(gs[0]) % 256",
+            "format"  : "atrace_(\\d+)_1",
+            "type"    : "timed",
+            "columns" : 2
         }
     },
-    "tests" : [],
+    "tests" : [
+        {
+            "desc"          : "SMACD Table II BW, Table III BW unprot",
+            "skip"          : true,
+            "networks"      : ["paper", "paper_cbn1", "paper_cbn2", "paper_cbn", "paper_fbn"],
+            "datasets"      : ["nlg_x_tt:max"],
+            "test_dataset"  : ["nlg_x_ss:max"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.0002,
+            "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "HACS Table II - Unprotected BW",
+            "skip"          : false,
+            "networks"      : ["paper", "paper_cbn1", "paper_cbn2", "paper_cbn", "paper_fbn"],
+            "datasets"      : ["dig_x_tt:max"],
+            "test_dataset"  : ["dig_x_ss:max"],
+            "learning_rate" : [0.00005],
+            "not_learning_decay": 0.0002,
+            "not_learning_rate" : [0.0004],
+            "learning_decay": 0.000000,
+            "optimizer"     : "Amsgrad"
+        }
+    ],
     "defaults" : {
         "sample_mode"     : ["MAX"],
         "sample_interval" : 0.1e-6,
         "sample_duration" : 260e-6,
+        "normalizer"      : "scale",
+        "trace_scale"     : 1,
         "columns"         : 1
     }
 }
