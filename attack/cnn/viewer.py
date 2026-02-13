@@ -29,8 +29,13 @@ regression.load()
 ## Datasets -----------------------------------------
 
 datasets = {}
-for dname in args.datasets:
-    datasets[dname] = regression.datasets[dname]
+try:
+    for dname in args.datasets:
+        datasets[dname] = regression.datasets[dname]
+except KeyError:
+    print("Available Datasets:")
+    print(*regression.datasets.keys())
+    exit(1)
 regression.build_datasets(*list(datasets.values()))
 
 if args.stack:

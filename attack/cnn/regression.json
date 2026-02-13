@@ -133,7 +133,7 @@
     "tests" : [
         {
             "desc"          : "Combined Prot BW",
-            "skip"          : true,
+            "skip"          : false,
             "networks"      : ["twocol"],
             "datasets"      : ["cmb_p_tt"],
             "test_dataset"  : ["cmb_p_ss"],
@@ -155,7 +155,7 @@
         },
         {
             "desc"          : "Combined UProt BW",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["tc_cjn_20", "tc_csp_20", "tc_cjn_fbn_20", "tc_csp_fbn_20"],
             "datasets"      : ["cmb_x_tt"],
             "test_dataset"  : ["cmb_x_ss"],

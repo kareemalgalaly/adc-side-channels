@@ -45,7 +45,7 @@ class TraceCache:
         self.cols       = cols
         self.normalizer = build_normalizer(self, nparams)
         
-        # print(f"cache path for {self.name} : cache/{self.id}")
+        # print(f"cache path for {self.name} : cache/{self.name}_{self.id}")
 
     def __len__(self):
         return len(self.file_list)
@@ -73,7 +73,7 @@ class TraceCache:
             fname, fpath, label, sample_info = self.file_list[index]
             sample_mode, sample_int, max_sample = sample_info
             
-            cpath = f"cache/{self.id}/{str(index).rjust(4,"0")}"
+            cpath = f"cache/{self.name}-{self.id}/{str(index).rjust(4,"0")}"
             if os.path.exists(cpath):
                 tinf = self.load_trace(cpath, ("", sample_int, max_sample))
             else:
