@@ -254,7 +254,7 @@ class CNNRegression(Regression):
             grad_arr = torch.empty(test.max_epochs//acc_period, device=self.device)
             grad_g = None
 
-        progress = ProgressBar(f_start="Training ", f_end="{model} | Loss {loss:7} | Acc {acc:5}:{pacc:5} | Test {tst:5} | {msg}", max_val=test.max_epochs)
+        progress = ProgressBar(f_start="Train ", f_end="{model} | Loss {loss:5.5} | Acc {acc:4.4}:{pacc:4.4} | Test {tst:5.5} | {msg}", max_val=test.max_epochs, bar_len=10)
         progress.start(model=run_hash, loss=1.0, acc=0.0, pacc=0.0, tst="    --", msg="")
 
         pacc = 0 # peak_accuracy

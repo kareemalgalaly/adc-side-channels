@@ -6,10 +6,16 @@
 ###############################################################################
 
 import sys
+import math
 from hashlib import shake_128
 
+# bar_chr = '-X'
+# bar_chr = ' ▏▎▍▌▋▊▉█'
+# bar_chr = ' ▁▂▃▄▅▆▇█'
+# bar_chr = ' ⠁⠉⠋⠛⠻⠿⢿⣿'
+
 class ProgressBar:
-    def __init__(self, f_start="", f_end="", bar_len=20, bar_chr='X', max_val=1, out=sys.stdout):
+    def __init__(self, f_start="", f_end="", bar_len=20, bar_chr=' ▏▎▍▌▋▊▉█', max_val=1, out=sys.stdout):
         self.out     = out
         self.f_start = f_start
         self.f_end   = f_end
@@ -29,6 +35,21 @@ class ProgressBar:
         self.running = True
         self.update(0)
 
+    def bar(self, value):
+        frac = self.bar_len * value / self.max_val
+        done = math.floor(frac)
+        drem = frac - done
+        done = int(done)
+        remn = self.bar_len - done
+        drem = int(drem * len(self.bar_chr))
+
+        if drem == 0:
+            return f"{self.bar_chr[-1]*done}{self.bar_chr[0]*remn}"
+
+        remn -= 1
+        return f"{self.bar_chr[-1]*done}{self.bar_chr[drem]}{self.bar_chr[0]*remn}"
+
+
     def update(self, value, **kwargs):
         if not(self.running): return
 
@@ -37,13 +58,13 @@ class ProgressBar:
 
         if kwargs is not {}: self.kwargs.update(kwargs)
 
-        print(f"{self.f_start.format(**self.kwargs)}[{self.bar_chr*done}{('-'*(remn))}] {value:{self.val_len}}/{self.max_val} {self.f_end.format(**self.kwargs)}", end='\r', file=self.out, flush=True)
+        print(f"\r{self.f_start.format(**self.kwargs)}{self.bar(value)} {value:{self.val_len}}/{self.max_val} {self.f_end.format(**self.kwargs)}", end='', file=self.out, flush=True)
 
     def stop(self, value=-1):
         if not(self.running): return
         if value == -1: value = self.max_val
 
-        print(f"{self.f_start.format(**self.kwargs)}[{self.bar_chr*self.bar_len}] {value:{self.val_len}}/{self.max_val} {self.f_end.format(**self.kwargs)}", file=self.out, flush=True)
+        print(f"\r{self.f_start.format(**self.kwargs)}{self.bar(value)} {value:{self.val_len}}/{self.max_val} {self.f_end.format(**self.kwargs)}", file=self.out, flush=True)
 
         self.kwargs = {}
         self.running = False
@@ -85,3 +106,12 @@ def base36hash(string):
     # 36 ^ 7 > 16 ^ 9
     # 36 ^ 14 > 16 ^ 18
 
+if __name__ == "__main__":
+    import time
+    m = 100
+    p = ProgressBar(max_val=m)
+    p.start()
+    for i in range(1,m):
+        time.sleep(0.05)
+        p.update(i)
+    p.stop()

@@ -43,7 +43,7 @@ time_arr = np.linspace(info_0.start, info_0.stop, len(info_0.trace), dtype=np.fl
 
 def merge_info(label, seed, info_0, info_1):
     with open(f"{args.output}/raw_s{seed}_{label}.txt", "w") as file:
-        file.write(f"{'time'.ljust(pad)} {args.datasets[0].ljust(pad)} {args.datasets[0].ljust(pad)}\n")
+        file.write(f"{'time'.ljust(pad)} {args.datasets[0].ljust(pad)} {args.datasets[1].ljust(pad)}\n")
 
         for t, i0, i1 in zip(time_arr, info_0.trace, info_1.trace):
             file.write(f"{str(t).ljust(pad)} {str(i0).ljust(pad)} {str(i1).ljust(pad)}\n")

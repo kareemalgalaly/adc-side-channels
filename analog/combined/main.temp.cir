@@ -55,6 +55,7 @@ Simulation of digital adc
 .include cells/and2/sky130_fd_sc_hs__and2_1.spice
 .include cells/and3/sky130_fd_sc_hs__and3_1.spice
 .include cells/and4/sky130_fd_sc_hs__and4_1.spice
+.include cells/clkinv/sky130_fd_sc_hs__clkinv_1.spice
 .include cells/dfxtp/sky130_fd_sc_hs__dfxtp_1.spice
 .include cells/inv/sky130_fd_sc_hs__inv_1.spice
 .include cells/mux2i/sky130_fd_sc_hs__mux2i_1.spice
@@ -75,9 +76,7 @@ Simulation of digital adc
 
 .lib lib/counter_half.lib          {dmode}
 .lib lib/double_rate_sampler.lib   {dmode}
-{if dmode != "model"}
 .lib lib/digital.lib               {dmode}
-{endif}
 {if amode != "model"}
 .lib lib/analog.lib                {amode}
 {endif}
@@ -105,12 +104,12 @@ xsamplep_{p} clk2 rst compp_p{p} compp_n{p}
 {endif}
 {if arch == "prot_old"} ; does this help ?
 xsamplen_{p} clk2 rst compn_p{p} compn_n{p} 
-+           {getbus("count")} {getbus("dpixel",p)} {getbus("dpixeld",p)} 
++           {getbus("count")} {getbus("pixel",p)} {getbus("pixeld",p)} 
 +           vss vss vddd vddd double_rate_sampler
 {endif}
-{if arch == "base"}
-xedge_detector_{p} clk reset comp.{p}_buffered enable vss vss vdd vdd negedge_detector
-xregister_array_{p} clk reset enable {getbus(count)} {getbus("dpixel",p)} vss vss vdd vdd register_array
+{if arch == "uprot"}
+xedge_detector_{p} clk reset compp_p{p} enable vss vss vdd vdd negedge_detector
+xregister_array_{p} clk reset enable {getbus("count")} {getbus("pixel",p)} vss vss vdd vdd register_array
 {endif}
 {endfor}
 

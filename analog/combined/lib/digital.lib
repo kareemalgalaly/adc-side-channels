@@ -1,5 +1,42 @@
 ** Digital Design Library ----------------------------------
 
+** Model ---------------------------------------------------
+
+.lib model
+
+.subckt negedge_detector clk reset comp enable VGND VNB VPB VPWR
+    ; c_clk       clk       VGND    5.278955e-15
+    ; c_reset     reset     VGND    3.748057e-15
+    c_comp        comp      VGND    1.136144e-15
+    ; c_enable    enable    VGND    4.543031e-16
+.ends
+
+.subckt register_array clk reset enable count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 stored_values.0 stored_values.1 stored_values.2 stored_values.3 stored_values.4 stored_values.5 stored_values.6 stored_values.7 VGND VNB VPB VPWR
+    ; c_clk              clk              VGND    1.492422e-14 
+    ; c_reset            reset            VGND    1.131048e-14 
+    c_enable           enable           VGND    2.046693e-14 
+    c_count.0          count.0          VGND    6.066965e-16 
+    c_count.1          count.1          VGND    6.066965e-16 
+    c_count.2          count.2          VGND    6.066965e-16 
+    c_count.3          count.3          VGND    6.066965e-16 
+    c_count.4          count.4          VGND    6.066965e-16 
+    c_count.5          count.5          VGND    6.066965e-16 
+    c_count.6          count.6          VGND    6.066965e-16 
+    c_count.7          count.7          VGND    6.066965e-16 
+    ; c_stored_values.0  stored_values.0  VGND    8.397088e-16 
+    ; c_stored_values.1  stored_values.1  VGND    8.397088e-16 
+    ; c_stored_values.2  stored_values.2  VGND    8.397088e-16 
+    ; c_stored_values.3  stored_values.3  VGND    8.397088e-16 
+    ; c_stored_values.4  stored_values.4  VGND    8.397088e-16 
+    ; c_stored_values.5  stored_values.5  VGND    8.397088e-16 
+    ; c_stored_values.6  stored_values.6  VGND    8.397088e-16 
+    ; c_stored_values.7  stored_values.7  VGND    8.397088e-16 
+.ends
+
+.endl
+
+** Synth ---------------------------------------------------
+
 .lib synth
 
 .subckt negedge_detector clk reset comp enable VGND VNB VPB VPWR

@@ -14,3 +14,8 @@ synth/%: ${PROJ_ROOT}/digital/design/%.v ${PROJ_ROOT}/script/synth.tcl
 
 area:
 	PDK_CELL_LIB=${PDK_CELL_LIB} ${PROJ_ROOT}/script/calc_area.sh
+
+# CNN Attack
+
+attack:
+	cd attack/cnn && python regress.py

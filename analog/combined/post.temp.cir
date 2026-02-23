@@ -11,6 +11,7 @@
 
 .control
 set wr_singlescale
+set wr_vecnames
 echo starting
 {if mode == "a"}
     load   {ddir}/rawfile_a_{seed}
@@ -23,7 +24,7 @@ echo starting
     wrdata {ddir}/{pfile} -I(vddd)
 {else}
     load   {ddir}/rawfile_c_{seed}
-    wrdata {ddir}/{pfile} -I(vdda) -I(vddd)
+    wrdata {ddir}/{pfile} 0-I(vdda) 0-I(vddd)
 {endif}{endif}
 exit
 .endc

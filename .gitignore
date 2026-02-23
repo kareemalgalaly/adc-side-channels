@@ -4,6 +4,7 @@ attack/cnn/outputs*
 attack/cnn/archive*
 synth/*
 build
+cache
 *.swp
 *.so
 *.log
