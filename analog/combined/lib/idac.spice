@@ -119,4 +119,3 @@ XM41 a iref net1 vss sky130_fd_pr__nfet_01v8 L=12 W=0.42 nf=1 ad='int((nf+1)/2) 
 XR2 net17 net20 vss sky130_fd_pr__res_xhigh_po_0p35 L=88 mult=1 m=1
 XR3 a iref vss sky130_fd_pr__res_xhigh_po_0p35 L=900 mult=1 m=1
 .ends
-.end

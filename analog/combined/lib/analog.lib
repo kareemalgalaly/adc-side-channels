@@ -2,8 +2,8 @@
 
 .lib design
 
-.inc analog_cmn.lib
 .inc idac.spice
+.inc analog_cmn.lib
 
 .subckt latch vdd ck out1 out2 in2 in1 vss
     XM10 X ck vdd vdd sky130_fd_pr__pfet_01v8 L=0.15 W=1 nf=1 ad='int((nf+1)/2) * W/nf * 0.29' as='int((nf+2)/2) * W/nf * 0.29'
@@ -111,8 +111,8 @@
 
 .lib layout
 
-.inc analog_cmn.lib
 .inc idac_pex.spice
+.inc analog_cmn.lib
 
 .subckt latch vdd ck outp outn in1 in2 vss
     X0 a_21260_4437.t9 in1.t0 a_21240_n344.t11 vss.t24 sky130_fd_pr__nfet_01v8 ad=0p pd=0u as=0p ps=0u w=1.1e+07u l=900000u

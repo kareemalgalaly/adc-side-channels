@@ -59,7 +59,7 @@ def sample_func_gen(mode):
 # - See paper for rough description of windowed technique
 # ------------------------------------------------
 
-def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", cols=1):
+def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", cols=1, column=0):
     f = sample_func_gen(sample_mode)
     l = select_func_gen(f'B{sample_mode}')
 
@@ -79,9 +79,9 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", cols=1):
         value = [DTYPE(v) for v in value]
         ptim = stim
         wtim = stim + sample_interval
-        for i, v in enumerate(value):
-            val_win[i].append(v)
-            val_arr[i].append(v)
+        for i in range(cols):
+            val_win[i].append(value[i+column])
+            val_arr[i].append(value[i+column])
         tim_arr.append(ptim)
 
         for line in file.readlines():
@@ -102,18 +102,18 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", cols=1):
                 wtim += sample_interval
                 while stim > wtim:
                     for i in range(cols):
-                        nval = l(ptim, val_arr[i][-1], stim, value[i], (len(val_arr[i])+0.5)*sample_interval)
+                        nval = l(ptim, val_arr[i][-1], stim, value[i+column], (len(val_arr[i])+0.5)*sample_interval)
                         if nval > HIWARN and warn: 
-                            print(f"High value: Large Timegap, l({ptim}, {val_arr[-1]}, {stim}, {value[i]}, {(len(val_arr)+0.5)*sample_interval})")
+                            print(f"High value: Large Timegap, l({ptim}, {val_arr[-1]}, {stim}, {value[i+column]}, {(len(val_arr)+0.5)*sample_interval})")
                         val_arr[i].append(nval)
                     tim_arr.append(wtim - sample_interval/2)
                     wtim += sample_interval
 
-                val_win = [[v] for v in value]
+                val_win = [[v] for v in value[column:column+cols]]
 
             else:
-                for i, v in enumerate(value):
-                    val_win[i].append(v)
+                for i in range(cols):
+                    val_win[i].append(value[i+column])
 
             ptim = stim
 
@@ -128,14 +128,13 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", cols=1):
         if len(val_arr) < max_samples:
             # val_win is empty, latest wtim is handled
             x0, x1 = tim_arr[-2:]
-            m = [(y1 - y0)/(x1 - x0) for *_, y0, y1 in val_arr]
-            # y0, y1 = val_arr[-2:]
-            # m = (y1 - y0)/(x1 - x0)
+            # m = [(y1 - y0)/(x1 - x0) for *_, y0, y1 in val_arr]
 
             wtim = wtim + sample_interval/2
             for i in range(cols):
                 for j in range(max_samples - len(val_arr[i])):
-                    val_arr[i].append(y1:=((wtim - x1)*m[i]+val_arr[i][-1]))
+                    # val_arr[i].append(y1:=((wtim - x1)*m[i]+val_arr[i][-1])) # Via Slope
+                    val_arr[i].append(y1:=val_arr[i][-1]) # Repeat value (more likely due to spice dyn timestepping)
                     if y1 > HIWARN and warn: print(f"High Value: Win empty, {wtim} {x1} {m} {y1}")
                     wtim += sample_interval
                 tim_arr.append(x1:=wtim)

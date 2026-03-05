@@ -35,7 +35,7 @@ DTYPE = np.float32
 ## Trace Cache ---------------------------------------------
 
 class TraceCache:
-    def __init__(self, name, id, file_list, label_dict, cols=1, nparams={}):
+    def __init__(self, name, id, file_list, label_dict, cols=1, column=1, nparams={}):
         self.name       = name
         self.id         = id
         self.file_list  = file_list
@@ -43,6 +43,7 @@ class TraceCache:
         self.raw_cache  = [None] * len(file_list) # list of trace info (w/ raw trace)
         self.nrm_cache  = [None] * len(file_list) # list of normalized traces
         self.cols       = cols
+        self.column     = column
         self.normalizer = build_normalizer(self, nparams)
         
         # print(f"cache path for {self.name} : cache/{self.name}_{self.id}")
@@ -75,7 +76,7 @@ class TraceCache:
             
             cpath = f"cache/{self.name}-{self.id}/{str(index).rjust(4,"0")}"
             if os.path.exists(cpath):
-                tinf = self.load_trace(cpath, ("", sample_int, max_sample))
+                tinf = self.load_trace(cpath, ("", sample_int, max_sample), column=0)
             else:
                 tinf = self.load_trace(fpath, sample_info)
                 if sample_mode and sample_mode != "timed" and self.cols == 1:
@@ -95,7 +96,7 @@ class TraceCache:
         else:
             self.normalizer.train()
 
-    def load_trace(self, fpath, sample_info):
+    def load_trace(self, fpath, sample_info, column=None):
         sample_mode, sample_int, max_sample = sample_info
 
         # timed
@@ -103,7 +104,7 @@ class TraceCache:
             with open(fpath, 'r') as file:
                 header = file.readline()
                 if self.cols == 1:
-                    splitf = lambda x: (DTYPE(x[0]), DTYPE(x[1]))
+                    splitf = lambda x: (DTYPE(x[0]), DTYPE(x[self.column+1]))
                 else:
                     splitf = lambda x: (DTYPE(x[0]), *[DTYPE(xi) for xi in x[1:]])
 
@@ -121,7 +122,7 @@ class TraceCache:
 
         # sampled
         elif sample_mode:
-            valu_arr, tstart, tstop = sample_file(fpath, sample_int, max_sample, sample_mode=sample_mode, cols=self.cols)
+            valu_arr, tstart, tstop = sample_file(fpath, sample_int, max_sample, sample_mode=sample_mode, cols=self.cols, column=self.column)
             if self.cols == 1:
                 trace = np.array(valu_arr[0], dtype=DTYPE)
             else:
@@ -141,7 +142,10 @@ class TraceCache:
                 tstop = DTYPE(tcurr)
 
                 if self.cols == 1:
-                    trace = np.array(valu_arr[0], dtype=DTYPE)[:max_sample]
+                    if column is None:
+                        trace = np.array(valu_arr[self.column], dtype=DTYPE)[:max_sample]
+                    else:
+                        trace = np.array(valu_arr[0], dtype=DTYPE)[:max_sample]
                 else:
                     trace = np.stack([np.array(va, dtype=DTYPE) for va in valu_arr], axis=0)[:, :max_sample]
 
@@ -226,12 +230,13 @@ class TraceDatasetBW(TraceDataset):
         return 1 if label & self.bit_mask else 0
 
 class TraceDatasetBuilder:
-    def __init__(self, name, id, adc_bitwidth=8, cols=1, nparams={}, device=None):
+    def __init__(self, name, id, adc_bitwidth=8, cols=1, column=0, nparams={}, device=None):
         self.name       = name
         self.id         = id
         self.file_list  = []
         self.label_dict = {}
         self.cols       = cols
+        self.column     = column
         self.cache      = None
         self.nparams    = nparams
         self.adc_bits   = adc_bitwidth
@@ -273,7 +278,7 @@ class TraceDatasetBuilder:
                 i += 1
 
     def build(self):
-        self.cache   = TraceCache(self.name, self.id, self.file_list, self.label_dict, self.cols, self.nparams)
+        self.cache   = TraceCache(self.name, self.id, self.file_list, self.label_dict, self.cols, self.column, self.nparams)
         self.dataset = TraceDataset(self.file_list, self.label_dict, self.cache, cols=self.cols, device=self.device)
         for b in range(self.adc_bits):
             self.datasets.append(TraceDatasetBW(self.file_list, self.label_dict, self.cache, b, cols=self.cols, device=self.device))

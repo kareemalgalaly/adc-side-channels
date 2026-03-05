@@ -133,7 +133,7 @@
     "tests" : [
         {
             "desc"          : "Combined Prot BW",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["twocol"],
             "datasets"      : ["cmb_p_tt"],
             "test_dataset"  : ["cmb_p_ss"],
@@ -225,7 +225,7 @@
         "sample_interval" : 0.1e-6,
         "sample_duration" : 260e-6,
         "columns"         : 1,
-        "normalizer"      : "autoscale",
+        "normalizer"      : "scale",
         "trace_scale"     : 1,
         "optimizer"       : "Adam",
         "loss"            : "CrossEntropyLoss",

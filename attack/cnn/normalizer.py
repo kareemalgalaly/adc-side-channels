@@ -105,10 +105,6 @@ class AutoscaleNormalizer(ScaleNormalizer):
         self.mult = self.average / average
 
         progress.stop(i+1)
-        # print("Average Value:", average)
-        # print("Target Value:", self.average)
-        # print("Scaling Factor:", self.mult)
-
 
 
 # ------------------------------------------------

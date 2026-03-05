@@ -39,8 +39,8 @@ echo "Dumping outputs to $outdir"
 
 if [ "$PYTHON" = "" ]; then PYTHON="python3"; fi
 TENG="$PYTHON ../../script/teng.py"
-SMAIN="$TENG main.temp.cir $@"
-SPOST="$TENG post.temp.cir $@"
+SMAIN="$TENG main.tcir $@"
+SPOST="$TENG post.tcir $@"
 NGBATCH="ngspice -b -r $outdir/rawfile"
 
 # Main

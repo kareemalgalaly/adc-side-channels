@@ -146,6 +146,7 @@ class Dataset(HashableBase):
         self.type = info['type']
         self.frmt = info['format']
         self.cols = info.get('columns', 1)
+        self.column = info.get('column', 0)
         self.lblf = eval(info.get("label", "lambda gs: int(gs[0])"), globals(), {})
         self.paths = [path if path.startswith("/") else os.path.join(data_dir, path) for path in info.get('paths', [])]
 
@@ -200,6 +201,7 @@ class Dataset(HashableBase):
             id           = self.chash(),
             adc_bitwidth = adc_bitwidth,
             cols         = self.cols,
+            column       = self.column,
             nparams      = self.nparams,
             device       = device
         )
@@ -445,6 +447,8 @@ class Regression:
                     self.datasets[nam] = Dataset.from_info(nam, inf, self.defaults)
                 inf = info.copy()
                 inf['type'] = 'timed'
+                inf['normalizer'] = 'scale'
+                inf['trace_scale'] = 1
                 nam=f"{name}:tru"
                 self.datasets[nam] = Dataset.from_info(nam, inf, self.defaults)
             else:

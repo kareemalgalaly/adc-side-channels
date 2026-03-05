@@ -1,0 +1,111 @@
+{
+    "networks" : {
+        "paper" : {
+            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:F(100):R:F(100):R:F(2):S",
+            "type"       : "bitwise",
+            "inputs"     : 1
+        },
+        "paper_bnf" : {
+            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:BN1:F(100):R:BN1:F(100):R:BN1:F(2):S",
+            "type"       : "bitwise",
+            "inputs"     : 1
+        },
+        "paper_bnc" : {
+            "definition" : "C(5,5,1):BN1:R:P(5,5):C(5,3,1):R:BN1:P(2,2):F(100):R:F(100):R:F(100):R:F(2):S",
+            "type"       : "bitwise",
+            "inputs"     : 1
+        },
+        "paper_bnc2" : {
+            "definition" : "C(10,10,1):BN1:R:P(5,5):C(5,5,1):R:BN1:P(2,2):F(100):R:F(2):S",
+            "type"       : "bitwise",
+            "inputs"     : 1
+        },
+        "paper_bnc3" : {
+            "definition" : "C(10,10,1):BN1:R:P(5,5):C(5,5,1):R:BN1:P(2,2):C(5,5,1):R:BN1:P(2,2):F(100):R:F(100):R:F(2):S",
+            "type"       : "bitwise",
+            "inputs"     : 1
+        },
+        "paper_4" : {
+            "definition" : "C(10,10,1):BN1:R:P(5,5):C(5,5,1):R:P(2,2):C(5,5,1):R:P(2,2):F(100):R:F(100):R:F(2):S",
+            "type"       : "bitwise",
+            "inputs"     : 1
+        },
+        "paper_se" : {
+            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:BN1:F(100):R:BN1:F(1)",
+            "type"       : "single_ended",
+            "inputs"     : 1
+        }
+    },
+    "datasets" : {
+        "analog_ldo_sx_tt" : {
+            "path" : "analog_ldo_s_tt",
+            "format" : "ptrace_\\d+_d(\\d+)",
+            "column" : 1
+        },
+        "analog_ldo_sx_ss" : {
+            "path" : "analog_ldo_s_ss",
+            "format" : "ptrace_\\d+_d(\\d+)",
+            "column" : 1
+        },
+        "analog_ldo_sx_fs" : {
+            "path" : "analog_ldo_s_fs",
+            "format" : "ptrace_\\d+_d(\\d+)",
+            "column" : 1
+        },
+        "analog_ldo_sp_tt" : {
+            "path" : "analog_ldo_s_tt",
+            "format" : "ptrace_\\d+_d(\\d+)"
+        },
+        "analog_ldo_sp_ss" : {
+            "path" : "analog_ldo_s_ss",
+            "format" : "ptrace_\\d+_d(\\d+)"
+        },
+        "analog_ldo_sp_fs" : {
+            "path" : "analog_ldo_s_fs",
+            "format" : "ptrace_\\d+_d(\\d+)"
+        }
+    },
+    "tests" : [
+        {
+            "desc"          : "Analog LDO BW",
+            "skip"          : false,
+            "networks"      : ["paper_4", "paper_bnc3", "paper_bnc2", "paper_bnc"],
+            "datasets"      : ["analog_ldo_sp_tt:max"],
+            "test_dataset"  : ["analog_ldo_sp_ss:max", "analog_ldo_sp_fs:max"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.000025,
+            "optimizer"     : "Amsgrad"
+        },
+        {
+            "desc"          : "Analog LDO SE",
+            "skip"          : true,
+            "networks"      : ["paper_se"],
+            "datasets"      : ["analog_ldo_sp_tt:max"],
+            "test_dataset"  : ["analog_ldo_sp_ss:max"],
+            "learning_rate" : [0.02],
+            "learning_decay": 0.00002,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 25000
+        }
+    ],
+    "defaults" : {
+        "sample_mode"     : ["MAX"],
+        "sample_interval" : 0.1e-6,
+        "sample_duration" : 256e-6,
+        "columns"         : 1,
+        "normalizer"      : "autoscale",
+        "trace_scale"     : 1,
+        "optimizer"       : "Adam",
+        "loss"            : "CrossEntropyLoss",
+        "loss_se"         : "MSELoss",
+        "learning_rate"   : 0.0005,
+        "learning_decay"  : 0,
+        "max_learn_rate"  : 0.05,
+        "max_epochs"      : 1000,
+        "max_accuracy"    : 0.99,
+        "max_loss"        : 0.0,
+        "batch_size"      : -1,
+        "train_split"     : 1
+    }
+}
+

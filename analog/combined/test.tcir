@@ -1,0 +1,107 @@
+* Test circuit
+
+{default corner "tt"}
+
+{ifxst /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice}
+  .lib "/foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice" {corner}
+  .include "/foss/pdk/sky130A/libs.ref/sky130_fd_sc_hs/spice/sky130_fd_sc_hs.spice"
+{else}
+  .lib "models/sky130.lib.spice" {corner}
+  .include cells/a211oi/sky130_fd_sc_hs__a211oi_1.spice
+  .include cells/a21oi/sky130_fd_sc_hs__a21oi_1.spice
+  .include cells/and2/sky130_fd_sc_hs__and2_1.spice
+  .include cells/and3/sky130_fd_sc_hs__and3_1.spice
+  .include cells/and4/sky130_fd_sc_hs__and4_1.spice
+  .include cells/clkinv/sky130_fd_sc_hs__clkinv_1.spice
+  .include cells/dfxtp/sky130_fd_sc_hs__dfxtp_1.spice
+  .include cells/inv/sky130_fd_sc_hs__inv_1.spice
+  .include cells/mux2i/sky130_fd_sc_hs__mux2i_1.spice
+  .include cells/mux2/sky130_fd_sc_hs__mux2_1.spice
+  .include cells/nand2b/sky130_fd_sc_hs__nand2b_1.spice
+  .include cells/nor2b/sky130_fd_sc_hs__nor2b_1.spice
+  .include cells/nor2/sky130_fd_sc_hs__nor2_1.spice
+  .include cells/nor3b/sky130_fd_sc_hs__nor3b_1.spice
+  .include cells/nor3/sky130_fd_sc_hs__nor3_1.spice
+  .include cells/nor4b/sky130_fd_sc_hs__nor4b_1.spice
+  .include cells/o21a/sky130_fd_sc_hs__o21a_1.spice
+  .include cells/o21bai/sky130_fd_sc_hs__o21bai_1.spice
+  .include cells/o21ba/sky130_fd_sc_hs__o21ba_1.spice
+  .include cells/or2/sky130_fd_sc_hs__or2_1.spice
+  .include cells/or3b/sky130_fd_sc_hs__or3b_1.spice
+  .include cells/xor2/sky130_fd_sc_hs__xor2_1.spice
+{endif}
+
+.lib lib/analog.lib design
+
+** Ramp Gen Comparison =====================================
+
+* xrmp1 vrefp                         ramp1 vdda vss rst  ramp_generator_fixed c=20p r=12.7Meg
+* xrmp2 irefp vss vdd vdd vdd vdd vdd ramp2 vdda vss rst  ramp_generator_idac  c=1p
+* xrmp3 irefp vss vss vss vss vss vss ramp3 vdda vss rst  ramp_generator_idac  c=1p
+
+xidac2 vc0 vc1 vc2 vc3 vc4 vc0i vc1i vc2i vc3i vc4i vx1 vx2 iref vdda vss idac
+
+c1 vx1 vx1o 1p
+c2 vx2 vx2o 1p
+; r1 vx1 vx1o 1
+; r2 vx2 vx2o 1
+
+vx1 vx1o vss 0
+vx2 vx2o vss 0
+
+
+** Global IO ===============================================
+
+* Power Rail
+
+.param vdd=1.8
+.param vss=0
+Vddd vddd 0 {vdd}
+Vdda vdda 0 {vdd}
+Vss  vss  0 {vss}
+
+* Clock and Reset (1MHz clock)
+
+; Vrst    rst     0   pulse   {vss}   {vdd}   0u     0.1n  0.1n     2u    260u
+; Vclk    clk     0   pulse   {vss}   {vdd}   1u     0.1n  0.1n   0.5u      1u
+; Vclk2   clk2    0   pulse   {vss}   {vdd}   1.25u  0.1n  0.1n  0.25u    0.5u
+
+vc0  vc0   vss  {vdd} ; pulse   {vss}   {vdd}   0u     0.1n  0.1n   4u        8u
+vc1  vc1   vss  {vdd} ; pulse   {vss}   {vdd}   0u     0.1n  0.1n   8u        16u
+vc2  vc2   vss  {vdd} ; pulse   {vss}   {vdd}   0u     0.1n  0.1n   16u       32u
+vc3  vc3   vss  {vdd} ; pulse   {vss}   {vdd}   0u     0.1n  0.1n   32u       64u
+vc4  vc4   vss  {vdd} ; pulse   {vss}   {vdd}   0u     0.1n  0.1n   64u       128u
+vc0i vc0i  vss  {vss} ; pulse   {vdd}   {vss}   0u     0.1n  0.1n   4u        8u
+vc1i vc1i  vss  {vss} ; pulse   {vdd}   {vss}   0u     0.1n  0.1n   8u        16u
+vc2i vc2i  vss  {vss} ; pulse   {vdd}   {vss}   0u     0.1n  0.1n   16u       32u
+vc3i vc3i  vss  {vss} ; pulse   {vdd}   {vss}   0u     0.1n  0.1n   32u       64u
+vc4i vc4i  vss  {vss} ; pulse   {vdd}   {vss}   0u     0.1n  0.1n   64u       128u
+
+* Reference Voltages
+
+; vrfp  vss   vrefp 1
+; vrfn  vrefn vss   1
+iref iref vss 15u
+* 1m -> 45m
+
+** Control =================================================
+
+.tran 50n 260u uic
+.control 
+    run 
+    plot i(vx1) i(vx2) 
+
+    alter vc1 {vss}
+    alter vc2 {vss}
+    alter vc3 {vss}
+    alter vc4 {vss}
+    alter vc1i {vdd}
+    alter vc2i {vdd}
+    alter vc3i {vdd}
+    alter vc4i {vdd}
+
+    run 
+    plot i(vx1) i(vx2) 
+
+.endc
+.end

@@ -93,13 +93,13 @@
             "format"  : "ptrace_a_\\d+_d(\\d+)"
         },
         "pdtrace_x_tt": {
-            "path" : "/home/kareem/Projects/adc-side-channels/analog/combined/outfiles/dataset_corner:tt_arch:uprot",
+            "path" : "dataset_corner:tt_arch:uprot",
             "label"   : "lambda gs: int(gs[0]) % 256",
             "format"  : "ptrace_d_\\d+_d(\\d+)",
             "columns" : 1
         },
         "patrace_x_tt": {
-            "path" : "/home/kareem/Projects/adc-side-channels/analog/combined/outfiles/dataset_corner:tt_arch:uprot",
+            "path" : "dataset_corner:tt_arch:uprot",
             "label"   : "lambda gs: int(gs[0]) % 256",
             "format"  : "ptrace_a_\\d+_d(\\d+)",
             "columns" : 1
@@ -110,6 +110,19 @@
             "format"  : "atrace_(\\d+)_1",
             "type"    : "timed",
             "columns" : 2
+        },
+        "analog_1px_tt_xx" : {
+            "path" : "analog_1px_tt_xx",
+            "type" : "sampled",
+            "format"  : "raw_s\\d+_((0\\.)?\\d+)\\.txt",
+            "columns" : 1,
+            "label"   : "lambda gs: int(round(float(gs[0])*256))"
+        },
+        "digital_1px_ff_x" : {
+            "path" : "digital_1px_ff_x",
+            "type" : "sampled",
+            "format"  : "sky_raw_s\\d+_(\\d+).txt",
+            "columns" : 1
         }
     },
     "tests" : [
@@ -118,49 +131,50 @@
             "skip"          : true,
             "networks"      : ["paper", "paper_cbn1", "paper_cbn2", "paper_cbn", "paper_fbn"],
             "datasets"      : ["nlg_x_tt:max"],
-            "test_dataset"  : ["nlg_x_ss:max"],
+            "test_dataset"  : ["nlg_x_fs:max", "nlg_x_ss:max"],
             "learning_rate" : [0.0003],
             "learning_decay": 0.0002,
-            "max_epochs"    : 5000
+            "max_epochs"    : 2000
         },
         {
             "desc"          : "HACS Table II - Unprotected BW",
-            "skip"          : true,
-            "networks"      : ["paper", "paper_cbn1", "paper_cbn2", "paper_cbn", "paper_fbn"],
+            "skip"          : false,
+            "networks"      : ["paper_cbn1", "paper_cbn2", "paper_cbn", "paper_fbn"],
             "datasets"      : ["dig_x_tt:max"],
-            "test_dataset"  : ["dig_x_ss:max"],
-            "learning_rate" : [0.00005],
-            "not_learning_decay": 0.0002,
-            "not_learning_rate" : [0.0004],
-            "learning_decay": 0.000000,
-            "optimizer"     : "Amsgrad"
+            "test_dataset"  : ["dig_x_tt:max"],
+            "old_test_dataset"  : ["dig_x_fs:max", "dig_x_ss:max"],
+            "learning_rate" : [0.0002],
+            "learning_decay": 0.000005,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 2000
         },
         {
             "desc"          : "PROT A",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["paper", "paper_cbn1", "paper_cbn2", "paper_cbn", "paper_fbn"],
             "datasets"      : ["nlg_p_tt:max"],
             "test_dataset"  : ["nlg_p_ss:max"],
             "learning_rate" : [0.0003],
             "learning_decay": 0.0002,
-            "max_epochs"    : 5000
+            "max_epochs"    : 2000
         },
         {
             "desc"          : "PROT D",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["paper", "paper_cbn1", "paper_cbn2", "paper_cbn", "paper_fbn"],
             "datasets"      : ["dig_p_tt:max"],
             "test_dataset"  : ["dig_p_ss:max"],
             "learning_rate" : [0.00005],
             "learning_decay": 0.000001,
-            "optimizer"     : "Amsgrad"
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 2000
         }
     ],
     "defaults" : {
         "sample_mode"     : ["MAX"],
         "sample_interval" : 0.1e-6,
         "sample_duration" : 260e-6,
-        "normalizer"      : "autoscale",
+        "normalizer"      : "scale",
         "trace_scale"     : 1,
         "columns"         : 1
     }
