@@ -1,7 +1,8 @@
 * expanding   symbol:  design/single_slope/idac.sym # of pins=15
 ** sym_path: /foss/design/single_slope/idac.sym
 ** sch_path: /foss/design/single_slope/idac.sch
-.subckt idac  vdd vx vx_neg b2 b4 b0 b1 b3 b2i b0i b4i b3i b1i iref vss
+; .subckt idac  vdd vx vx_neg b2 b4 b0 b1 b3 b2i b0i b4i b3i b1i iref vss
+.subckt idac  vdd vx vx_neg b4 b3 b2 b1 b0 b4i b3i b2i b1i b0i iref vss
 *.iopin iref
 *.iopin b0
 *.iopin b0i

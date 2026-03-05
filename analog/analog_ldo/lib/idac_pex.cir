@@ -1,6 +1,7 @@
 * NGSPICE file created from idac1_pex.ext - technology: sky130A
 
-.subckt idac vdd vx vx_neg b2 b4 b0 b1 b3 b2i b0i b4i b3i b1i iref vss
+;.subckt idac vdd vx vx_neg b2 b4 b0 b1 b3 b2i b0i b4i b3i b1i iref vss
+.subckt idac vdd vx vx_neg b4 b3 b2 b1 b0 b4i b3i b2i b1i b0i iref vss
 X0 a_n1912_n5780.t29 a_n12231_n5806.t2 vss.t180 vss.t37 sky130_fd_pr__nfet_01v8 ad=0p pd=0u as=0p ps=0u w=420000u l=1.2e+07u
 X1 vdd.t26 a_3614_2487.t0 a_3614_2487.t2 vdd.t10 sky130_fd_pr__pfet_01v8_lvt ad=0p pd=0u as=0p ps=0u w=420000u l=1.2e+07u
 X2 a_n7145_n5780.t99 a_n12231_n5806.t3 vss.t179 vss.t34 sky130_fd_pr__nfet_01v8 ad=0p pd=0u as=0p ps=0u w=420000u l=1.2e+07u
