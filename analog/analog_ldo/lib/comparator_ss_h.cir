@@ -1,0 +1,15 @@
+* expanding   symbol:  design/single_slope/comparator_ss_h.sym # of pins=8
+** sym_path: /foss/design/single_slope/comparator_ss_h.sym
+** sch_path: /foss/design/single_slope/comparator_ss_h.sch
+.subckt comparator_ss_h  vdd inp ck outp inn outn iref vss
+*.iopin vdd
+*.iopin vss
+*.iopin ck
+*.iopin inp
+*.iopin inn
+*.iopin outp
+*.iopin outn
+*.iopin iref
+x2 vdd inp inn iref net1 net2 vss preamp_singleslope
+x1 vdd ck outp outn net1 net2 vss latch_singleslope
+.ends

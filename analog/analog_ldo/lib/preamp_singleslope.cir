@@ -1,0 +1,34 @@
+* expanding   symbol:  design/single_slope/preamp_singleslope.sym # of pins=7
+** sym_path: /foss/design/single_slope/preamp_singleslope.sym
+** sch_path: /foss/design/single_slope/preamp_singleslope.sch
+.subckt preamp_singleslope  vdd inp inn iref outp outn vss
+*.iopin vdd
+*.iopin vss
+*.iopin iref
+*.iopin inn
+*.iopin inp
+*.iopin outp
+*.iopin outn
+XM16 net1 iref vdd vdd sky130_fd_pr__pfet_01v8 L=5 W=27 nf=1 ad='int((nf+1)/2) * W/nf * 0.29' as='int((nf+2)/2) * W/nf * 0.29'
++ pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)' nrd='0.29 / W' nrs='0.29 / W'
++ sa=0 sb=0 sd=0 mult=10 m=10
+XM17 outp C vss vss sky130_fd_pr__nfet_01v8 L=5 W=50 nf=2 ad='int((nf+1)/2) * W/nf * 0.29' as='int((nf+2)/2) * W/nf * 0.29'
++ pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)' nrd='0.29 / W' nrs='0.29 / W'
++ sa=0 sb=0 sd=0 mult=2 m=2
+XM18 outn C vss vss sky130_fd_pr__nfet_01v8 L=5 W=50 nf=2 ad='int((nf+1)/2) * W/nf * 0.29' as='int((nf+2)/2) * W/nf * 0.29'
++ pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)' nrd='0.29 / W' nrs='0.29 / W'
++ sa=0 sb=0 sd=0 mult=2 m=2
+XM21 iref iref vdd vdd sky130_fd_pr__pfet_01v8 L=5 W=27 nf=1 ad='int((nf+1)/2) * W/nf * 0.29' as='int((nf+2)/2) * W/nf * 0.29'
++ pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)' nrd='0.29 / W' nrs='0.29 / W'
++ sa=0 sb=0 sd=0 mult=1 m=1
+XM1 outp inn net1 vdd sky130_fd_pr__pfet_01v8_lvt L=5 W=44 nf=2 ad='int((nf+1)/2) * W/nf * 0.29' as='int((nf+2)/2) * W/nf * 0.29'
++ pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)' nrd='0.29 / W' nrs='0.29 / W'
++ sa=0 sb=0 sd=0 mult=6 m=6
+XM2 outn inp net1 vdd sky130_fd_pr__pfet_01v8_lvt L=5 W=44 nf=2 ad='int((nf+1)/2) * W/nf * 0.29' as='int((nf+2)/2) * W/nf * 0.29'
++ pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)' nrd='0.29 / W' nrs='0.29 / W'
++ sa=0 sb=0 sd=0 mult=6 m=6
+XR1 C outp vss sky130_fd_pr__res_xhigh_po_0p35 L=7 mult=1 m=1
+XR2 C outn vss sky130_fd_pr__res_xhigh_po_0p35 L=7 mult=1 m=1
+.ends
+
+

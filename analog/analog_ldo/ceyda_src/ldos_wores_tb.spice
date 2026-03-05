@@ -1,0 +1,64 @@
+** sch_path: /foss/design/ldo/ldos_wores_tb.sch
+**.subckt ldos_wores_tb
+V1 vdd3v3 GND 3.3
+I2 net1 GND 15u
+C1 vout GND 100p m=1
+V4 net2 GND 1.2
+V6 in+ net2 AC 1
+V7 net3 GND 0
+I1 vout net3 1m
+x1 vdd3v3 net1 in- in+ vout GND ldos_wores
+R13 vout in- 60k m=1
+R14 in- GND 120k m=1
+**** begin user architecture code
+
+** opencircuitdesign pdks install
+.lib /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice tt
+
+
+
+
+
+.include /foss/design/single_slope/netgen/ldos_wores_pex.spice
+.option method=Gear
+*.ic v(vout)=1.8 v(n5)=1.2
+.control
+set color0=white
+set units= degrees
+*set sqrnoise
+save all
+
+
+tran .1u 20u
+*let gmdp= @m.xm14.msky130_fd_pr__pfet_01v8[gm]
+plot vb2 vb3
+plot vout
+plot n1
+plot a b c d e f
+
+*reset
+*ac dec 100 1 1G
+*plot vdb(vout)
+*plot phase(vout)
+*plot vdb(outn)
+*plot inp inn out1
+
+*meas ac gbw when vdb(vout)=0
+*meas ac gbw_2 when vout=1
+
+*reset
+*noise v(vout) V4 dec 100 1 52Meg
+*print inoise_total onoise_total
+*setplot noise1
+*plot inoise_spectrum xlog ylog
+*plot onoise_spectrum xlog ylog
+
+
+show all
+.endc
+
+
+**** end user architecture code
+**.ends
+.GLOBAL GND
+.end

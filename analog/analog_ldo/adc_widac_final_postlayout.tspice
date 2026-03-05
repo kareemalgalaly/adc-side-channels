@@ -1,0 +1,108 @@
+** sch_path: /foss/design/ldo/adc_widac_final.sch
+
+{ifxst /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice}
+  .lib "/foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice" {corner}
+  .include "/foss/pdk/sky130A/libs.ref/sky130_fd_sc_hd/spice/sky130_fd_sc_hd.spice"
+  ; .include "/foss/pdk/sky130A/libs.ref/sky130_fd_sc_hs/spice/sky130_fd_sc_hs.spice"
+{else}
+  .lib "models/sky130.lib.spice" {corner}
+  .include cells/clkinv/sky130_fd_sc_hd__clkinv_1.spice
+  ; .include cells/inv/sky130_fd_sc_hd__inv_1.spice
+{endif}
+
+**.subckt adc_widac_final
+V1 vddd GND 1.8
+V9 vp GND 0.2
+xx6 b4 vss vss vddd vddd b4i sky130_fd_sc_hd__clkinv_1
+xx4 b1 vss vss vddd vddd b1i sky130_fd_sc_hd__clkinv_1
+xx5 b0 vss vss vddd vddd b0i sky130_fd_sc_hd__clkinv_1
+V7 vss GND 0
+V2 b4 GND 1.8
+V3 b3 GND 1.8
+V4 b2 GND 1.8
+V5 b1 GND 1.8
+V12 b0 GND 1.8
+C1 vx inp 20p m=1
+XM32 inp reset vx vx sky130_fd_pr__nfet_01v8 L=0.15 W=20 nf=1 ad='int((nf+1)/2) * W/nf * 0.29' as='int((nf+2)/2) * W/nf * 0.29'
++ pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)' nrd='0.29 / W' nrs='0.29 / W'
++ sa=0 sb=0 sd=0 mult=2 m=2
+V22 reset GND PULSE(0 1.8 0 10p 10p 40n 256.04u)
+I1 net1 GND 20u
+x3 vdd net1 vx vp inp GND opamp_singleslope_wcapnew
+C2 vx_neg inp_neg 20p m=1
+V11 net3 net4 1
+XM39 net3 reset inp_neg GND sky130_fd_pr__nfet_01v8 L=0.15 W=20 nf=1 ad='int((nf+1)/2) * W/nf * 0.29'
++ as='int((nf+2)/2) * W/nf * 0.29' pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)'
++ nrd='0.29 / W' nrs='0.29 / W' sa=0 sb=0 sd=0 mult=2 m=2
+XM40 net4 reset vx_neg GND sky130_fd_pr__nfet_01v8 L=0.15 W=20 nf=1 ad='int((nf+1)/2) * W/nf * 0.29'
++ as='int((nf+2)/2) * W/nf * 0.29' pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)'
++ nrd='0.29 / W' nrs='0.29 / W' sa=0 sb=0 sd=0 mult=2 m=2
+x8 vdd net2 vx_neg vp inp_neg GND opamp_singleslope_wcapnew
+I4 net2 GND 20u
+I3 vdd net6 10n
+x7 vdd net5 net7 b2 b4 b0 b1 b3 b2i b0i b4i b3i b1i net6 GND idac
+V10 ck GND PULSE(0 1.8 500u 10p 10p .5u 1u)
+V23 inn GND 0.8
+V6 vx net5 0
+V8 vx_neg net7 0
+I0 net8 GND 10u
+x9 vdd inp ck outp inn outn net8 GND comparator_ss_h
+I2 net9 GND 10u
+x10 vdd inp_neg ck outp_neg inn outn_neg net9 GND comparator_ss_h
+xx7 b2 vss vss vddd vddd b2i sky130_fd_sc_hd__clkinv_1
+xx3 b3 vss vss vddd vddd b3i sky130_fd_sc_hd__clkinv_1
+V13 in+ GND 1.2
+R13 net10 n5 60k m=1
+R14 n5 GND 120k m=1
+V14 vdd net10 0
+C3 net10 GND 100p m=1
+I5 net11 GND 15u
+x1 vdd3v3 net11 n5 in+ net10 GND ldos_wores
+V15 vdd3v3 GND 3.3
+**** begin user architecture code
+
+
+
+
+.include /foss/design/single_slope/netgen/idac1_pex.spice
+.include /foss/design/single_slope/netgen/ldos_wores_pex.spice
+.include /foss/design/single_slope/guncel_layoutlar/netgen/preamp_singleslope_new_pex.spice
+.include /foss/design/single_slope/guncel_layoutlar/netgen/latch_singleslope_new_pex.spice
+.include /foss/design/single_slope/guncel_layoutlar/netgen/opamp_singleslope_addcap_pex.spice
+.option method = Gear
+
+.control
+set color0=white
+
+tran 10u 800u
+let i_1v8= i(v14)
+let i_3v3= i(v15)
+plot inp inn outp outn
+plot inp_neg inn outp_neg outn_neg
+plot i_1v8 i_3v3
+
+.endc
+.end
+
+
+**** end user architecture code
+**.ends
+
+* expanding   symbol:  design/single_slope/comparator_ss_h.sym # of pins=8
+** sym_path: /foss/design/single_slope/comparator_ss_h.sym
+** sch_path: /foss/design/single_slope/comparator_ss_h.sch
+.subckt comparator_ss_h  vdd inp ck outp inn outn iref vss
+*.iopin vdd
+*.iopin vss
+*.iopin ck
+*.iopin inp
+*.iopin inn
+*.iopin outp
+*.iopin outn
+*.iopin iref
+x2 vdd inp inn iref net1 net2 vss preamp_singleslope
+x1 vdd ck outp outn net1 net2 vss latch_singleslope
+.ends
+
+.GLOBAL GND
+.end

@@ -1,0 +1,17 @@
+* Post process script for template_batch.cir
+
+{default outdir "outfiles"}
+{default start  0}
+{define  start  eval:int(start)}
+{default value  start % 256}
+
+.control
+  set wr_singlescale
+  set wr_vecnames
+
+  load   {outdir}/rawfile_{start}
+  wrdata {outdir}/ptrace_{start}_d{value} 0-i(vdd3v3) 0-i(vdd1v8)    
+  exit
+.endc
+.end
+
