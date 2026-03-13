@@ -16,6 +16,7 @@ def build_normalizer(cache, nparams):
         case None       : return NOPNormalizer(cache, nparams)
         case "scale"    : return ScaleNormalizer(cache, nparams)
         case "autoscale": return AutoscaleNormalizer(cache, nparams)
+        case "zscore"   : return ZScoreNormalizer(cache, nparams)
         case "robust"   : return RobustNormalizer(cache, nparams)
         case _          : raise NotImplementedError(f"Unknown normalization technique {nparams['norm']}")
 
@@ -106,6 +107,42 @@ class AutoscaleNormalizer(ScaleNormalizer):
 
         progress.stop(i+1)
 
+# ------------------------------------------------
+# class: AutoscaleNormalizer
+# - A normalizer that uniformly shifts and scales 
+# - all traces to achieve average value 0 and 
+#   stddev of 1
+# ------------------------------------------------
+
+class ZScoreNormalizer(Normalizer):
+    def __init__(self, cache, params):
+        super().__init__(cache, params)
+        self.avg = None
+        self.std = None
+        self.off = params["mult"]
+
+    def train(self):
+        progress = ProgressBar(f_start=f"{{state}} {self.cache.name} ", max_val=len(self.cache))
+        progress.start(state="Loading Dataset")
+
+        all_data = []
+        for i, tinf in enumerate(self.cache.iter_raw()):
+            all_data.append(tinf.trace)
+            progress.update(i)
+
+        all_data = np.array(all_data)
+        self.avg = np.mean(all_data)
+        self.std = np.std(all_data, mean=self.avg)
+        print("avg", self.avg)
+        print("std", self.std)
+        progress.stop(i+1)
+
+    def load_training(self, them):
+        super().load_training(them)
+        self.avg = them.avg
+        self.std = them.std
+
+    def do_fit(self, index): return (self.cache.raw_cache[index].trace - self.avg) / self.std + self.off
 
 # ------------------------------------------------
 # class: RobustNormalizer
