@@ -99,7 +99,7 @@ def build_mapping(format_list, mapping={}):
                 continue
             try:
                 k, v = fmt.split("=")
-                if v and v[0] in ("'", '"', "/") and v[-1] != v[0]:
+                if v and v[0] in ("'", '"') and v[-1] != v[0]: # , "/"
                     pend = v[1:]
                     end  = v[0]
                     continue
