@@ -6,6 +6,7 @@ synth/*
 build
 cache
 *.swp
+*.swo
 *.so
 *.log
 *.ods
