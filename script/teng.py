@@ -41,9 +41,9 @@ ifexp_re = re.compile(r"\s*if\s+(.*)")                                      # Ge
 endif_re = re.compile(r"\s*(endif)\s*")                                     # End of if statement
 econd_re = re.compile(r"\s*(endif|else)\s*")                                # End of block of if statement
 error_re = re.compile(r"\s*error(.*)")                                      # Error
-match_re = re.compile(r"\s*(s)?match\s+(.*)")                                 # Match
-case__re = re.compile(r"\s*(\+?case\s+(.*))")                                  # Case
-ecase_re = re.compile(r"\s*(\+?case\s+(.*)|endmatch)")                         # End of case/match
+match_re = re.compile(r"\s*(s)?match\s+(.*)")                               # Match
+case__re = re.compile(r"\s*(\+?case\s+(.*))")                               # Case
+ecase_re = re.compile(r"\s*(\+?case\s+(.*)|endmatch)")                      # End of case/match
 #emtch_re = re.compile(r"\s*(endmatch)\s*")                                 # End of match
 loop__re = re.compile(r"\s*for\s+(\w+)\s+in\s+(.*)")                        # Loop
 eloop_re = re.compile(r"\s*endfor\s*")                                      # End of Loop
@@ -281,7 +281,7 @@ class TEngine:
                 yield from self.process(env, iter(default_tokens), include)
 
     def case_cond(self, case_exp, value, env):
-        exps = case_exp.split(" || ")
+        exps = case_exp.split("||")
         for exp in exps:
             if value == self.eval_expr(exp, env):
                 return True
@@ -301,7 +301,8 @@ class TEngine:
             case "import":
                 # return self.exec_expr(f"import {args[0]}", env)
                 match args[0]:
-                    case "math": env["math"] = importlib.import_module("math")
+                    case "math"  : env["math"] = importlib.import_module("math")
+                    case "random": env["random"] = importlib.import_module("random")
                     case _: error(f"Unsupported library <{args[0]}>")
 
             case "default":

@@ -9,8 +9,10 @@
 {default stop  256}
 {default arch "uprot"}
 {default inverter "clkinv"}
-{default clean ""}
-{if clean}
+{default power "single"}
+{default python "/usr/bin/python"}
+{assert  power in ("ideal", "single", "cascode")}
+{ifdef clean}
   {define cs 512u}
   {define ce 768u}
 {else}
@@ -24,6 +26,9 @@
 {endif}
 
 {import math}
+{import random}
+{eval random.seed(start)}
+{define randctl func:k,vs,dlt,ris:" ".join(" ".join([str(i*dlt+ris),str(v),str((i+1)*dlt),str(v)]) for i,v in enumerate(random.choices(vs, k=k)))}
 {define subseed eval:int(start)//256}
 {if subseed > 0}
   {define frac_offset_den eval:2**math.floor(math.log2(subseed))}
@@ -33,6 +38,10 @@
 {else}
   {define pix_voltage eval:int(start)/256 + 0.2}
 {endif}
+
+{define  getbus func:name,suffix=".",r=(8,): " ".join(name+str(suffix)+str(i) for i in range(*r))}
+{define  dplot  func:vars: " ".join(var+"/2+"+str(i) for i, var in enumerate(vars.split()))}
+{define  dbus   func:name,suffix=".",r=(8,): "+".join(name+str(suffix)+str(i)+"/"+str(1 << (8-i)) for i in range(*r))}
 
 {ifxst /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice}
   .lib "/foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice" {corner}
@@ -47,6 +56,8 @@
 .inc lib/idac{version}.cir
 .inc lib/latch_singleslope{version}.cir
 .inc lib/ldos_wores{version}.cir
+.inc lib/ldoc1_wores{version}.cir
+.inc lib/ldoc2_wores{version}.cir
 .inc lib/opamp_singleslope_wcapnew{version}.cir
 .inc lib/preamp_singleslope{version}.cir
 
@@ -60,20 +71,53 @@ vpix  pix  GND {pix_voltage}
 
 iref_op1 iref1 GND 20u
 iref_op2 iref2 GND 20u
-iref_ldo iref3 GND 15u
+{if power != "ideal"}
+iref_ld1 iref3 GND 15u
+{if power == "cascode"}
+iref_ld2 iref7 GND 15u
+{endif}
+{endif}
 iref_idc vdd iref4 10n
 iref_cp1 iref5 GND 10u
 iref_cp2 iref6 GND 10u
+
+vclk   clock  GND PULSE(0 1.8 0u 10p 10p .5u      1u)
+vrst   reset  GND PULSE(0 1.8 0  10p 10p 40n 256.04u)
+
+vdd3v3 vdd3v3 GND 3.3
+vdd1v8 vdd    vdd1v8  0
+
+** Ramp Control --------------------------------------------
+
+{smatch arch}
+{case "uprot"}
 vc0 b0 GND 1.8
 vc1 b1 GND 1.8
 vc2 b2 GND 1.8
 vc3 b3 GND 1.8
 vc4 b4 GND 1.8
 
-vclk   clock  GND PULSE(0 1.8 0u 10p 10p .5u      1u)
-vrst   reset  GND PULSE(0 1.8 0  10p 10p 40n 256.04u)
-vdd3v3 vdd3v3 GND 3.3
-vdd1v8 vdd    vdd1v8  0
+{case "prot"}
+vc0 b0 GND PWL(0 0 {randctl(12,(0,1.8),256e-6/4,1e-9)}) td=0
+vc1 b1 GND PWL(0 0 {randctl(12,(0,1.8),256e-6/4,1e-9)}) td=0
+vc2 b2 GND PWL(0 0 {randctl(12,(0,1.8),256e-6/4,1e-9)}) td=0
+vc3 b3 GND PWL(0 0 {randctl(12,(0,1.8),256e-6/4,1e-9)}) td=0
+vc4 b4 GND PWL(0 0 {randctl(12,(0,1.8),256e-6/4,1e-9)}) td=0
+; abridgea [rst clk] [dreset dclk] atod 
+; abridged [{getbus("drc", r=(5,))}] [{getbus("vc", r=(5,), suffix="")}] dtoa 
+; acounter null dclk dreset [{getbus("drc", r=(5,))}] proc_counter
+; .model atod adc_bridge(in_low=0.2 in_high=1.6)
+; .model dtoa dac_bridge(out_low=0 out_high=1.8)
+; .model proc_counter d_process (process_file="{python}" process_params=["lib/rampctrlgen.py" "{start}"])
+
+{case "fixed"}
+vc0 b0 GND PWL(0 1.8 512u 1.8 512.001u 0 768 0) td=0
+vc1 b1 GND PWL(0 1.8 512u 1.8 512.001u 0 768 0) td=0
+vc2 b2 GND PWL(0 1.8 512u 1.8 512.001u 0 768 0) td=0
+vc3 b3 GND PWL(0 1.8 512u 1.8 512.001u 0 768 0) td=0
+vc4 b4 GND PWL(0 1.8 512u 1.8 512.001u 0 768 0) td=0
+
+{endmatch}
 
 ** Control Inverters ---------------------------------------
 
@@ -85,24 +129,41 @@ xc4 b4 vss vss vddd vddd b4i sky130_fd_sc_hd__{inverter}_1
 
 ** LDO -----------------------------------------------------
 
+{smatch power}
+{case "single"}
 xldo vdd3v3 iref3 n5 in+ vdd1v8 GND ldos_wores
-R13  vdd1v8 n5  60k m=1
-R14  n5     GND 120k m=1
-C3   vdd1v8 GND 100p m=1
+rld1 vdd1v8 n5  60k m=1
+rld2 n5     GND 120k m=1
+cldo vdd1v8 GND 100p m=1
+
+{case "cascode"}
+xldo1 vdd3v3 iref3 n5 in+ vddmid GND ldoc1_wores
+rld1 vddmid n5  120k m=1
+rld2 n5      GND 120k m=1
+cld1 vddmid GND 15p m=1
+
+xldo2 vddmid iref7 nx in+ vdd1v8 GND ldoc2_wores
+rld3 vdd1v8 nx  60k m=1
+rld4 nx     GND 120k m=1
+cld2 vdd1v8 GND 85p m=1
+
+{case "ideal"}
+vdda vdd1v8 GND  1.8
+
+{endmatch}
 
 ** Ramp Generator ------------------------------------------
 
-x7 vdd vx_ vx_neg_ b4 b3 b2 b1 b0 b4i b3i b2i b1i b0i iref4 GND idac
+xidac vdd vx_ vx_neg_ b4 b3 b2 b1 b0 b4i b3i b2i b1i b0i iref4 GND idac
 vmeas_idacp vx     vx_     0
-vmeas_idacn vx_neg vx_neg_ 0
 
-x3 vdd iref1 vx vp inp GND opamp_singleslope_wcapnew
+xopampp vdd iref1 vx vp inp GND opamp_singleslope_wcapnew
 C1 vx inp 20p m=1
 XM32 inp reset vx vx sky130_fd_pr__nfet_01v8 L=0.15 W=20 nf=1 ad='int((nf+1)/2) * W/nf * 0.29' as='int((nf+2)/2) * W/nf * 0.29'
 + pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)' nrd='0.29 / W' nrs='0.29 / W'
 + sa=0 sb=0 sd=0 mult=2 m=2
 
-x8 vdd iref2 vx_neg vp inp_neg GND opamp_singleslope_wcapnew
+xopampn vdd iref2 vx_neg vp inp_neg GND opamp_singleslope_wcapnew
 C2 vx_neg inp_neg 20p m=1
 XM39 net3 reset inp_neg GND sky130_fd_pr__nfet_01v8 L=0.15 W=20 nf=1 ad='int((nf+1)/2) * W/nf * 0.29'
 + as='int((nf+2)/2) * W/nf * 0.29' pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)'
@@ -115,8 +176,8 @@ XM40 net4 reset vx_neg GND sky130_fd_pr__nfet_01v8 L=0.15 W=20 nf=1 ad='int((nf+
 
 ** Comparators ---------------------------------------------
 
-x9 vdd inp clock outp pix outn net8 GND comparator_ss_h
-x10 vdd inp_neg clock outp_neg pix outn_neg net9 GND comparator_ss_h
+xcompp vdd inp     clock outp     pix outn     iref5 GND comparator_ss_h
+xcompn vdd inp_neg clock outp_neg pix outn_neg iref6 GND comparator_ss_h
 
 ** Digital Load --------------------------------------------
 c_drs_comp  outp VGND 1.709029e-15 ; extracted from combined
@@ -126,7 +187,7 @@ c_drs_compn outn VGND 1.668815e-15 ; extracted from combined
 
 ** Control -------------------------------------------------
 
-.option method = Gear
+; .option method = Gear
 .tran 10u {ce}
 
 {ifndef batch}
@@ -137,7 +198,7 @@ c_drs_compn outn VGND 1.668815e-15 ; extracted from combined
 
   let iseed = {start}
   set dlm = "_d"
-  while iseed < {stop}
+  while iseed <= {stop}
     echo Running Sweep $&iseed/{start}:{step}:{stop}
 
     let value   = iseed % 256
@@ -161,13 +222,15 @@ c_drs_compn outn VGND 1.668815e-15 ; extracted from combined
     alter vpix pix_voltage
 
     run
-    let cut-tstart = {cs}
-    let cut-tstop = {ce}
-    cutout
+    ; let cut-tstart = {cs}
+    ; let cut-tstop = {ce}
+    ; cutout
 
     wrdata {outdir}/ptrace_$&iseed$dlm$&value 0-I(vdd3v3) 0-I(vdd1v8)
     {ifdef plot}
       plot 0-i(vdd1v8) 0-i(vdd3v3)
+      plot i(vmeas_idacp)
+      plot inp inp_neg
     {else}
       destroy all
     {endif}
@@ -179,7 +242,7 @@ c_drs_compn outn VGND 1.668815e-15 ; extracted from combined
   {endif}
 .endc
 {else}
-.save i(vdd1v8) i(vdd3v3) i(vddd) inp pix
+.save i(vdd1v8) i(vdd3v3) i(vddd) inp pix {if arch=="prot"}i(vddmid){endif}
 {endif}
 .end
 
