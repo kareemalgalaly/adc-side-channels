@@ -26,18 +26,19 @@ FIGY = 3.5
 #job_launch_time = time.ctime()
 job_launch_time = time.strftime("%y%m%d_%H%M")
 
-argparser.add_argument("-c", "--cpuonly", const=True, default=False, action='store_const', help="Don't use GPU even if available")
-argparser.add_argument("-n", "--nowrite", const=True, default=False, action='store_const', help="Don't write any outputs")
-argparser.add_argument("-f", "--force", const=True, default=False, action='store_const', help="Overwrite output files")
-argparser.add_argument("-p", "--preview", const=True, default=False, action='store_const', help="Don't run anything only list runs that would occur")
-argparser.add_argument("-x", "--headless", const=True, default=False, action='store_const', help="Do not open any gui's")
-argparser.add_argument("-t", "--test", type=str, default="", help="Limit run tests to those whose description matches the specified regex")
-argparser.add_argument("-r", "--repeat", type=int, default=1, help="Rerun training/test this many times. requires -f flag to work properly")
-argparser.add_argument("--nndebug", const=True, default=False, action='store_const', help="Print information about cnn creation.")
-argparser.add_argument("--seed", type=int, default=None, help="Override random seed")
-argparser.add_argument("--gradplot", action="store_true", help="Plot gradient")
-argparser.add_argument("--testplot", action="store_true", help="Plot test accuracy")
-argparser.add_argument("--fineplot", action="store_true", help="Plot metrics finely")
+argparser.add_argument("-t", "--test",      type=str, default="",   help="Limit run tests to those whose description matches the specified regex")
+argparser.add_argument("-r", "--repeat",    type=int, default=1,    help="Rerun training/test this many times. requires -f flag to work properly")
+argparser.add_argument(      "--seed",      type=int, default=None, help="Override random seed")
+argparser.add_argument("-c", "--cpuonly",   action='store_true', help="Don't use GPU even if available")
+argparser.add_argument("-n", "--nowrite",   action='store_true', help="Don't write any outputs")
+argparser.add_argument("-f", "--force",     action='store_true', help="Overwrite output files")
+argparser.add_argument("-p", "--preview",   action='store_true', help="Don't run anything only list runs that would occur")
+argparser.add_argument("-x", "--headless",  action='store_true', help="Do not open any gui's")
+argparser.add_argument(      "--noplot",    action="store_true", help="Do not do any plotting")
+argparser.add_argument(      "--nndebug",   action='store_true', help="Print information about cnn creation.")
+argparser.add_argument(      "--gradplot",  action="store_true", help="Plot gradient")
+argparser.add_argument(      "--testplot",  action="store_true", help="Plot test accuracy")
+argparser.add_argument(      "--fineplot",  action="store_true", help="Plot metrics finely")
 args = argparser.parse_args()
 
 def gradient_hook(module_name, grads):
@@ -96,12 +97,12 @@ class CNNRegression(Regression):
 
                     except KeyboardInterrupt as e:
                         print("Keyboard Interrupt detected. Shutting down...")
-                        if not(self.args.preview or self.args.nowrite):
+                        if not(self.args.preview or self.args.nowrite or self.args.noplot):
                             self.fig.savefig(f'{self.args.output}/{run_hash}_{job_launch_time}.png')
                             plt.close()
                         exit()
 
-                    if not(self.args.preview or self.args.nowrite or skip):
+                    if not(self.args.preview or self.args.nowrite or self.args.noplot or skip):
                         self.fig.savefig(f'{self.args.output}/{run_hash}:{self.seed}.png')
                         plt.close()
 
@@ -265,8 +266,8 @@ class CNNRegression(Regression):
 
         try:
             for epoch in range(test.max_epochs):
-                calc_metrics = epoch % acc_period == 0
-                plot_metrics = epoch % plot_period == 0
+                calc_metrics = (epoch % acc_period  == 0) # and not self.args.noplot
+                plot_metrics = (epoch % plot_period == 0) and not(self.args.noplot or self.args.headless)
 
                 loss, accuracy = self.do_nn_pass(network, dataloader, cnn, optimizer, criterion, scheduler, se, True, calc_metrics)
                 loss_arr[epoch] = loss
@@ -297,25 +298,24 @@ class CNNRegression(Regression):
                     progress.update(epoch, loss=round(loss.item(), 6), acc=round(facc,4), pacc=round(pacc,4))
 
                 if plot_metrics:
-                    if not self.args.headless:
-                        if loss_g: loss_g.remove()
-                        loss_g = self.axs[0].plot(loss_arr.detach().cpu()[:epoch], color='gray', linestyle='dotted')[0]
+                    if loss_g: loss_g.remove()
+                    loss_g = self.axs[0].plot(loss_arr.detach().cpu()[:epoch], color='gray', linestyle='dotted')[0]
 
-                        if acc_g:  acc_g.remove()
-                        acc_g  = self.axs[1].plot(acc_arr.cpu()[:acc_indx+1],  color='gray', linestyle='dotted')[0]
-                        i = 2
+                    if acc_g:  acc_g.remove()
+                    acc_g  = self.axs[1].plot(acc_arr.cpu()[:acc_indx+1],  color='gray', linestyle='dotted')[0]
+                    i = 2
 
-                        if self.args.testplot:
-                            if test_g: test_g.remove()
-                            test_g = self.axs[i].plot(test_arr.cpu()[:acc_indx+1], color='gray', linestyle='dotted')[0]
-                            i += 1
+                    if self.args.testplot:
+                        if test_g: test_g.remove()
+                        test_g = self.axs[i].plot(test_arr.cpu()[:acc_indx+1], color='gray', linestyle='dotted')[0]
+                        i += 1
 
-                        if self.args.gradplot:
-                            if grad_g: grad_g.remove()
-                            grad_g = self.axs[i].plot(grad_arr.cpu()[:acc_indx+1],  color='gray', linestyle='dotted')[0]
-                            i += 1
+                    if self.args.gradplot:
+                        if grad_g: grad_g.remove()
+                        grad_g = self.axs[i].plot(grad_arr.cpu()[:acc_indx+1],  color='gray', linestyle='dotted')[0]
+                        i += 1
 
-                        self.fig.canvas.flush_events() # update plots without moving window to foreground
+                    self.fig.canvas.flush_events() # update plots without moving window to foreground
 
                 if calc_metrics and (accuracy >= test.max_accuracy):
                     progress.update(epoch, msg=f"Hit Acc {test.max_accuracy}"); break
@@ -331,34 +331,35 @@ class CNNRegression(Regression):
 
         ## Plot Training Metrics ---------------------------
 
-        label = f'cnn[{bit}]'
+        if not self.args.noplot:
+            label = f'cnn[{bit}]'
 
-        if loss_g: loss_g.remove()
-        self.axs[0].plot(loss_arr.detach().cpu()[:epoch], label=label)
-        self.axs[0].legend()
+            if loss_g: loss_g.remove()
+            self.axs[0].plot(loss_arr.detach().cpu()[:epoch], label=label)
+            self.axs[0].legend()
 
-        if acc_g: acc_g.remove()
-        self.axs[1].plot(acc_arr.cpu()[:epoch//acc_period+1], label=label)
-        self.axs[1].legend()
+            if acc_g: acc_g.remove()
+            self.axs[1].plot(acc_arr.cpu()[:epoch//acc_period+1], label=label)
+            self.axs[1].legend()
 
-        i = 2
+            i = 2
 
-        if self.args.testplot:
-            if test_g: test_g.remove()
-            self.axs[i].plot(test_arr.cpu()[:epoch//acc_period+1], label=label)
-            self.axs[i].legend()
-            i += 1
+            if self.args.testplot:
+                if test_g: test_g.remove()
+                self.axs[i].plot(test_arr.cpu()[:epoch//acc_period+1], label=label)
+                self.axs[i].legend()
+                i += 1
 
-        if self.args.gradplot:
-            if grad_g: grad_g.remove()
-            self.axs[i].plot(grad_arr.cpu()[:epoch//acc_period+1], label=label)
-            self.axs[i].legend()
-            i += 1
+            if self.args.gradplot:
+                if grad_g: grad_g.remove()
+                self.axs[i].plot(grad_arr.cpu()[:epoch//acc_period+1], label=label)
+                self.axs[i].legend()
+                i += 1
 
-        if not self.args.headless:
-            self.fig.canvas.flush_events() # update plots without moving window to foreground
+            if not self.args.headless:
+                self.fig.canvas.flush_events() # update plots without moving window to foreground
 
-        if self.args.nowrite: return False
+            if self.args.nowrite: return False
 
 
         ## Write Training Results --------------------------

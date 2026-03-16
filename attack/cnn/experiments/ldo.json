@@ -52,89 +52,61 @@
         }
     },
     "datasets" : {
-        "analog_ldo_sfx_tt" : {
-            "path" : "analog_ldo_sf_tt",
-            "format" : "ptrace_\\d+_d(\\d+)",
-            "column" : 1
-        },
-        "analog_ldo_sfx_ss" : {
-            "path" : "analog_ldo_sf_ss",
-            "format" : "ptrace_\\d+_d(\\d+)",
-            "column" : 1
-        },
-        "analog_ldo_sfx_fs" : {
-            "path" : "analog_ldo_sf_fs",
-            "format" : "ptrace_\\d+_d(\\d+)",
-            "column" : 1
-        },
-        "analog_ldo_sfp_tt" : {
-            "path" : "analog_ldo_sf_tt",
-            "format" : "ptrace_\\d+_d(\\d+)"
-        },
-        "analog_ldo_sfp_ss" : {
-            "path" : "analog_ldo_sf_ss",
-            "format" : "ptrace_\\d+_d(\\d+)"
-        },
-        "analog_ldo_sfp_fs" : {
-            "path" : "analog_ldo_sf_fs",
-            "format" : "ptrace_\\d+_d(\\d+)"
-        },
-        "analog_ldo_srx_tt" : {
-            "path" : "analog_ldo_sr_tt",
-            "format" : "ptrace_\\d+_d(\\d+)",
-            "column" : 1
-        },
-        "analog_ldo_srx_ss" : {
-            "path" : "analog_ldo_sr_ss",
-            "format" : "ptrace_\\d+_d(\\d+)",
-            "column" : 1
-        },
-        "analog_ldo_srx_fs" : {
-            "path" : "analog_ldo_sr_fs",
-            "format" : "ptrace_\\d+_d(\\d+)",
-            "column" : 1
-        },
-        "analog_ldo_srp_tt" : {
-            "path" : "analog_ldo_sr_tt",
-            "format" : "ptrace_\\d+_d(\\d+)"
-        },
-        "analog_ldo_srp_ss" : {
-            "path" : "analog_ldo_sr_ss",
-            "format" : "ptrace_\\d+_d(\\d+)"
-        },
-        "analog_ldo_srp_fs" : {
-            "path" : "analog_ldo_sr_fs",
-            "format" : "ptrace_\\d+_d(\\d+)"
-        },
-        "analog_ldo_cfp_tt" : {
-            "path" : "analog_ldo_cf_tt",
-            "format" : "ptrace_\\d+_d(\\d+)"
-        },
-        "analog_ldo_cfp_ss" : {
-            "path" : "analog_ldo_cf_ss",
-            "format" : "ptrace_\\d+_d(\\d+)"
-        },
-        "analog_ldo_cfp_fs" : {
-            "path" : "analog_ldo_cf_fs",
-            "format" : "ptrace_\\d+_d(\\d+)"
-        },
-        "analog_ldo_crp_tt" : {
-            "path" : "analog_ldo_cr_tt",
-            "format" : "ptrace_\\d+_d(\\d+)"
-        },
-        "analog_ldo_crp_ss" : {
-            "path" : "analog_ldo_cr_ss",
-            "format" : "ptrace_\\d+_d(\\d+)"
-        },
-        "analog_ldo_crp_fs" : {
-            "path" : "analog_ldo_cr_fs",
-            "format" : "ptrace_\\d+_d(\\d+)"
-        }
+        "analog_ldo_dxp_tt" : {"path" : "analog_ldo_dx_tt", "format" : "ptrace_\\d+_d(\\d+)", "column" : 1},
+        "analog_ldo_dxp_ss" : {"path" : "analog_ldo_dx_ss", "format" : "ptrace_\\d+_d(\\d+)", "column" : 1},
+        "analog_ldo_dxp_fs" : {"path" : "analog_ldo_dx_fs", "format" : "ptrace_\\d+_d(\\d+)", "column" : 1},
+        "analog_ldo_drp_tt" : {"path" : "analog_ldo_dr_tt", "format" : "ptrace_\\d+_d(\\d+)", "column" : 1},
+        "analog_ldo_drp_ss" : {"path" : "analog_ldo_dr_ss", "format" : "ptrace_\\d+_d(\\d+)", "column" : 1},
+        "analog_ldo_drp_fs" : {"path" : "analog_ldo_dr_fs", "format" : "ptrace_\\d+_d(\\d+)", "column" : 1},
+
+        "analog_ldo_sxp_tt" : {"path" : "analog_ldo_sx_tt", "format" : "ptrace_\\d+_d(\\d+)" },
+        "analog_ldo_sxp_ss" : {"path" : "analog_ldo_sx_ss", "format" : "ptrace_\\d+_d(\\d+)" },
+        "analog_ldo_sxp_fs" : {"path" : "analog_ldo_sx_fs", "format" : "ptrace_\\d+_d(\\d+)" },
+        "analog_ldo_sfp_tt" : {"path" : "analog_ldo_sf_tt", "format" : "ptrace_\\d+_d(\\d+)" },
+        "analog_ldo_sfp_ss" : {"path" : "analog_ldo_sf_ss", "format" : "ptrace_\\d+_d(\\d+)" },
+        "analog_ldo_sfp_fs" : {"path" : "analog_ldo_sf_fs", "format" : "ptrace_\\d+_d(\\d+)" },
+        "analog_ldo_srp_tt" : {"path" : "analog_ldo_sr_tt", "format" : "ptrace_\\d+_d(\\d+)" },
+        "analog_ldo_srp_ss" : {"path" : "analog_ldo_sr_ss", "format" : "ptrace_\\d+_d(\\d+)" },
+        "analog_ldo_srp_fs" : {"path" : "analog_ldo_sr_fs", "format" : "ptrace_\\d+_d(\\d+)" },
+
+        "analog_ldo_cfp_tt" : {"path" : "analog_ldo_cf_tt", "format" : "ptrace_\\d+_d(\\d+)" },
+        "analog_ldo_cfp_ss" : {"path" : "analog_ldo_cf_ss", "format" : "ptrace_\\d+_d(\\d+)" },
+        "analog_ldo_cfp_fs" : {"path" : "analog_ldo_cf_fs", "format" : "ptrace_\\d+_d(\\d+)" },
+        "analog_ldo_crp_tt" : {"path" : "analog_ldo_cr_tt", "format" : "ptrace_\\d+_d(\\d+)" },
+        "analog_ldo_crp_ss" : {"path" : "analog_ldo_cr_ss", "format" : "ptrace_\\d+_d(\\d+)" },
+        "analog_ldo_crp_fs" : {"path" : "analog_ldo_cr_fs", "format" : "ptrace_\\d+_d(\\d+)" }
     },
     "tests" : [
         {
-            "desc"          : "Analog LDO BW : Sahadev",
+            "desc"          : "Analog LDO BW : Ideal Base : Sahadev",
             "skip"          : false,
+            "networks"      : ["ldo_bw"],
+            "datasets"      : ["analog_ldo_dxp_tt:max"],
+            "test_dataset"  : ["analog_ldo_dxp_ss:max", "analog_ldo_dxp_fs:max"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.000025
+        },
+        {
+            "desc"          : "Analog LDO BW : Ideal Random : Wei Chen",
+            "skip"          : false,
+            "networks"      : ["ldo_bw"],
+            "datasets"      : ["analog_ldo_drp_tt:max"],
+            "test_dataset"  : ["analog_ldo_drp_ss:max", "analog_ldo_drp_fs:max"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.000025
+        },
+        {
+            "desc"          : "Analog LDO BW : Single Base : Yixin",
+            "skip"          : true,
+            "networks"      : ["ldo_bw"],
+            "datasets"      : ["analog_ldo_sxp_tt:max"],
+            "test_dataset"  : ["analog_ldo_sxp_ss:max", "analog_ldo_sxp_fs:max"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.000025
+        },
+        {
+            "desc"          : "Analog LDO BW : Single Fixed : Sahadev",
+            "skip"          : true,
             "networks"      : ["ldo_bw"],
             "datasets"      : ["analog_ldo_sfp_tt:max"],
             "test_dataset"  : ["analog_ldo_sfp_ss:max", "analog_ldo_sfp_fs:max"],
@@ -142,8 +114,8 @@
             "learning_decay": 0.000025
         },
         {
-            "desc"          : "Analog LDO BW : Wei Chen",
-            "skip"          : false,
+            "desc"          : "Analog LDO BW : Single Random : Wei Chen",
+            "skip"          : true,
             "networks"      : ["ldo_bw"],
             "datasets"      : ["analog_ldo_srp_tt:max"],
             "test_dataset"  : ["analog_ldo_srp_ss:max", "analog_ldo_srp_fs:max"],
@@ -151,8 +123,8 @@
             "learning_decay": 0.000025
         },
         {
-            "desc"          : "Analog LDO BW : Yixin",
-            "skip"          : false,
+            "desc"          : "Analog LDO BW : Cascode Fixed : Yixin",
+            "skip"          : true,
             "networks"      : ["ldo_bw"],
             "datasets"      : ["analog_ldo_cfp_tt:max"],
             "test_dataset"  : ["analog_ldo_cfp_ss:max", "analog_ldo_cfp_fs:max"],
@@ -160,31 +132,40 @@
             "learning_decay": 0.000025
         },
         {
+            "desc"          : "Analog LDO BW : Cascode Random",
+            "skip"          : true,
+            "networks"      : ["ldo_bw"],
+            "datasets"      : ["analog_ldo_crp_tt:max"],
+            "test_dataset"  : ["analog_ldo_crp_ss:max", "analog_ldo_crp_fs:max"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.000025
+        },
+        {
             "desc"          : "Analog LDO SE : Sahadev",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["paper_se"],
             "datasets"      : ["analog_ldo_sfp_tt:max"],
-            "test_dataset"  : ["analog_ldo_sfp_ss:max"],
+            "test_dataset"  : ["analog_ldo_sfp_ss:max", "analog_ldo_sfp_fs:max"],
             "learning_rate" : [0.001],
             "learning_decay": 0.00001,
             "max_epochs"    : 20000
         },
         {
             "desc"          : "Analog LDO SE : Wei Chen",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["paper_se"],
             "datasets"      : ["analog_ldo_srp_tt:max"],
-            "test_dataset"  : ["analog_ldo_srp_ss:max"],
+            "test_dataset"  : ["analog_ldo_srp_ss:max", "analog_ldo_srp_fs:max"],
             "learning_rate" : [0.001],
             "learning_decay": 0.00001,
             "max_epochs"    : 20000
         },
         {
             "desc"          : "Analog LDO SE : Wei Chen",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["paper_se"],
             "datasets"      : ["analog_ldo_cfp_tt:max"],
-            "test_dataset"  : ["analog_ldo_cfp_ss:max"],
+            "test_dataset"  : ["analog_ldo_cfp_ss:max", "analog_ldo_cfp_fs:max"],
             "learning_rate" : [0.001],
             "learning_decay": 0.00001,
             "max_epochs"    : 20000

@@ -104,7 +104,6 @@ class AutoscaleNormalizer(ScaleNormalizer):
 
         average = ctot / tnum
         self.mult = self.average / average
-
         progress.stop(i+1)
 
 # ------------------------------------------------
