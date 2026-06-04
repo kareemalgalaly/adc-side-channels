@@ -10,45 +10,11 @@
             "type"       : "single_ended",
             "inputs"     : 1
         },
-        "tc_cjn" : {
-            "definition" : "C(10,5,1,1):R:P(5,5):C(10,3,1,1):R:P(2,2):F(200):R:F(200):R:F(2):S",
+        "ldo_bw" : {
+            "definition" : "C(10,10,1):BN1:R:P(5,5):C(5,5,1):R:P(2,2):F(100):R:F(2):S",
+            "nparams"    : "10*10 + 5*5*2 + 100*(2560*10/5/2*5/2) + 2*(100) = ",
             "type"       : "bitwise",
-            "inputs"     : 2
-        },
-        "tc_csp" : {
-            "definition" : "C(10,5,1,2):R:P(5,5):C(10,3,1,2):R:P(2,2):F(200):R:F(200):R:F(2):S",
-            "type"       : "bitwise",
-            "inputs"     : 2
-        },
-        "tc_cjn_fbn" : {
-            "definition" : "C(10,5,1,1):R:P(5,5):C(10,3,1,1):R:P(2,2):F(200):R:BN1:F(200):R:BN1:F(2):S",
-            "type"       : "bitwise",                                                          
-            "inputs"     : 2                                                                   
-        },                                                                                     
-        "tc_csp_fbn" : {                                                                       
-            "definition" : "C(10,5,1,2):R:P(5,5):C(10,3,1,2):R:P(2,2):F(200):R:BN1:F(200):R:BN1:F(2):S",
-            "type"       : "bitwise",
-            "inputs"     : 2
-        },
-        "tc_cjn_20" : {
-            "definition" : "C(20,5,1,1):R:P(5,5):C(10,3,1,1):R:P(2,2):F(200):R:F(200):R:F(2):S",
-            "type"       : "bitwise",
-            "inputs"     : 2
-        },
-        "tc_csp_20" : {
-            "definition" : "C(20,5,1,2):R:P(5,5):C(10,3,1,2):R:P(2,2):F(200):R:F(200):R:F(2):S",
-            "type"       : "bitwise",
-            "inputs"     : 2
-        },
-        "tc_cjn_fbn_20" : {
-            "definition" : "C(20,5,1,1):R:P(5,5):C(10,3,1,1):R:P(2,2):F(200):R:BN1:F(200):R:BN1:F(2):S",
-            "type"       : "bitwise",                                                          
-            "inputs"     : 2                                                                   
-        },                                                                                     
-        "tc_csp_fbn_20" : {                                                                    
-            "definition" : "C(20,5,1,2):R:P(5,5):C(10,3,1,2):R:P(2,2):F(200):R:BN1:F(200):R:BN1:F(2):S",
-            "type"       : "bitwise",
-            "inputs"     : 2
+            "inputs"     : 1
         },
         "twocol" : {
             "definition" : "C(10,5,1,1):R:P(5,5):C(10,3,1,1):R:P(2,2):F(200):R:F(200):R:F(2):S",
@@ -59,9 +25,28 @@
             "definition" : "C(5,5,2,1,1):R:P(5,1,5,1):C(5,3,2,1,1):R:P(2,1,2,1):F(100):R:BN1:F(100):R:BN1:F(1)",
             "type"       : "single_ended",
             "inputs"     : 2
+        },
+        "ldo_bw_2" : {
+            "definition" : "C(10,10,1):BN1:R:P(5,5):C(5,5,1):R:P(2,2):F(100):R:F(2):S",
+            "nparams"    : "10*10 + 5*5*2 + 100*(2560*10/5/2*5/2) + 2*(100) = ",
+            "type"       : "bitwise",
+            "inputs"     : 2
         }
     },
     "datasets" : {
+        "debug_c" : {
+            "path"        : "/home/kareem/Projects/adc-side-channels/analog/combined/outfiles/dataset_corner:tt_arch:uprot",
+            "format"      : "atrace_(\\d+)_1",
+            "columns"     : 2
+        },
+        "debug_a" : {
+            "path"        : "/home/kareem/Projects/adc-side-channels/analog/combined/outfiles/dataset_corner:tt_arch:uprot",
+            "format"      : "ptrace_a_\\d+_d(\\d+)"
+        },
+        "debug_d" : {
+            "path"        : "/home/kareem/Projects/adc-side-channels/analog/combined/outfiles/dataset_corner:tt_arch:uprot",
+            "format"      : "ptrace_d_\\d+_d(\\d+)"
+        },
         "cmb_p_tt" : {
             "path"        : "cmb_p_tt",
             "format"      : "raw_s\\d+_(\\d+)\\.txt",
@@ -98,6 +83,80 @@
             "type"        : "raw",
             "columns"     : 2
         },
+        "dig_p_tt" : {
+            "path"        : "cmb_p_tt",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "column"      : 1
+        },
+        "dig_p_ss" : {
+            "path"        : "cmb_p_ss",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "column"      : 1
+        },
+        "dig_p_fs" : {
+            "path"        : "cmb_p_fs",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "column"      : 1
+        },
+        "dig_x_tt" : {
+            "path"        : "cmb_x_tt",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "column"      : 1
+        },
+        "dig_x_ss" : {
+            "path"        : "cmb_x_ss",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "column"      : 1
+        },
+        "dig_x_fs" : {
+            "path"        : "cmb_x_fs",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "column"      : 1
+        },
+        "nlg_p_tt" : {
+            "path"        : "cmb_p_tt",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "column"      : 0
+        },
+        "nlg_p_ss" : {
+            "path"        : "cmb_p_ss",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "column"      : 0
+        },
+        "nlg_p_fs" : {
+            "path"        : "cmb_p_fs",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "column"      : 0
+        },
+        "nlg_x_tt" : {
+            "path"        : "cmb_x_tt",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "column"      : 0
+        },
+        "nlg_x_ss" : {
+            "path"        : "cmb_x_ss",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "column"      : 0
+        },
+        "nlg_x_fs" : {
+            "path"        : "cmb_x_fs",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "column"      : 0
+        },
+
+
         "digital_1px_tt_3" : {
             "path"        : "digital_1px_tt_3",
             "format"      : "trace_(\\d+)"
@@ -133,10 +192,65 @@
     "tests" : [
         {
             "desc"          : "Combined Prot BW",
-            "skip"          : true,
-            "networks"      : ["twocol"],
+            "skip"          : false,
+            "networks"      : ["ldo_bw_2"],
             "datasets"      : ["cmb_p_tt"],
-            "test_dataset"  : ["cmb_p_ss"],
+            "test_dataset"  : ["cmb_p_ss", "cmb_p_fs"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.000025,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "Digital Prot BW",
+            "skip"          : false,
+            "networks"      : ["ldo_bw"],
+            "datasets"      : ["dig_p_tt"],
+            "test_dataset"  : ["dig_p_ss", "dig_p_fs"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.000025,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "Analog Prot BW",
+            "skip"          : false,
+            "networks"      : ["ldo_bw"],
+            "datasets"      : ["nlg_p_tt"],
+            "test_dataset"  : ["nlg_p_ss", "nlg_p_fs"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.000025,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "Combined Uprot BW",
+            "skip"          : false,
+            "networks"      : ["ldo_bw_2"],
+            "datasets"      : ["cmb_x_tt"],
+            "test_dataset"  : ["cmb_x_ss", "cmb_x_fs"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.000025,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "Digital Uprot BW",
+            "skip"          : false,
+            "networks"      : ["ldo_bw"],
+            "datasets"      : ["dig_x_tt"],
+            "test_dataset"  : ["dig_x_ss", "dig_x_fs"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.000025,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "Analog Uprot BW",
+            "skip"          : false,
+            "networks"      : ["ldo_bw"],
+            "datasets"      : ["nlg_x_tt"],
+            "test_dataset"  : ["nlg_x_ss", "nlg_x_fs"],
             "learning_rate" : [0.0003],
             "learning_decay": 0.000025,
             "optimizer"     : "Amsgrad",
@@ -156,7 +270,7 @@
         {
             "desc"          : "Combined UProt BW",
             "skip"          : true,
-            "networks"      : ["tc_cjn_20", "tc_csp_20", "tc_cjn_fbn_20", "tc_csp_fbn_20"],
+            "networks"      : ["ldo_bw_2"],
             "datasets"      : ["cmb_x_tt"],
             "test_dataset"  : ["cmb_x_ss"],
             "learning_rate" : [0.0003],

@@ -1,5 +1,5 @@
 ###############################################################################
-# File        : /Users/kareemahmad/Projects/SideChannels/adc-side-channel/attack/cnn/viewer.py
+# File        : adc-side-channel/attack/cnn/viewer.py
 # Author      : kareemahmad
 # Created     : 
 # Description : Plots traces.
@@ -21,6 +21,7 @@ argparser.add_argument("-T", "--traces", type=int, default=[1], nargs="+", help=
 argparser.add_argument("-D", "--datasets", type=str, default=["a1u_tt:min"], nargs="+", help="Datasets to extract traces for plotting")
 argparser.add_argument("-H", "--histogram", action="store_true", help="Plot histogram of data")
 argparser.add_argument("-S", "--stack", action="store_true", help="Stack traces on same plot")
+argparser.add_argument("-L", "--labels", nargs="+", default=[])
 args = argparser.parse_args()
 
 regression = Regression(args)
@@ -54,7 +55,12 @@ for label, ax in zip(args.traces, axs):
 
     for dname in datasets:
         try:
-            info = datasets[dname].get_trace(label)
+            if label != -1:
+                label = label % 256
+                index = label // 256
+            else:
+                index = 0
+            info = datasets[dname].get_trace(label, index)
         except KeyError as e:
             print(e)
             print("Listing all labels available")
@@ -67,29 +73,38 @@ for label, ax in zip(args.traces, axs):
         time = None
         if datasets[dname].type == 'timed':
             time, trace = trace
+    
+        if args.labels: 
+            lbl = args.labels.pop(0)
+        else:
+            lbl = f"{dname}[{label}]"
 
         if args.histogram:
             if datasets[dname].cols == 1:
-                ax.hist(trace, bins=50, histtype='step', label=f"{dname}[{label}]")
+                ax.hist(trace, bins=50, histtype='step', label=lbl)
                 print(f"{dname}[{label}]", min(trace), max(trace))
             else:
                 for c, trace_i in enumerate(trace): 
-                    ax.hist(trace_i, bins=50, histtype='step', label=f"{dname}.{c}[{label}]")
-                    print(f"{dname}.{c}[{label}]", min(trace_i), max(trace_i))
+                    ax.hist(trace_i, bins=50, histtype='step', label=f"{lbl}.{c}")
+                    print(f"{dname}.{c}[{label}] ({lbl})", min(trace_i), max(trace_i))
         else:
             if datasets[dname].cols == 1:
                 if time is None:
                     time = np.linspace(start, stop, num=len(trace))
-                ax.plot(time, trace, alpha=0.5, label=dname, linestyle='solid')
+                ax.plot(time, trace, alpha=0.5, label=lbl, linestyle='solid')
+                print(f"{lbl}\t[{trace.min():7.3} : {trace.max():7.3}]")
             else:
                 if time is None:
                     print(type(start), type(stop))
                     time = np.linspace(start, stop, num=trace.shape[1])
                 for i, trace_i in enumerate(trace):
                     print(i, trace_i)
-                    ax.plot(time, trace_i, alpha=0.5, label=f"{dname}[{i}]", linestyle='solid')
+                    ax.plot(time, trace_i, alpha=0.5, label=f"{lbl}[{i}]", linestyle='solid')
 
     if not args.stack: ax.legend()
 
 if args.stack: ax.legend()
-plt.show()
+try:
+    plt.show()
+except KeyboardInterrupt:
+    print("Exiting")

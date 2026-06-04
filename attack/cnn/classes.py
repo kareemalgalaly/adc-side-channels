@@ -146,9 +146,13 @@ class Dataset(HashableBase):
         self.type = info['type']
         self.frmt = info['format']
         self.cols = info.get('columns', 1)
+        self.cstart = info.get('cstart', 0)
         self.column = info.get('column', 0)
         self.lblf = eval(info.get("label", "lambda gs: int(gs[0])"), globals(), {})
         self.paths = [path if path.startswith("/") else os.path.join(data_dir, path) for path in info.get('paths', [])]
+
+        self.noise_method = info.get('noise_method', defaults.get('noise_method', 'white-gaussian'))
+        self.noise_rms    = info.get('noise_rms',    defaults.get('noise_rms', 0))
 
         self.nparams = dict(
             norm = info.get('normalizer', defaults.get("normalizer", "scale")),
@@ -181,7 +185,7 @@ class Dataset(HashableBase):
 
     def get_csv(self):
         npstr = ";".join(f"{k}:{v}" for k,v in self.nparams.items())
-        return f"{self.type},{';'.join(os.path.basename(path) for path in self.paths)},{self.cols},{self.frmt},{npstr}"
+        return f"{self.type},{';'.join(os.path.basename(path) for path in self.paths)},{self.cols},{self.frmt},{self.noise_method},{self.noise_rms},{npstr};cstart:{self.cstart}"
 
     def chash(self):
         npstr = ";".join(f"{k}:{v}" for k,v in self.nparams.items())
@@ -202,6 +206,9 @@ class Dataset(HashableBase):
             adc_bitwidth = adc_bitwidth,
             cols         = self.cols,
             column       = self.column,
+            cstart       = self.cstart,
+            noise_method = self.noise_method,
+            noise_rms    = self.noise_rms,
             nparams      = self.nparams,
             device       = device
         )
@@ -321,6 +328,7 @@ class Test(HashableBase):
         self.skip          = info.get('skip',           False)
         self.optimizer     = info.get('optimizer',      defaults.get('optimizer'      , "Adam"))
         self.loss          = info.get('loss',           defaults.get('loss'           , "CrossEntropyLoss"))
+        self.loss_mb       = info.get('loss_mb',        defaults.get('loss_mb'        , "BCEWithLogitsLoss")) # MultiLabelSoftMarginLoss
         self.loss_se       = info.get('loss_se',        defaults.get('loss_se'        , "MSELoss"))
         self.learning_rate = info.get('learning_rate',  defaults.get('learning_rate'  , 5e-4))
         self.learning_decay= info.get('learning_decay', defaults.get('learning_decay' ,    0))
@@ -330,7 +338,6 @@ class Test(HashableBase):
         self.max_loss      = info.get('max_loss',       defaults.get('max_loss'       ,    0))
         self.batch_size    = info.get('batch_size',     defaults.get('batch_size'     ,   -1))
         self.train_split   = info.get('train_split',    defaults.get('train_split'    ,    1))
-        self.test_split    = 1 - self.train_split if self.train_split != 1 else 1
 
         #if not isinstance(self.learning_rate, list): self.learning_rate = [self.learning_rate]
         #if not isinstance(self.optimizer,     list): self.optimizer     = [self.optimizer]
@@ -347,13 +354,13 @@ class Test(HashableBase):
         that.max_learn_rate= self.max_learn_rate
         that.optimizer     = self.optimizer
         that.loss          = self.loss
+        that.loss_mb       = self.loss_mb
         that.loss_se       = self.loss_se
         that.max_epochs    = self.max_epochs
         that.max_accuracy  = self.max_accuracy
         that.max_loss      = self.max_loss
         that.batch_size    = self.batch_size
         that.train_split   = self.train_split
-        that.test_split    = self.test_split
         return that
 
     def get_csv(self, test_index=0):
@@ -388,10 +395,11 @@ class Test(HashableBase):
     # --------------------------------------------
 
     def get_loss(self, network):
-        if network.type == 'bitwise':
-            return getattr(nn, self.loss)()
-        else:
-            return getattr(nn, self.loss_se)()
+        match network.type:
+            case 'bitwise':      return getattr(nn, self.loss)()
+            case 'multibit':     return getattr(nn, self.loss_mb)()
+            case 'single_ended': return getattr(nn, self.loss_se)()
+            case _: raise NotImplementedError(f"Unknown network type {network.type}")
 
 # Regression #####################################
 

@@ -9,6 +9,12 @@
             "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:F(100):R:F(100):R:F(1)",
             "type"       : "single_ended",
             "inputs"     : 1
+        },
+        "ldo_bw" : {
+            "definition" : "C(10,10,1):BN1:R:P(5,5):C(5,5,1):R:BN1:P(2,2):F(100):R:F(2):S",
+            "nparams"    : "10*10 + 5*5*2 + 100*(2560*10/5/2*5/2) + 2*(100) = ",
+            "type"       : "bitwise",
+            "inputs"     : 1
         }
     },
     "datasets" : {
@@ -117,7 +123,7 @@
         {
             "desc"          : "Table II BW, Table III BW unprot",
             "skip"          : false,
-            "networks"      : ["paper"],
+            "networks"      : ["ldo_bw"],
             "datasets"      : ["analog_1px_tt_xx:max"],
             "test_dataset"  : ["analog_1px_tt_xm:max", "analog_1px_tt_xl:max", "analog_1_tt2_x:max", "analog_1_sf_x:max", "analog_1_tt_l:max"],
             "learning_rate" : [0.0003],
@@ -126,7 +132,7 @@
         },
         {
             "desc"          : "Table II redo layout",
-            "skip"          : true,
+            "skip"          : false,
             "networks"      : ["paper"],
             "datasets"      : ["analog_1px_tt_xl:max"],
             "test_dataset"  : ["analog_1px_sf_xl:max", "analog_1_sf_l:max"],
@@ -136,7 +142,7 @@
         },
         {
             "desc"          : "Table II SE, Table III SE unprot",
-            "skip"          : true,
+            "skip"          : false,
             "networks"      : ["paper_se"],
             "datasets"      : ["analog_1px_tt_xx:max"],
             "test_dataset"  : ["analog_1px_tt_xm:max", "analog_1px_tt_xl:max", "analog_1_tt2_x:max", "analog_1_sf_x:max", "analog_1_tt_l:max"],
@@ -146,7 +152,7 @@
         },
         {
             "desc"          : "Table II SE redo layout",
-            "skip"          : true,
+            "skip"          : false,
             "networks"      : ["paper_se"],
             "datasets"      : ["analog_1px_tt_xl:max"],
             "test_dataset"  : ["analog_1px_sf_xl:max", "analog_1_sf_l:max"],
@@ -156,7 +162,7 @@
         },
         {
             "desc"          : "Table III BW prot",
-            "skip"          : true,
+            "skip"          : false,
             "networks"      : ["paper"],
             "datasets"      : ["analog_1_tt1_x:max"],
             "test_dataset"  : ["analog_1_tt2_x:max", "analog_1_sf_x:max", "analog_1_tt_l:max"],
@@ -166,7 +172,7 @@
         },
         {
             "desc"          : "Table III redo layout",
-            "skip"          : true,
+            "skip"          : false,
             "networks"      : ["paper_se"],
             "datasets"      : ["analog_1_tt_l:max"],
             "test_dataset"  : ["analog_1_sf_l:max"],
@@ -176,7 +182,7 @@
         },
         {
             "desc"          : "Table III SE prot",
-            "skip"          : true,
+            "skip"          : false,
             "networks"      : ["paper_se"],
             "datasets"      : ["analog_1_tt1_x:max"],
             "test_dataset"  : ["analog_1_tt2_x:max", "analog_1_sf_x:max", "analog_1_tt_l:max"],

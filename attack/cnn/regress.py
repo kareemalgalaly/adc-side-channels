@@ -88,7 +88,10 @@ class CNNRegression(Regression):
                                 for i in range(self.adc_bitwidth-1, -1, -1):
                                     skip &= self.run_single_test(test, network, dataset, f"{run_hash}_{i}", bit=i)
 
-                            case 'single_ended':
+                            case 'single_ended' | 'multibit':
+                                se = network.type == 'single_ended'
+                                dataset.builder.dataset.set_se(se)
+                                for test_dataset in test.test_dataset: test_dataset.builder.dataset.set_se(se)
                                 skip &= self.run_single_test(test, network, dataset, run_hash, bit=-1)
 
                             case _:
@@ -107,7 +110,7 @@ class CNNRegression(Regression):
                         plt.close()
 
     # --------------------------------------------
-    # func: write_header
+    # func: write_header                   HEADER
     # - writes the header for the csv
     # --------------------------------------------
 
@@ -116,9 +119,10 @@ class CNNRegression(Regression):
             if not(os.path.isfile(self.csv)):
                 with open(self.csv, "w") as file:
                     file.write("Run ID,Network,Network ID,Network Type,Definition,Inputs,Dataset,Datset ID,")
-                    file.write("Type,Path,Dataset Cols,Format,Normalizer,Datset Info,Test ID,Learning Rate,LR Decay,Max LR,")
-                    file.write("Optimizer,Batch Size,Max Epochs,Target Accuracy,Target Loss,Test Dataset,Split,")
-                    file.write("Bit,Accuracy,Peak Accuracy,Test Accuracy,Loss,Epoch,Runtime,Job Timestamp,Seed\n")
+                    file.write("Type,Path,Dataset Cols,Format,Noise Method,Noise RMS,Normalizer,Datset Info,")
+                    file.write("Test ID,Learning Rate,LR Decay,Max LR,Optimizer,")
+                    file.write("Batch Size,Max Epochs,Target Accuracy,Target Loss,Test Dataset,Split,Bit,")
+                    file.write("Accuracy,Peak Accuracy,Test Accuracy,Loss,Epoch,Runtime,Job Timestamp,Seed\n")
 
     # --------------------------------------------
     # func: filter_tests
@@ -162,7 +166,7 @@ class CNNRegression(Regression):
         for dataset in all_datasets:
             self.build_datasets(dataset, device=self.device)
             batch_size = test.batch_size if test.batch_size != -1 else len(dataset.builder)
-            dataset.builder.build_dataloaders(proportion=test.test_split, batch_size=batch_size, shuffle=True)
+            dataset.builder.build_dataloaders(proportion=test.train_split, batch_size=batch_size, shuffle=True)
 
     # --------------------------------------------
     # func: retrain_datacache
@@ -210,7 +214,8 @@ class CNNRegression(Regression):
 
         self.set_seed()
         start_tm = time.monotonic()
-        se = network.type == 'single_ended'
+        nt = network.type
+        # se = network.type == 'single_ended'
         test_builder = [td.builder for td in test.test_dataset if td is not dataset]
         test_builder = test_builder[0] if test_builder else dataset.builder
 
@@ -269,7 +274,7 @@ class CNNRegression(Regression):
                 calc_metrics = (epoch % acc_period  == 0) # and not self.args.noplot
                 plot_metrics = (epoch % plot_period == 0) and not(self.args.noplot or self.args.headless)
 
-                loss, accuracy = self.do_nn_pass(network, dataloader, cnn, optimizer, criterion, scheduler, se, True, calc_metrics)
+                loss, accuracy = self.do_nn_pass(network, dataloader, cnn, optimizer, criterion, scheduler, nt, True, calc_metrics)
                 loss_arr[epoch] = loss
 
                 if calc_metrics:
@@ -281,7 +286,7 @@ class CNNRegression(Regression):
 
                     if self.args.testplot:
                         test_builder.set_test()
-                        l, a = self.do_nn_pass(network, test_dataloader, cnn, optimizer, criterion, scheduler, se, False, True)
+                        l, a = self.do_nn_pass(network, test_dataloader, cnn, optimizer, criterion, scheduler, nt, False, True)
                         test_arr[acc_indx] = a
                         test_builder.set_train()
 
@@ -375,7 +380,7 @@ class CNNRegression(Regression):
             test_dataset.builder.set_test()
             test_dataloader = test_dataset.builder.dataloader if bit == "_" else test_dataset.builder.dataloaders[bit]
 
-            l, test_accuracy = self.do_nn_pass(network, test_dataloader, cnn, optimizer, criterion, scheduler, se, False, True)
+            l, test_accuracy = self.do_nn_pass(network, test_dataloader, cnn, optimizer, criterion, scheduler, nt, False, True)
             progress.update(epoch, tst=round(float(test_accuracy), 4))
             progress.stop(epoch+1)
 
@@ -384,10 +389,13 @@ class CNNRegression(Regression):
 
         return False
 
-    def do_nn_pass(self, network, dataloader, cnn, optimizer, criterion, scheduler, se, do_backward, do_accuracy):
+    def do_nn_pass(self, network, dataloader, cnn, optimizer, criterion, scheduler, nt, do_backward, do_accuracy):
         correct = 0
         count   = 0
         loss = None
+
+        se = nt == 'single_ended'
+        mb = nt == 'multibit'
 
         for inputs, labels in dataloader:
             if self.device:
@@ -417,6 +425,17 @@ class CNNRegression(Regression):
                 if se:
                     labels = labels.reshape(output.shape)
                     correct += (output.round() == labels.round()).sum()
+                elif mb:
+                    # print("----")
+                    # print(output)
+                    # print(output.round())
+                    # print(labels)
+                    # print(output.round() == labels)
+                    # ((output > 0) == labels).sum()
+                    # fully correct
+                    correct += (((output > 0) == labels).sum(1) == 8).sum()
+                    # bits correct
+                    # correct += (((output > 0) == labels).sum())//8
                 else:
                     _, predicted = torch.max(output, 1)
                     correct += (predicted == labels).sum()

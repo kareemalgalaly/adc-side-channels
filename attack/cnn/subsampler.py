@@ -59,12 +59,9 @@ def sample_func_gen(mode):
 # - See paper for rough description of windowed technique
 # ------------------------------------------------
 
-def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", cols=1, column=0):
+def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", cols=1, column=0, cstart=0):
     f = sample_func_gen(sample_mode)
     l = select_func_gen(f'B{sample_mode}')
-
-    tstart = 0
-    tstop  = 1
 
     with open(fpath, 'r') as file:
         header = file.readline()
@@ -73,8 +70,16 @@ def sample_file(fpath, sample_interval, max_samples, sample_mode="AVG", cols=1, 
         val_arr = [[] for i in range(cols)]
         val_win = [[] for i in range(cols)]
 
-        stim, *value = file.readline().strip().split()
-        stim = DTYPE(stim)
+        try:
+            stim, *value = file.readline().strip().split()
+            stim = DTYPE(stim)
+            while stim < cstart:
+                stim, *value = file.readline().strip().split()
+                stim = DTYPE(stim)
+        except ValueError:
+            print(f"ERROR: File {fpath} is incomplete")
+            return None, None, None
+
         tstart = stim
         value = [DTYPE(v) for v in value]
         ptim = stim

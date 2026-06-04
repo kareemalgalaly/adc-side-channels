@@ -60,9 +60,14 @@ ax.set_title("Differential Power Traces")
 for i in range(0, len(datasets), 2):
     dataset1 = datasets[i]
     dataset2 = datasets[i+1]
-    info1  = dataset1.get_trace(traces[i])
+
+    l1 = traces[i] % 256 if traces[i] != -1 else -1
+    i1 = traces[i] // 256
+    l2 = traces[i+1] % 256 if traces[i+1] != -1 else -1
+    i2 = traces[i+1] // 256
+    info1  = dataset1.get_trace(l1, i1)
     trace1, start, stop = info1
-    trace2 = dataset2.get_trace(traces[i+1]).trace
+    trace2 = dataset2.get_trace(l2, i2).trace
 
     if len(trace1) != len(trace2):
         print("Traces do not have equal length")
@@ -80,5 +85,8 @@ for i in range(0, len(datasets), 2):
 #f"Diff {args.dataset1}[{args.trace1}]-{args.dataset2}[{args.trace2 if args.trace2 != -1 else 'avg'}]")
 
 ax.legend()
-plt.show()
+try:
+    plt.show()
+except KeyboardInterrupt:
+    print("Exiting")
 

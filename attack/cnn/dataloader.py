@@ -21,10 +21,12 @@ from torch.utils.data import Dataset, DataLoader
 from collections import namedtuple
 from subsampler import sample_file
 from normalizer import build_normalizer
+from noise import NoiseGenerator
 # TODO other sample_file
 import numpy as np
 import os
 import re
+import traceback
 
 ## Types ---------------------------------------------------
 
@@ -35,7 +37,7 @@ DTYPE = np.float32
 ## Trace Cache ---------------------------------------------
 
 class TraceCache:
-    def __init__(self, name, id, file_list, label_dict, cols=1, column=1, nparams={}):
+    def __init__(self, name, id, file_list, label_dict, cols=1, column=1, cstart=0, noise_method=None, noise_rms=0, nparams={}):
         self.name       = name
         self.id         = id
         self.file_list  = file_list
@@ -44,7 +46,9 @@ class TraceCache:
         self.nrm_cache  = [None] * len(file_list) # list of normalized traces
         self.cols       = cols
         self.column     = column
+        self.cstart     = cstart
         self.normalizer = build_normalizer(self, nparams)
+        self.noise      = NoiseGenerator(noise_method, noise_rms) if noise_rms else None
         
         # print(f"cache path for {self.name} : cache/{self.name}_{self.id}")
 
@@ -76,18 +80,24 @@ class TraceCache:
             
             cpath = f"cache/{self.name}-{self.id}/{str(index).rjust(4,"0")}"
             if os.path.exists(cpath):
-                tinf = self.load_trace(cpath, ("", sample_int, max_sample), column=0)
+                tinf = self.load_trace(cpath, ("", sample_int, max_sample), column=0, cstart=0)
             else:
-                tinf = self.load_trace(fpath, sample_info)
-                if sample_mode and sample_mode != "timed" and self.cols == 1:
+                tinf = self.load_trace(fpath, sample_info, cstart=self.cstart)
+                if tinf and sample_mode and sample_mode != "timed" and self.cols == 1:
                     self.write_trace(cpath, tinf)
+
+            # Noise
+
+            if self.noise:
+                tinf = TraceInfo(tinf.trace + self.noise.gen(len(tinf.trace)), tinf.start, tinf.stop)
 
             self.raw_cache[index] = tinf
         return tinf
 
     def iter_raw(self):
         for i in range(len(self)):
-            yield self.get_raw(i)
+            t = self.get_raw(i)
+            if t is not None: yield t
 
     def retrain(self, trainer=None):
         self.nrm_cache = [None] * len(self.file_list)
@@ -96,7 +106,7 @@ class TraceCache:
         else:
             self.normalizer.train()
 
-    def load_trace(self, fpath, sample_info, column=None):
+    def load_trace(self, fpath, sample_info, column=None, cstart=0):
         sample_mode, sample_int, max_sample = sample_info
 
         # timed
@@ -111,10 +121,16 @@ class TraceCache:
                 valu_arr = [splitf(line.strip().split()) for line in file.readlines()]
                 time_arr, *valu_arr = zip(*valu_arr)
 
+                for i, t in enumerate(time_arr):
+                    if t >= cstart: break
+
+                time_arr = time_arr[i:]
+
                 if self.cols == 1:
-                    trace = np.array(valu_arr[0], dtype=DTYPE)
+                    trace = np.array(valu_arr[0][i:], dtype=DTYPE)
                 else:
-                    trace = np.stack([np.array(va, dtype=DTYPE) for va in valu_arr], axis=0)
+                    trace = np.stack([np.array(va[i:], dtype=DTYPE) for va in valu_arr], axis=0)
+
                 trace = (time_arr, trace)
 
                 tstart = time_arr[0]
@@ -122,7 +138,8 @@ class TraceCache:
 
         # sampled
         elif sample_mode:
-            valu_arr, tstart, tstop = sample_file(fpath, sample_int, max_sample, sample_mode=sample_mode, cols=self.cols, column=self.column)
+            valu_arr, tstart, tstop = sample_file(fpath, sample_int, max_sample, sample_mode=sample_mode, cols=self.cols, column=self.column, cstart=cstart)
+            if valu_arr is None: return
             if self.cols == 1:
                 trace = np.array(valu_arr[0], dtype=DTYPE)
             else:
@@ -134,6 +151,9 @@ class TraceCache:
                 header = file.readline()
                 tstart, *val = file.readline().strip().split()
                 tstart = DTYPE(tstart)
+                while tstart < cstart:
+                    tstart, *val = file.readline().strip().split()
+                    tstart = DTYPE(tstart)
                 valu_arr = [[DTYPE(v)] for v in val]
                 for line in file.readlines():
                     tcurr, *val = line.strip().split()
@@ -166,12 +186,13 @@ class TraceCache:
 
 
 class TraceDataset(Dataset):
-    def __init__(self, file_list, label_dict, cache, cols=1, device=None):
+    def __init__(self, file_list, label_dict, cache): #, cols=1, device=None): 
         self.file_list  = file_list
         self.label_dict = label_dict
         self.cache      = cache
-        self.device     = device
-        self.cols       = cols
+        self.se         = True
+        # self.device     = device
+        # self.cols       = cols
 
         self.set_prop_range(0, 1)
 
@@ -191,6 +212,8 @@ class TraceDataset(Dataset):
         label = self.process_label(self.file_list[index].label)
         return TraceInfo(trace, tinf.start, tinf.stop), label
 
+    def set_se(self, value=True): self.se = value
+
     def get_by_label(self, label, index=0):
         if index == -1:
             return [self.get_by_label(label, i) for i in range(len(self.label_dict[label]))]
@@ -206,8 +229,19 @@ class TraceDataset(Dataset):
     def set_prop_range(self, test, proportion):
         if len(self.file_list) == 0: raise RuntimeError("File list is empty")
         self.prop = proportion
-        width = int(len(self.file_list) * proportion)
-        start = len(self.file_list) - width if test else 0
+
+        start = 0
+        if test and proportion != 1:
+            if proportion < 0:
+                width = int(len(self.file_list) * (-proportion))
+            else:
+                width = int(len(self.file_list) * (1-proportion))
+                start = len(self.file_list) - width
+        else:
+            if proportion < 0:
+                width = int(len(self.file_list) * (-proportion))
+            else:
+                width = int(len(self.file_list) * proportion)
         stop  = start + width
         self.set_range(start, stop)
         return self
@@ -219,38 +253,45 @@ class TraceDataset(Dataset):
         self.set_prop_range(0, self.prop)
  
     def process_label(self, label): 
-        return DTYPE(label)
+        if self.se:
+            return DTYPE(label)
+        else:
+            return np.array([(label>>7)&1, (label>>6)&1, (label>>5)&1, (label>>4)&1, (label>>3)&1, (label>>2)&1, (label>>1)&1, label&1], dtype=DTYPE)
 
 class TraceDatasetBW(TraceDataset):
-    def __init__(self, file_list, label_dict, cache, bit_select, cols=1, device=None):
+    def __init__(self, file_list, label_dict, cache, bit_select): #, cols=1, device=None):
         self.bit_mask = 1 << bit_select
-        super().__init__(file_list, label_dict, cache, cols=cols, device=device)
+        super().__init__(file_list, label_dict, cache) #, cols=cols, device=device)
 
     def process_label(self, label):
         return 1 if label & self.bit_mask else 0
 
 class TraceDatasetBuilder:
-    def __init__(self, name, id, adc_bitwidth=8, cols=1, column=0, nparams={}, device=None):
-        self.name       = name
-        self.id         = id
-        self.file_list  = []
-        self.label_dict = {}
-        self.cols       = cols
-        self.column     = column
-        self.cache      = None
-        self.nparams    = nparams
-        self.adc_bits   = adc_bitwidth
-        self.device     = device
+    def __init__(self, name, id, adc_bitwidth=8, cols=1, column=0, cstart=0, noise_method=None, noise_rms=0, nparams={}, device=None):
+        self.name         = name
+        self.id           = id
+        self.file_list    = []
+        self.label_dict   = {}
+        self.cols         = cols
+        self.column       = column
+        self.cstart       = cstart
+        self.cache        = None
+        self.nparams      = nparams
+        self.adc_bits     = adc_bitwidth
+        self.device       = device
+        self.noise_method = noise_method
+        self.noise_rms    = noise_rms
 
-        self.dataset    = None
-        self.dataloader = None
-        self.datasets   = []
-        self.dataloaders = []
+        self.dataset      = None
+        self.dataloader   = None
+        self.datasets     = []
+        self.dataloaders  = []
 
     def __len__(self):
         return len(self.file_list)
 
-    def add_files(self, directory, format, label_func=lambda gs: int(gs[0]), sample_mode=None, sample_int=0.1e-6, sample_time=300e-6, max_sample=None):
+    def add_files(self, directory, format, label_func=lambda gs: int(gs[0]), sample_mode=None, 
+                  sample_int=0.1e-6, sample_time=300e-6, max_sample=None):
         ''' Builds list of powertrace files
         Inputs:
             directory   : folder to search for files
@@ -262,12 +303,12 @@ class TraceDatasetBuilder:
         format = re.compile(format)
         fnames = os.listdir(directory)
 
-        if sample_mode: max_sample = int(sample_time / sample_int)
+        if sample_mode: max_sample = int((sample_time) / sample_int)
         sample_info = (sample_mode, sample_int, max_sample)
 
         i = 0
         for fname in fnames:
-            if match := format.match(fname):
+            if match := format.fullmatch(fname):
                 fpath = os.path.join(directory, fname)
                 dvalue = label_func(match.groups())
 
@@ -278,12 +319,14 @@ class TraceDatasetBuilder:
                 i += 1
 
     def build(self):
-        self.cache   = TraceCache(self.name, self.id, self.file_list, self.label_dict, self.cols, self.column, self.nparams)
-        self.dataset = TraceDataset(self.file_list, self.label_dict, self.cache, cols=self.cols, device=self.device)
+        self.cache   = TraceCache(self.name, self.id, self.file_list, self.label_dict, cols=self.cols, 
+                                  column=self.column, cstart=self.cstart, noise_method=self.noise_method,
+                                  noise_rms=self.noise_rms, nparams=self.nparams)
+        self.dataset = TraceDataset(self.file_list, self.label_dict, self.cache)
         for b in range(self.adc_bits):
-            self.datasets.append(TraceDatasetBW(self.file_list, self.label_dict, self.cache, b, cols=self.cols, device=self.device))
+            self.datasets.append(TraceDatasetBW(self.file_list, self.label_dict, self.cache, b))
 
-    def build_dataloaders(self, proportion=1, **kwargs): # batch_size=256, shuffle=True
+    def build_dataloaders(self, proportion=1, **kwargs):
         if self.device and 'pin_memory' not in kwargs: kwargs['pin_memory'] = True
 
         self.dataloader = DataLoader(self.dataset.set_prop_range(0, proportion), **kwargs)

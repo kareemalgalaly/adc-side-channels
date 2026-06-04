@@ -113,12 +113,11 @@ class AutoscaleNormalizer(ScaleNormalizer):
 #   stddev of 1
 # ------------------------------------------------
 
-class ZScoreNormalizer(Normalizer):
+class ZScoreNormalizer(ScaleNormalizer):
     def __init__(self, cache, params):
         super().__init__(cache, params)
         self.avg = None
         self.std = None
-        self.off = params["mult"]
 
     def train(self):
         progress = ProgressBar(f_start=f"{{state}} {self.cache.name} ", max_val=len(self.cache))
@@ -141,7 +140,7 @@ class ZScoreNormalizer(Normalizer):
         self.avg = them.avg
         self.std = them.std
 
-    def do_fit(self, index): return (self.cache.raw_cache[index].trace - self.avg) / self.std + self.off
+    def do_fit(self, index): return (self.cache.raw_cache[index].trace - self.avg) / self.std * self.mult
 
 # ------------------------------------------------
 # class: RobustNormalizer
