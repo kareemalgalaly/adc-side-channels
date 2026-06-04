@@ -13,6 +13,7 @@ Simulation of digital adc
 *   interactive         - 
 {endif}
 {default seed     1}
+{define seed eval:int(seed)}
 {default corner   "tt"}
 {default pixels   1}
 {assert  pixels > 0}
@@ -49,6 +50,8 @@ Simulation of digital adc
 {else}
   {define frac_offset     eval:0}
 {endif}
+
+; Voltage {pix_voltage} : {subseed} : : {frac_offset_num} / {eval:frac_offset_den*2}
 
 ** Libraries --------------------------------------------------
 
@@ -209,7 +212,7 @@ vclk2   clk2    0   pulse   {vss}   {vdd}   1.25u  0.1n  0.1n  0.25u    0.5u
 * Pixel values
 
 {for p in range(1, pixels+1)}
-  vpixel{p} pix{p} vss {eval (dvals[p-1] + frac_offset)/256}
+  vpixel{p} pix{p} vss {eval (dvals[p-1]%256 + frac_offset)/256 + 0.2}
 {endfor}
 
 ** Simulation Control --------------------------------------

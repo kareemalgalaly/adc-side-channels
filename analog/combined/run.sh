@@ -54,8 +54,8 @@ echo "#!/bin/bash" > jobs.sh
 # for s in $(seq $sstart $sstop); do echo "ngspice <($SPOST 'seed=eval:$s' 'ddir=$outdir' 'mode=d')"                >> jobs.sh; done
 # V2
 for s in $(seq $sstart $sstop); do 
-    #echo -n "${NGBATCH}_a_${s} <($SMAIN 'seed=eval:$s' 'ddir=$outdir' 'dmode=model') && " >> jobs.sh
-    #echo -n "ngspice <($SPOST 'seed=eval:$s' 'ddir=$outdir' 'mode=a') && "                >> jobs.sh
+    echo -n "${NGBATCH}_a_${s} <($SMAIN 'seed=eval:$s' 'ddir=$outdir' 'dmode=model') && " >> jobs.sh
+    echo -n "ngspice <($SPOST 'seed=eval:$s' 'ddir=$outdir' 'mode=a') && "                >> jobs.sh
     echo -n "${NGBATCH}_d_${s} <($SMAIN 'seed=eval:$s' 'ddir=$outdir' 'amode=model') && " >> jobs.sh
     echo -n "ngspice <($SPOST 'seed=eval:$s' 'ddir=$outdir' 'mode=d') "                >> jobs.sh
     echo "&& echo Job $s Completed || echo Job $s Failed" >> jobs.sh
