@@ -380,7 +380,7 @@ if __name__ == "__main__":
             clean_re = re.compile(f"^\\s*({start_re}(((?!{start_re}|{stop_re}).)+){stop_re})\\s*$")
             data = []
             for line in file.readlines():
-                if m := clean_re.fullmatch(line):
+                if (m := clean_re.fullmatch(line)) and not var___re.match(m.groups()[2]):
                     data.append(m.groups()[0])
                 else:
                     data.append(line)
