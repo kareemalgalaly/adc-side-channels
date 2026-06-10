@@ -1,7 +1,7 @@
 * expanding   symbol:  design/single_slope/preamp_singleslope.sym # of pins=7
 ** sym_path: /foss/design/single_slope/preamp_singleslope.sym
 ** sch_path: /foss/design/single_slope/preamp_singleslope.sch
-.subckt preamp_singleslope  vdd inp inn iref outp outn vss
+.subckt preamp_singleslope vdd inp inn iref outp outn vss
 *.iopin vdd
 *.iopin vss
 *.iopin iref

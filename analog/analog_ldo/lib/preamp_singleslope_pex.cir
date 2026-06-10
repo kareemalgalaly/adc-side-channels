@@ -1,5 +1,5 @@
 * preamp_singleslope
-.subckt preamp_singleslope vdd inp inn outn outp iref vss
+.subckt preamp_singleslope vdd inp inn iref outp outn vss
     X0 iref.t0 a_914_n4014# a_856_n3988.t0 vdd.t23 sky130_fd_pr__pfet_01v8 ad=0p pd=0u as=0p ps=0u w=2.7e+07u l=5e+06u
     X1 vdd.t48 iref.t1 iref.t2 vdd.t47 sky130_fd_pr__pfet_01v8 ad=0p pd=0u as=0p ps=0u w=2.7e+07u l=5e+06u
     X2 outp.t16 inn.t0 a_n5524_n9116.t17 vdd.t49 sky130_fd_pr__pfet_01v8_lvt ad=0p pd=0u as=0p ps=0u w=2.2e+07u l=5e+06u

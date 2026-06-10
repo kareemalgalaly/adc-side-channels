@@ -11,7 +11,7 @@
 {default inverter "clkinv"}
 {default power "single"}
 {default python "/usr/bin/python"}
-{assert  power in ("ideal", "single", "cascode")}
+{assert  power in ("ideal", "single", "cascade")}
 {ifdef clean}
   {define cs 512u}
   {define ce 768u}
@@ -30,18 +30,21 @@
 {eval random.seed(start)}
 {define randctl func:k,vs,dlt,ris:" ".join(" ".join([str(i*dlt+ris),str(v),str((i+1)*dlt),str(v)]) for i,v in enumerate(random.choices(vs, k=k)))}
 {define subseed eval:int(start)//256}
+{define digval eval:int(start)%256}
 {if subseed > 0}
   {define frac_offset_den eval:2**math.floor(math.log2(subseed))}
   {define frac_offset_num eval:(subseed - frac_offset_den)*2 + 1}
   {define frac_offset     eval:frac_offset_num / (frac_offset_den*2)}
-  {define pix_voltage eval:(int(start)+frac_offset)/256 + 0.2}
+  {define pix_voltage eval:(digval+frac_offset)/256 + 0.2}
 {else}
-  {define pix_voltage eval:int(start)/256 + 0.2}
+  {define pix_voltage eval:digval/256 + 0.2}
 {endif}
 
 {define  getbus func:name,suffix=".",r=(8,): " ".join(name+str(suffix)+str(i) for i in range(*r))}
 {define  dplot  func:vars: " ".join(var+"/2+"+str(i) for i, var in enumerate(vars.split()))}
 {define  dbus   func:name,suffix=".",r=(8,): "+".join(name+str(suffix)+str(i)+"/"+str(1 << (8-i)) for i in range(*r))}
+
+; Voltage {pix_voltage} : {subseed} : : {frac_offset_num} / {eval:frac_offset_den*2}
 
 {ifxst /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice}
   .lib "/foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice" {corner}
@@ -80,14 +83,19 @@ iref_cp2 iref6 GND 10u
 {endif}
 {if power != "ideal"}
 iref_ld1 iref3 GND 15u
-{if power == "cascode"}
+{if power == "cascade"}
 iref_ld2 iref7 GND 15u
 {endif}
 {endif}
 iref_cp1 iref5 GND 10u
 vref     GND  vref 1
 
-vclk   clock  GND PULSE(0 1.8 0u 10p 10p .5u      1u)
+{ifdef clean}
+vclk   clock  GND PULSE(0 1.8 250u 10p 10p .5u      1u)
+{else}
+vclk   clock  GND PULSE(0 1.8 500u 10p 10p .5u      1u)
+{endif}
+;vclk   clock  GND PULSE(0 1.8 0u 10p 10p .5u      1u)
 vrst   reset  GND PULSE(0 1.8 0  10p 10p 40n 256.04u)
 
 vdd3v3 vdd3v3 GND 3.3
@@ -145,7 +153,7 @@ rld1 vdd1v8 n5  60k m=1
 rld2 n5     GND 120k m=1
 cldo vdd1v8 GND 100p m=1
 
-{case "cascode"}
+{case "cascade"}
 xldo1 vdd3v3 iref3 n5 in+ vddmid GND ldoc1_wores
 rld1 vddmid n5  120k m=1
 rld2 n5      GND 120k m=1
@@ -202,10 +210,13 @@ xcompn vdd inp_neg clock outp_neg pix outn_neg iref6 GND comparator_ss_h
 {endif}
 
 ** Digital Load --------------------------------------------
+
+{ifndef noload}
 c_drs_comp  outp VGND 1.709029e-15 ; extracted from combined
 c_drs_compn outn VGND 1.668815e-15 ; extracted from combined
 ; c_drs_comp_dummy  outp_neg VGND 1.709029e-15 ; extracted from combined
 ; c_drs_compn_dummy outn_neg VGND 1.668815e-15 ; extracted from combined
+{endif}
 
 ** Control -------------------------------------------------
 
@@ -266,7 +277,7 @@ c_drs_compn outn VGND 1.668815e-15 ; extracted from combined
   {endif}
 .endc
 {else}
-.save i(vdd1v8) i(vdd3v3) i(vddd) inp pix {if arch=="prot"}i(vddmid){endif}
+.save i(vdd1v8) i(vdd3v3) i(vddd) inp pix {if power=="cascade"}i(vddmid){endif} outp outn
 {endif}
 .end
 

@@ -10,10 +10,11 @@ sstop=255
 queue=1
 batch=""
 norun=""
+append=""
 outdir=""
 keepold=""
 
-while getopts "o:s:S:q:nbk" opt
+while getopts "o:s:S:q:nNbk" opt
 do
     case "$opt" in 
         o ) outdir="outfiles/${dataset}" ;;
@@ -22,6 +23,7 @@ do
         q ) queue="${OPTARG}"            ;;
         b ) batch=1                      ;;
         n ) norun=1                      ;;
+        N ) norun=1;append=1             ;;
         k ) keepold=1                    ;;
     esac
 done
@@ -53,7 +55,9 @@ PYPATH="$(which $PYTHON)"
 
 # Main
 
-echo "#!/bin/bash" > jobs.sh
+if ! [ "$append" ]; then
+    echo "#!/bin/bash" > jobs.sh
+fi
 
 if [ "$batch" ]; then
     COUNT=1
