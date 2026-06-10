@@ -19,7 +19,7 @@ while getopts "id:p:s:c:n:v:NQ:" opt
 do
     case "$opt" in 
         i ) interactive="interactive="  ;;
-        d ) dvalue="eval:${OPTARG}"     ;;
+        d ) dvalue="${OPTARG}"          ;;
         p ) pixels="${OPTARG}"          ;;
         s ) seed="${OPTARG}"            ;;
         c ) corner="${OPTARG}"          ;;
@@ -71,13 +71,15 @@ elif [ "$pixels" = 1 ]; then
     for i in $(seq $numsim); do
         if [ "$seed" != "" ]; then
             s=$((seed + i - 1))
-            if [ "$pixels" = 1 ] && (( $s < 256 )); then
-                value="dvals=eval:[$s]"
+            # if [ "$pixels" = 1 ] && (( $s < 256 )); then
+            if [ "$pixels" = 1 ]; then
+                value="dvals=eval:[$((s % 256))]"
             else
                 value="seed=eval:$s"
             fi
+            s="d$((s % 256))_s$s"
         else
-            value="dvals='$dvalue'"
+            value="dvals=eval:$dvalue"
             s="d$(echo $dvalue | tr -d '[\[ \]]')"
         fi
 
