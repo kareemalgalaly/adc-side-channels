@@ -1,5 +1,6 @@
 **Analog ADC
 
+{default pixels 1}
 {assert pixels in (1,5)}
 
 {ifdef foss}
@@ -33,18 +34,18 @@ VRRC4 vc4 GND PWL(0 V1 67u V1 67.1u V2 131u V2 131.1u V3 195u V3 195.1u V4 259u 
 
 * Ramp Generator
 {ifdef randramp2}
-xramp_generator vref rst ramp vdd gnd ramp_generator_rand{ifdef layout _layout}
+xramp_generator vref rst ramp vdd gnd ramp_generator_rand{ifdef layout}_layout{endif}
 {else}
-xramp_generator vref rst ramp vdd gnd ramp_generator{ifdef layout _layout}
+xramp_generator vref rst ramp vdd gnd ramp_generator{ifdef layout}_layout{endif}
 {endif}
 
 * Comparators
-xcomp_1 ramp pix_1 clk outp_1 outn_1 vdd gnd comparator_2_wrap{ifdef layout _layout}{ifdef mismatch _mismatch mismatch=500u}
+xcomp_1 ramp pix_1 clk outp_1 outn_1 vdd gnd comparator_2_wrap{ifdef layout}_layout{endif}{ifdef mismatch}_mismatch mismatch=500u{endif}
 {if pixels==5}
-xcomp_2 ramp pix_2 clk outp_2 outn_2 vdd gnd comparator_2_wrap{ifdef layout _layout}{ifdef mismatch _mismatch mismatch=3m}
-xcomp_3 ramp pix_3 clk outp_3 outn_3 vdd gnd comparator_2_wrap{ifdef layout _layout}{ifdef mismatch _mismatch mismatch=-1m}
-xcomp_4 ramp pix_4 clk outp_4 outn_4 vdd gnd comparator_2_wrap{ifdef layout _layout}{ifdef mismatch _mismatch mismatch=-1500u}
-xcomp_5 ramp pix_5 clk outp_5 outn_5 vdd gnd comparator_2_wrap{ifdef layout _layout}{ifdef mismatch _mismatch mismatch=1m}
+xcomp_2 ramp pix_2 clk outp_2 outn_2 vdd gnd comparator_2_wrap{ifdef layout}_layout{endif}{ifdef mismatch}_mismatch mismatch=3m{endif}
+xcomp_3 ramp pix_3 clk outp_3 outn_3 vdd gnd comparator_2_wrap{ifdef layout}_layout{endif}{ifdef mismatch}_mismatch mismatch=-1m{endif}
+xcomp_4 ramp pix_4 clk outp_4 outn_4 vdd gnd comparator_2_wrap{ifdef layout}_layout{endif}{ifdef mismatch}_mismatch mismatch=-1500u{endif}
+xcomp_5 ramp pix_5 clk outp_5 outn_5 vdd gnd comparator_2_wrap{ifdef layout}_layout{endif}{ifdef mismatch}_mismatch mismatch=1m{endif}
 {endif}
 
 * Protection
@@ -54,12 +55,12 @@ xramp_generator_p vref rst ramp_p vc4 vc3 vc2 vc1 vc0 vdd gnd ramp_generator_ran
 {else}
 xramp_generator_p vref rst ramp_p vdd gnd ramp_generator r=20Meg
 {endif}
-xcomp_p1 ramp_p pix_1 clk outpp_1 outpn_1 vdd gnd comparator_2_wrap{ifdef layout _layout}{ifdef mismatch _mismatch mismatch=1500u}
+xcomp_p1 ramp_p pix_1 clk outpp_1 outpn_1 vdd gnd comparator_2_wrap{ifdef layout}_layout{endif}{ifdef mismatch}_mismatch mismatch=1500u{endif}
 {if pixels == 5}                                                                         
-xcomp_p2 ramp_p pix_2 clk outpp_2 outpn_2 vdd gnd comparator_2_wrap{ifdef layout _layout}{ifdef mismatch _mismatch mismatch=-2m}
-xcomp_p3 ramp_p pix_3 clk outpp_3 outpn_3 vdd gnd comparator_2_wrap{ifdef layout _layout}{ifdef mismatch _mismatch mismatch=3m}
-xcomp_p4 ramp_p pix_4 clk outpp_4 outpn_4 vdd gnd comparator_2_wrap{ifdef layout _layout}{ifdef mismatch _mismatch mismatch=-500u}
-xcomp_p5 ramp_p pix_5 clk outpp_5 outpn_5 vdd gnd comparator_2_wrap{ifdef layout _layout}{ifdef mismatch _mismatch mismatch=200u}
+xcomp_p2 ramp_p pix_2 clk outpp_2 outpn_2 vdd gnd comparator_2_wrap{ifdef layout}_layout{endif}{ifdef mismatch}_mismatch mismatch=-2m{endif}
+xcomp_p3 ramp_p pix_3 clk outpp_3 outpn_3 vdd gnd comparator_2_wrap{ifdef layout}_layout{endif}{ifdef mismatch}_mismatch mismatch=3m{endif}
+xcomp_p4 ramp_p pix_4 clk outpp_4 outpn_4 vdd gnd comparator_2_wrap{ifdef layout}_layout{endif}{ifdef mismatch}_mismatch mismatch=-500u{endif}
+xcomp_p5 ramp_p pix_5 clk outpp_5 outpn_5 vdd gnd comparator_2_wrap{ifdef layout}_layout{endif}{ifdef mismatch}_mismatch mismatch=200u{endif}
 {endif}
 {endif}
 
@@ -91,15 +92,15 @@ set wr_singlescale
 set wr_vecnames
 {endif}
 
-let istart = 0
-let istop  = length(randvec_1)
+let istart = {start}
+let istop  = {stop}
 
 while istart < istop
     echo
     echo Running Sweep $&istart/$&istop
     echo
 
-    let iseed = istart + {seed}
+    let iseed = istart + {seed} - {start}
     {for pixel in range(1,pixels+1)}
         let pact_{pixel} = randvec_{pixel}[istart]
         alter V{pixel} pact_{pixel}
@@ -143,25 +144,23 @@ while istart < istop
     wrdata {outdir}/raw_s$&iseed$dlm$&pact_1$ext -I(vdd)
     {endif}
 
-    let lin-tstart = 260u
-    let lin-tstop  = 520u
-    let lin-tstep  = 100n
-    linearize I(vdd) ; digitized
+    ; let lin-tstart = 260u
+    ; let lin-tstop  = 520u
+    ; let lin-tstep  = 100n
+    ; linearize I(vdd) ; digitized
 
-    ; plot I(vdd)
-    {if pixels == 5}
-    wrdata {outdir}/lin_s$&iseed$dlm$&pact_1$dlm$&pact_2$dlm$&pact_3$dlm$&pact_4$dlm$&pact_5$ext -I(vdd)
-    {else}
-    wrdata {outdir}/lin_s$&iseed$dlm$&pact_1$ext -I(vdd)
-    {endif}
-    {endif}
+    ; ; plot I(vdd)
+    ; {if pixels == 5}
+    ; wrdata {outdir}/lin_s$&iseed$dlm$&pact_1$dlm$&pact_2$dlm$&pact_3$dlm$&pact_4$dlm$&pact_5$ext -I(vdd)
+    ; {else}
+    ; wrdata {outdir}/lin_s$&iseed$dlm$&pact_1$ext -I(vdd)
+    ; {endif}
+    ; {endif}
 
     let istart = istart + 1
 
-    {ifndef plot destroy all}
+    {ifndef plot}destroy all{endif}
 end
-{ifndef plot}
-exit
-{endif}
+{ifndef plot}exit{endif}
 .endc
 
