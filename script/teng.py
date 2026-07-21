@@ -163,8 +163,10 @@ class TEngine:
 
         for token in tokens:
             if static:
+                if args.debug: print("static:", token)
                 yield token
             else:
+                if args.debug: print("dynamic:", token)
                 if target and (m:=target.fullmatch(token)):
                     yield m.groups()[0]
                     if exit_on_target: return
@@ -397,11 +399,11 @@ if __name__ == "__main__":
                 if token is not None:
                     file.write(str(token))
 
-    elif args.debug:
-        for token in engine.process(env):
-            #if token == '\n': continue
-            if token is not None:
-                print(repr(token), end="")
+    # elif args.debug:
+    #     for token in engine.process(env):
+    #         #if token == '\n': continue
+    #         if token is not None:
+    #             print(repr(token), end="")
 
     else:
         for token in engine.process(env):

@@ -1,0 +1,5 @@
+* Circuit
+v1 a b 8
+v2 b c 9
+r1 a a.1 8
+c2 a.1 b 6

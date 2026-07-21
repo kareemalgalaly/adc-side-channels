@@ -1,0 +1,90 @@
+** Digital Design Library ----------------------------------
+
+** Model ---------------------------------------------------
+
+.lib model
+
+.subckt negedge_detector clk reset comp enable VGND VPWR
+    ; c_clk       clk       VGND    5.278955e-15
+    ; c_reset     reset     VGND    3.748057e-15
+    c_comp        comp      VGND    1.136144e-15
+    ; c_enable    enable    VGND    4.543031e-16
+.ends
+
+.subckt register_array clk reset enable count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 stored_values.0 stored_values.1 stored_values.2 stored_values.3 stored_values.4 stored_values.5 stored_values.6 stored_values.7 VGND VPWR
+    ; c_clk              clk              VGND    1.492422e-14 
+    ; c_reset            reset            VGND    1.131048e-14 
+    c_enable           enable           VGND    2.046693e-14 
+    c_count.0          count.0          VGND    6.066965e-16 
+    c_count.1          count.1          VGND    6.066965e-16 
+    c_count.2          count.2          VGND    6.066965e-16 
+    c_count.3          count.3          VGND    6.066965e-16 
+    c_count.4          count.4          VGND    6.066965e-16 
+    c_count.5          count.5          VGND    6.066965e-16 
+    c_count.6          count.6          VGND    6.066965e-16 
+    c_count.7          count.7          VGND    6.066965e-16 
+    ; c_stored_values.0  stored_values.0  VGND    8.397088e-16 
+    ; c_stored_values.1  stored_values.1  VGND    8.397088e-16 
+    ; c_stored_values.2  stored_values.2  VGND    8.397088e-16 
+    ; c_stored_values.3  stored_values.3  VGND    8.397088e-16 
+    ; c_stored_values.4  stored_values.4  VGND    8.397088e-16 
+    ; c_stored_values.5  stored_values.5  VGND    8.397088e-16 
+    ; c_stored_values.6  stored_values.6  VGND    8.397088e-16 
+    ; c_stored_values.7  stored_values.7  VGND    8.397088e-16 
+.ends
+
+.endl
+
+** Synth ---------------------------------------------------
+
+.lib synth
+
+.subckt negedge_detector clk reset comp enable VGND VPWR
+    x__0__ clk VGND VGND VPWR VPWR __6__ sky130_fd_sc_hs__clkinv_1
+    x__1__ reset comp VGND VGND VPWR VPWR __7__ sky130_fd_sc_hs__nor2b_1
+    x__2__ sample_hold_registered sample_hold VGND VGND VPWR VPWR enable sky130_fd_sc_hs__nor2b_1
+    x__3__ reset sample_hold VGND VGND VPWR VPWR __10__ sky130_fd_sc_hs__nor2b_1
+    x__4__ sample_hold negedge_sample reset VGND VGND VPWR VPWR __12__ sky130_fd_sc_hs__o21ba_1
+    x__5__ __6__ __7__ VGND VGND VPWR VPWR negedge_sample sky130_fd_sc_hs__dfxtp_1
+    x__6__ clk __12__ VGND VGND VPWR VPWR sample_hold sky130_fd_sc_hs__dfxtp_1
+    x__7__ clk __10__ VGND VGND VPWR VPWR sample_hold_registered sky130_fd_sc_hs__dfxtp_1
+.ends
+
+.subckt register_array clk reset enable count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 stored_values.0 stored_values.1 stored_values.2 stored_values.3 stored_values.4 stored_values.5 stored_values.6 stored_values.7 VGND VPWR
+    x__0__ stored_values.0 count.0 enable VGND VGND VPWR VPWR __21__ sky130_fd_sc_hs__mux2i_1
+    x__1__ reset __21__ VGND VGND VPWR VPWR __22__ sky130_fd_sc_hs__nor2_1
+    x__2__ stored_values.1 count.1 enable VGND VGND VPWR VPWR __23__ sky130_fd_sc_hs__mux2i_1
+    x__3__ reset __23__ VGND VGND VPWR VPWR __24__ sky130_fd_sc_hs__nor2_1
+    x__4__ stored_values.2 count.2 enable VGND VGND VPWR VPWR __25__ sky130_fd_sc_hs__mux2i_1
+    x__5__ reset __25__ VGND VGND VPWR VPWR __26__ sky130_fd_sc_hs__nor2_1
+    x__6__ stored_values.3 count.3 enable VGND VGND VPWR VPWR __27__ sky130_fd_sc_hs__mux2i_1
+    x__7__ reset __27__ VGND VGND VPWR VPWR __28__ sky130_fd_sc_hs__nor2_1
+    x__8__ stored_values.4 count.4 enable VGND VGND VPWR VPWR __29__ sky130_fd_sc_hs__mux2i_1
+    x__9__ reset __29__ VGND VGND VPWR VPWR __30__ sky130_fd_sc_hs__nor2_1
+    x__10__ stored_values.5 count.5 enable VGND VGND VPWR VPWR __31__ sky130_fd_sc_hs__mux2i_1
+    x__11__ reset __31__ VGND VGND VPWR VPWR __32__ sky130_fd_sc_hs__nor2_1
+    x__12__ stored_values.6 count.6 enable VGND VGND VPWR VPWR __33__ sky130_fd_sc_hs__mux2i_1
+    x__13__ reset __33__ VGND VGND VPWR VPWR __34__ sky130_fd_sc_hs__nor2_1
+    x__14__ stored_values.7 count.7 enable VGND VGND VPWR VPWR __35__ sky130_fd_sc_hs__mux2i_1
+    x__15__ reset __35__ VGND VGND VPWR VPWR __36__ sky130_fd_sc_hs__nor2_1
+    x__16__ clk __22__ VGND VGND VPWR VPWR stored_values.0 sky130_fd_sc_hs__dfxtp_1
+    x__17__ clk __24__ VGND VGND VPWR VPWR stored_values.1 sky130_fd_sc_hs__dfxtp_1
+    x__18__ clk __26__ VGND VGND VPWR VPWR stored_values.2 sky130_fd_sc_hs__dfxtp_1
+    x__19__ clk __28__ VGND VGND VPWR VPWR stored_values.3 sky130_fd_sc_hs__dfxtp_1
+    x__20__ clk __30__ VGND VGND VPWR VPWR stored_values.4 sky130_fd_sc_hs__dfxtp_1
+    x__21__ clk __32__ VGND VGND VPWR VPWR stored_values.5 sky130_fd_sc_hs__dfxtp_1
+    x__22__ clk __34__ VGND VGND VPWR VPWR stored_values.6 sky130_fd_sc_hs__dfxtp_1
+    x__23__ clk __36__ VGND VGND VPWR VPWR stored_values.7 sky130_fd_sc_hs__dfxtp_1
+.ends
+
+.endl
+
+* Layout Full ----------------------------------------------
+
+.lib layout_full
+
+.include lib/digital_pex/negedge_detector.spice
+.include lib/digital_pex/register_array.spice
+
+.endl
+

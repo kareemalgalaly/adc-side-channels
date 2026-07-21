@@ -1,0 +1,57 @@
+* Post process script for main.tspice
+
+{default outdir   "outfiles"}
+{default start    0}
+{default amode    "design"}
+{default dmode    "design"}
+{default arch     "prot"  }
+
+{define  seed   eval:int(start)}
+{define  value  eval:seed % 256}
+
+{define  digitize func:value:"floor("+str(value)+"/3.6+0.75)"}
+{define  dbus   func:name,suffix=".",r=(8,): "+".join(digitize(name+str(suffix)+str(i))+"*"+str(1 << i) for i in range(*r))}
+
+{smatch smode}
+{case "full"}
+  {define ts 0.005u}
+  {define cs 500u}
+  {define ce 768u}
+{case "ic"}
+  {define ts 0.1u}
+  {define cs 500u}
+  {define ce 512u}
+{case "main"}
+  {define ts 0.005u}
+  {define cs 0u}
+  {define ce 256u}
+{endmatch}
+
+.control
+  set wr_singlescale
+  set wr_vecnames
+
+{smatch amode!="model", dmode!="model"}
+{case True, False}
+  load   {outdir}/rawfile_a_{seed}
+  wrdata {outdir}/ptrace_a_{seed}_d{value} 0-I(vdd3v3a) 0-I(vdd1v8a)
+  unset wr_vecnames
+  wrdata {outdir}/atrace_{seed} outp outn {if arch=="prot"}outp_neg outn_neg {endif}
+
+{case False, True}
+  load   {outdir}/rawfile_d_{seed}
+  wrdata {outdir}/ptrace_d_{seed}_d{value} 0-I(vdd3v3d) 0-I(vdd1v8d)
+  let  pixel = {dbus("pixel")}
+  echo -n "seed {seed}: " >> {outdir}/summary
+  meas tran dout find pixel at={ce} >> {outdir}/summary
+
+{case True, True}
+  load   {outdir}/rawfile_c_{seed}
+  wrdata {outdir}/ptrace_a_{seed}_d{value} 0-I(vdd3v3a) 0-I(vdd1v8a)
+  wrdata {outdir}/ptrace_d_{seed}_d{value} 0-I(vdd3v3d) 0-I(vdd1v8d)
+
+{endmatch}
+
+  exit
+.endc
+.end

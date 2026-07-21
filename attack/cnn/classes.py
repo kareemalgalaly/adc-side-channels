@@ -146,7 +146,7 @@ class Dataset(HashableBase):
         self.type = info['type']
         self.frmt = info['format']
         self.cols = info.get('columns', 1)
-        self.cstart = info.get('cstart', 0)
+        self.cstart = info.get('cstart', defaults.get('cstart', 0))
         self.column = info.get('column', 0)
         self.lblf = eval(info.get("label", "lambda gs: int(gs[0])"), globals(), {})
         self.paths = [path if path.startswith("/") else os.path.join(data_dir, path) for path in info.get('paths', [])]

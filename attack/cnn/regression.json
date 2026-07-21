@@ -34,304 +34,150 @@
         }
     },
     "datasets" : {
-        "debug_c" : {
-            "path"        : "/home/kareem/Projects/adc-side-channels/analog/combined/outfiles/dataset_corner:tt_arch:uprot",
-            "format"      : "atrace_(\\d+)_1",
-            "columns"     : 2
-        },
-        "debug_a" : {
-            "path"        : "/home/kareem/Projects/adc-side-channels/analog/combined/outfiles/dataset_corner:tt_arch:uprot",
-            "format"      : "ptrace_a_\\d+_d(\\d+)"
-        },
-        "debug_d" : {
-            "path"        : "/home/kareem/Projects/adc-side-channels/analog/combined/outfiles/dataset_corner:tt_arch:uprot",
-            "format"      : "ptrace_d_\\d+_d(\\d+)"
-        },
-        "cmb_p_tt" : {
-            "path"        : "cmb_p_tt",
-            "format"      : "raw_s\\d+_(\\d+)\\.txt",
-            "type"        : "raw",
-            "columns"     : 2
-        },
-        "cmb_p_ss" : {
-            "path"        : "cmb_p_ss",
-            "format"      : "raw_s\\d+_(\\d+)\\.txt",
-            "type"        : "raw",
-            "columns"     : 2
-        },
-        "cmb_p_fs" : {
-            "path"        : "cmb_p_fs",
-            "format"      : "raw_s\\d+_(\\d+)\\.txt",
-            "type"        : "raw",
-            "columns"     : 2
-        },
-        "cmb_x_tt" : {
-            "path"        : "cmb_x_tt",
-            "format"      : "raw_s\\d+_(\\d+)\\.txt",
-            "type"        : "raw",
-            "columns"     : 2
-        },
-        "cmb_x_ss" : {
-            "path"        : "cmb_x_ss",
-            "format"      : "raw_s\\d+_(\\d+)\\.txt",
-            "type"        : "raw",
-            "columns"     : 2
-        },
-        "cmb_x_fs" : {
-            "path"        : "cmb_x_fs",
-            "format"      : "raw_s\\d+_(\\d+)\\.txt",
-            "type"        : "raw",
-            "columns"     : 2
-        },
-        "dig_p_tt" : {
-            "path"        : "cmb_p_tt",
-            "format"      : "raw_s\\d+_(\\d+)\\.txt",
-            "type"        : "raw",
+        "nlg_xx_tt" : {
+            "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:base_corner:tt",
+            "format"      : "ptrace_a_\\d+_d(\\d+)",
+            "cstart"      : 512e-6,
             "column"      : 1
         },
-        "dig_p_ss" : {
-            "path"        : "cmb_p_ss",
-            "format"      : "raw_s\\d+_(\\d+)\\.txt",
-            "type"        : "raw",
+        "dig_xx_tt" : {
+            "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:base_corner:tt",
+            "format"      : "ptrace_d_\\d+_d(\\d+)",
+            "cstart"      : 512e-6,
             "column"      : 1
         },
-        "dig_p_fs" : {
-            "path"        : "cmb_p_fs",
-            "format"      : "raw_s\\d+_(\\d+)\\.txt",
-            "type"        : "raw",
+        "nlg_xx_ss" : {
+            "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:base_corner:ss",
+            "format"      : "ptrace_a_\\d+_d(\\d+)",
             "column"      : 1
         },
-        "dig_x_tt" : {
-            "path"        : "cmb_x_tt",
-            "format"      : "raw_s\\d+_(\\d+)\\.txt",
-            "type"        : "raw",
+        "dig_xx_ss" : {
+            "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:base_corner:ss",
+            "format"      : "ptrace_d_\\d+_d(\\d+)",
             "column"      : 1
         },
-        "dig_x_ss" : {
-            "path"        : "cmb_x_ss",
-            "format"      : "raw_s\\d+_(\\d+)\\.txt",
-            "type"        : "raw",
+        "nlg_xx_fs" : {
+            "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:base_corner:fs",
+            "format"      : "ptrace_a_\\d+_d(\\d+)",
             "column"      : 1
         },
-        "dig_x_fs" : {
-            "path"        : "cmb_x_fs",
-            "format"      : "raw_s\\d+_(\\d+)\\.txt",
-            "type"        : "raw",
+        "dig_xx_fs" : {
+            "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:base_corner:fs",
+            "format"      : "ptrace_d_\\d+_d(\\d+)",
             "column"      : 1
         },
-        "nlg_p_tt" : {
-            "path"        : "cmb_p_tt",
-            "format"      : "raw_s\\d+_(\\d+)\\.txt",
-            "type"        : "raw",
-            "column"      : 0
+        "cmp_xp_tt" : {
+            "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:prot_corner:tt",
+            "format"      : "atrace_(\\d+)"
         },
-        "nlg_p_ss" : {
-            "path"        : "cmb_p_ss",
-            "format"      : "raw_s\\d+_(\\d+)\\.txt",
-            "type"        : "raw",
-            "column"      : 0
+        "nlg_xp_tt" : {
+            "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:prot_corner:tt",
+            "format"      : "ptrace_a_\\d+_d(\\d+)",
+            "column"      : 1
         },
-        "nlg_p_fs" : {
-            "path"        : "cmb_p_fs",
-            "format"      : "raw_s\\d+_(\\d+)\\.txt",
-            "type"        : "raw",
-            "column"      : 0
+        "dig_xp_tt" : {
+            "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:prot_corner:tt",
+            "format"      : "ptrace_d_\\d+_d(\\d+)",
+            "column"      : 1
         },
-        "nlg_x_tt" : {
-            "path"        : "cmb_x_tt",
-            "format"      : "raw_s\\d+_(\\d+)\\.txt",
-            "type"        : "raw",
-            "column"      : 0
-        },
-        "nlg_x_ss" : {
-            "path"        : "cmb_x_ss",
-            "format"      : "raw_s\\d+_(\\d+)\\.txt",
-            "type"        : "raw",
-            "column"      : 0
-        },
-        "nlg_x_fs" : {
-            "path"        : "cmb_x_fs",
-            "format"      : "raw_s\\d+_(\\d+)\\.txt",
-            "type"        : "raw",
-            "column"      : 0
-        },
-
-
-        "digital_1px_tt_3" : {
-            "path"        : "digital_1px_tt_3",
-            "format"      : "trace_(\\d+)"
-        },
-        "digital_1px_cs_3" : {
-            "path" : "digital_1px_tt_3",
-            "paths" : ["digital_1px_ss_3", "digital_1px_fs_3"],
-            "format"  : "trace_(\\d+)"
-        },
-        "digital_1px_mc_3" : {
-            "path" : "digital_1px_mc_3",
-            "format"  : "trace_s(\\d+)_d(\\d+)"
-        },
-        "analog_1_tt_p" : {
-            "path" : "analog_1_tt1_x",
-            "paths" : ["analog_1_tt2_x"],
-            "format"  : "raw_s\\d+_((0\\.)?\\d+).txt",
-            "label"   : "lambda gs: int(math.floor(float(gs[0])*256))"
-        },
-        "analog_1_nt_p" : {
-            "path" : "analog_1_ss_x",
-            "paths" : ["analog_1_sf_x"],
-            "format"  : "raw_s\\d+_((0\\.)?\\d+).txt",
-            "label"   : "lambda gs: int(math.floor(float(gs[0])*256))"
-        },
-        "analog_1_cs_p" : {
-            "path" : "analog_1_tt1_x",
-            "paths" : ["analog_1_tt2_x", "analog_1_ss_x", "analog_1_sf_x"],
-            "format"  : "raw_s\\d+_((0\\.)?\\d+).txt",
-            "label"   : "lambda gs: int(math.floor(float(gs[0])*256))"
+        "nlg_xp_ss" : {
+            "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:prot_corner:ss",
+            "format"      : "ptrace_a_\\d+_d(\\d+)",
+            "column"      : 1
         }
     },
-    "tests" : [
+    "ndatasets" : {
+        "cmp_xx_tt" : {
+            "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:base_corner:tt",
+            "format"      : "atrace_(\\d+)"
+        },
+        "nlg_xx_tt" : {
+            "path"        : "cmb_xx_tt",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "column"      : 0
+        },
+        "dig_xx_tt" : {
+            "path"        : "cmb_xx_tt",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "column"      : 1
+        },
+        "cmb_xx_tt" : {
+            "path"        : "cmb_x_tt",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "columns"     : 2
+        },
+        "nlg_xx_ss" : {
+            "path"        : "cmb_xx_ss",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "column"      : 0
+        },
+        "dig_xx_ss" : {
+            "path"        : "cmb_xx_ss",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "column"      : 1
+        },
+        "cmb_xx_ss" : {
+            "path"        : "cmb_x_ss",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "columns"     : 2
+        },
+        "nlg_xx_fs" : {
+            "path"        : "cmb_xx_fs",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "column"      : 0
+        },
+        "dig_xx_fs" : {
+            "path"        : "cmb_xx_fs",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "column"      : 1
+        },
+        "cmb_xx_fs" : {
+            "path"        : "cmb_xx_fs",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "columns"     : 2
+        }
+    },
+    "tests" : [],
+    "tosts" : [
         {
-            "desc"          : "Combined Prot BW",
+            "desc"          : "Base (ideal uprot): Analog",
+            "networks"      : ["ldo_bw"],
+            "datasets"      : ["nlg_xx_tt"],
+            "test_dataset"  : ["nlg_xx_ss", "nlg_xx_fs"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.000025,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "Base (ideal uprot): Digital",
+            "networks"      : ["ldo_bw"],
+            "datasets"      : ["dig_xx_tt"],
+            "test_dataset"  : ["dig_xx_ss", "dig_xx_fs"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.000025,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "Base (ideal uprot): Combined",
             "skip"          : false,
             "networks"      : ["ldo_bw_2"],
-            "datasets"      : ["cmb_p_tt"],
-            "test_dataset"  : ["cmb_p_ss", "cmb_p_fs"],
+            "datasets"      : ["cmb_xx_tt"],
+            "test_dataset"  : ["cmb_xx_ss", "cmb_xx_fs"],
             "learning_rate" : [0.0003],
             "learning_decay": 0.000025,
             "optimizer"     : "Amsgrad",
             "max_epochs"    : 5000
-        },
-        {
-            "desc"          : "Digital Prot BW",
-            "skip"          : false,
-            "networks"      : ["ldo_bw"],
-            "datasets"      : ["dig_p_tt"],
-            "test_dataset"  : ["dig_p_ss", "dig_p_fs"],
-            "learning_rate" : [0.0003],
-            "learning_decay": 0.000025,
-            "optimizer"     : "Amsgrad",
-            "max_epochs"    : 5000
-        },
-        {
-            "desc"          : "Analog Prot BW",
-            "skip"          : false,
-            "networks"      : ["ldo_bw"],
-            "datasets"      : ["nlg_p_tt"],
-            "test_dataset"  : ["nlg_p_ss", "nlg_p_fs"],
-            "learning_rate" : [0.0003],
-            "learning_decay": 0.000025,
-            "optimizer"     : "Amsgrad",
-            "max_epochs"    : 5000
-        },
-        {
-            "desc"          : "Combined Uprot BW",
-            "skip"          : false,
-            "networks"      : ["ldo_bw_2"],
-            "datasets"      : ["cmb_x_tt"],
-            "test_dataset"  : ["cmb_x_ss", "cmb_x_fs"],
-            "learning_rate" : [0.0003],
-            "learning_decay": 0.000025,
-            "optimizer"     : "Amsgrad",
-            "max_epochs"    : 5000
-        },
-        {
-            "desc"          : "Digital Uprot BW",
-            "skip"          : false,
-            "networks"      : ["ldo_bw"],
-            "datasets"      : ["dig_x_tt"],
-            "test_dataset"  : ["dig_x_ss", "dig_x_fs"],
-            "learning_rate" : [0.0003],
-            "learning_decay": 0.000025,
-            "optimizer"     : "Amsgrad",
-            "max_epochs"    : 5000
-        },
-        {
-            "desc"          : "Analog Uprot BW",
-            "skip"          : false,
-            "networks"      : ["ldo_bw"],
-            "datasets"      : ["nlg_x_tt"],
-            "test_dataset"  : ["nlg_x_ss", "nlg_x_fs"],
-            "learning_rate" : [0.0003],
-            "learning_decay": 0.000025,
-            "optimizer"     : "Amsgrad",
-            "max_epochs"    : 5000
-        },
-        {
-            "desc"          : "Combined Prot SE",
-            "skip"          : true,
-            "networks"      : ["twocol_se"],
-            "datasets"      : ["cmb_p_tt"],
-            "test_dataset"  : ["cmb_p_ss"],
-            "learning_rate" : [0.02],
-            "learning_decay": 0.00002,
-            "optimizer"     : "Amsgrad",
-            "max_epochs"    : 25000
-        },
-        {
-            "desc"          : "Combined UProt BW",
-            "skip"          : true,
-            "networks"      : ["ldo_bw_2"],
-            "datasets"      : ["cmb_x_tt"],
-            "test_dataset"  : ["cmb_x_ss"],
-            "learning_rate" : [0.0003],
-            "learning_decay": 0.000025,
-            "optimizer"     : "Amsgrad",
-            "max_epochs"    : 5000
-        },
-        {
-            "desc"          : "Combined UProt SE",
-            "skip"          : true,
-            "networks"      : ["twocol_se"],
-            "datasets"      : ["cmb_x_tt"],
-            "test_dataset"  : ["cmb_x_ss"],
-            "learning_rate" : [0.02],
-            "learning_decay": 0.00002,
-            "optimizer"     : "Amsgrad",
-            "max_epochs"    : 25000
-        },
-        {
-            "desc"          : "Digital Masked BW",
-            "skip"          : true,
-            "networks"      : ["paper"],
-            "datasets"      : ["digital_1px_cs_3:max"],
-            "test_dataset"  : ["digital_1px_mc_3:max"],
-            "learning_rate" : [0.0003],
-            "learning_decay": 0.000025,
-            "optimizer"     : "Amsgrad",
-            "max_epochs"    : 5000
-        },
-        {
-            "desc"          : "Digital Masked SE",
-            "skip"          : true,
-            "networks"      : ["paper_se"],
-            "datasets"      : ["digital_1px_cs_3:max"],
-            "test_dataset"  : ["digital_1px_mc_3:max"],
-            "learning_rate" : [0.01],
-            "learning_decay": 0.00002,
-            "optimizer"     : "Amsgrad",
-            "max_epochs"    : 25000
-        },
-        {
-            "desc"          : "Analog Randomized BW",
-            "skip"          : true,
-            "networks"      : ["paper"],
-            "datasets"      : ["analog_1_cs_p:max"],
-            "test_dataset"  : ["analog_1_cs_p:max"],
-            "train_split"   : 0.5,
-            "learning_rate" : [0.0003],
-            "learning_decay": 0.0004,
-            "max_epochs"    : 5000
-        },
-        {
-            "desc"          : "Analog Randomized SE",
-            "skip"          : true,
-            "networks"      : ["paper_se"],
-            "datasets"      : ["analog_1_cs_p:max"],
-            "test_dataset"  : ["analog_1_cs_p:max"],
-            "train_split"   : 0.5,
-            "learning_rate" : [0.01],
-            "learning_decay": 0.0002,
-            "max_epochs"    : 20000
         }
     ],
     "defaults" : {

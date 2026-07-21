@@ -1,0 +1,463 @@
+** SCRIPT: analog_ldo/main.tspice
+
+* Argument  value       default   notes
+*   outdir  {outdir}    outfiles/ str
+*   corner  {corner}    tt        str in (tt, ss, fs, ...)
+*   amode   {amode}     design    str in (model, design)
+*   dmode   {dmode}     design    str in (model, design)
+*   arch    {arch}      prot      str in  base    : base case w/ single ramp
+*                                         fixed   : ??
+*                                         prot    : double random ramp
+*   power   {power}     single    str in  ideal   : 1.8 V ideal voltage source
+*                                         single  : single ldo 3.3 -> 1.8 V
+*                                         cascade : double ldo 3.3 -> ?? -> 1.8 V
+*   smode               full      str in  full    : full simulation
+*                                         ic      : simulate initial conditions
+*                                         main    : simulate using initial conditions
+*   plot                -         define (don't quit at end of interactive)
+*   batch               -         define (select batch mode)
+*   layout              -         str in (cap, full) or unset
+*   start   {start}     1         start pixel for simulation
+*   step    {step}      1         not used in batch mode
+*   stop    {stop}      256       not used in batch mode
+
+{default outdir "outfiles"}
+{default corner "tt"}
+{default start 0}
+{default step  1}
+{default stop  256}
+{default amode    "design"}{assert amode in ("model", "design")}
+{default dmode    "design"}{assert dmode in ("model", "design")}
+{default smode    "full"}
+{default arch     "prot"  }{assert arch in ("base", "fixed", "prot")}
+{default inverter "inv"}{assert inverter in ("clkinv", "inv")}
+{default power    "single"}{assert power in ("ideal", "single", "cascade")}
+{default layout   None}{assert not layout or layout in ("full", "cap")}
+{default python "/usr/bin/python3"}
+
+{smatch smode}
+{case "full"}
+{if power=="ideal"}
+  {define ts 0.1u} ; 0.01, 0.005
+  {define cs 0u}
+  {define ce 256u}
+{else}
+  {define ts 0.1u} ; 0.01, 0.005
+  {define cs 500u}
+  {define ce 768u}
+{endif}
+{case "ic"}
+  {define ts 0.1u}
+  {define cs 500u}
+  {define ce 512u}
+{case "main"}
+  {define ts 0.1u}
+  {define cs 0u}
+  {define ce 256u}
+{endmatch}
+{define version }
+{define dlib synth}
+{match layout}
+{case "full"}
+  {define version _pex}
+  {define dlib layout_full}
+{case "cap"}
+  {define version _cex}
+  {define dlib layout_cap}
+{endmatch}
+
+{if dmode == "model"}
+  {define dlib model}
+{endif}
+
+{import math}
+{import random}
+{eval random.seed(start)}
+{define randctl func:k,vs,dlt,ris:" ".join(" ".join([str(i*dlt+ris),str(v),str((i+1)*dlt),str(v)]) for i,v in enumerate(random.choices(vs, k=k)))}
+{define subseed eval:int(start)//256}
+{define digval eval:int(start)%256}
+{if subseed > 0}
+  {define frac_offset_den eval:2**math.floor(math.log2(subseed))}
+  {define frac_offset_num eval:(subseed - frac_offset_den)*2 + 1}
+  {define frac_offset     eval:frac_offset_num / (frac_offset_den*2)}
+  {define pix_voltage     eval:(digval+frac_offset)/256 + 0.2}
+{else}
+  {define pix_voltage     eval:digval/256 + 0.2}
+{endif}
+
+{define  getbus func:name,suffix=".",r=(8,): " ".join(name+str(suffix)+str(i) for i in range(*r))}
+{define  dplot  func:vars: " ".join(var+"/2+"+str(i) for i, var in enumerate(vars.split()))}
+{define  dbus   func:name,suffix=".",r=(8,): "+".join(digitize(name+str(suffix)+str(i))+"*"+str(1 << i) for i in range(*r))}
+{define  digitize func:value:"floor("+str(value)+"/3.6+0.75)"}
+
+; Voltage {pix_voltage} : {subseed} : : {frac_offset_num} / {eval:frac_offset_den*2}
+
+{ifxst /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice}
+  .lib "/foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice" {corner}
+  .include "/foss/pdk/sky130A/libs.ref/sky130_fd_sc_hs/spice/sky130_fd_sc_hs.spice"
+{else}
+  .lib "models/sky130.lib.spice" {corner}
+  .include cells/a211oi/sky130_fd_sc_hs__a211oi_1.spice
+  .include cells/a21oi/sky130_fd_sc_hs__a21oi_1.spice
+  .include cells/and2/sky130_fd_sc_hs__and2_1.spice
+  .include cells/and3/sky130_fd_sc_hs__and3_1.spice
+  .include cells/and4/sky130_fd_sc_hs__and4_1.spice
+  .include cells/clkinv/sky130_fd_sc_hs__clkinv_1.spice
+  .include cells/dfxtp/sky130_fd_sc_hs__dfxtp_1.spice
+  .include cells/inv/sky130_fd_sc_hs__inv_1.spice
+  .include cells/mux2i/sky130_fd_sc_hs__mux2i_1.spice
+  .include cells/mux2/sky130_fd_sc_hs__mux2_1.spice
+  .include cells/nand2b/sky130_fd_sc_hs__nand2b_1.spice
+  .include cells/nor2b/sky130_fd_sc_hs__nor2b_1.spice
+  .include cells/nor2/sky130_fd_sc_hs__nor2_1.spice
+  .include cells/nor3b/sky130_fd_sc_hs__nor3b_1.spice
+  .include cells/nor3/sky130_fd_sc_hs__nor3_1.spice
+  .include cells/nor4b/sky130_fd_sc_hs__nor4b_1.spice
+  .include cells/o21a/sky130_fd_sc_hs__o21a_1.spice
+  .include cells/o21bai/sky130_fd_sc_hs__o21bai_1.spice
+  .include cells/o21ba/sky130_fd_sc_hs__o21ba_1.spice
+  .include cells/or2/sky130_fd_sc_hs__or2_1.spice
+  .include cells/or3b/sky130_fd_sc_hs__or3b_1.spice
+  .include cells/xor2/sky130_fd_sc_hs__xor2_1.spice
+{endif}
+
+.inc lib/analog/comparator_ss_h.cir
+.inc lib/analog{version}/idac.cir
+.inc lib/analog{version}/latch_singleslope.cir
+.inc lib/analog{version}/ldos_wores.cir
+.inc lib/analog{version}/ldoc1_wores.cir
+.inc lib/analog{version}/ldoc2_wores.cir
+.inc lib/analog{version}/opamp_singleslope_wcapnew.cir
+.inc lib/analog{version}/preamp_singleslope.cir
+
+
+.lib lib/digital/counter_half.lib {dlib}
+.lib lib/digital/digital.lib {dlib}
+.lib lib/digital/double_rate_sampler.lib {dlib}
+
+** Control / Reference -------------------------------------
+
+vp    vp   GND 0.2
+V13   in+  GND 1.2
+vpix  pix  GND {pix_voltage}
+
+{if amode != "model"}
+  iref_op1 iref1 GND 20u
+  {if arch != "base"}
+    iref_op2 iref2 GND 20u
+    iref_idc vdda iref4 10n
+    iref_cp2 iref6 GND 10u
+  {endif}
+  {if power != "ideal"}
+    iref_ld1 iref3 GND 15u
+    {if power == "cascade"}
+      iref_ld2 iref7 GND 15u
+    {endif}
+  {endif}
+  iref_cp1 iref5 GND 10u
+  {if arch=="base"}
+    vref     GND  vref 1
+  {endif}
+{endif}
+
+{if dmode != "model" and power != "ideal"}
+  iref_ld3 iref8 GND 15u
+  {if power == "cascade"}
+    iref_ld4 iref9 GND 15u
+  {endif}
+{endif}
+
+; Kemal suggests no less than 100p in this process
+; Ceyda notes this can affect signal behavior
+vclk   clk  GND PULSE(0 1.8 {cs} 100p 100p .5u 1u)
+vclk2  clk2 GND PULSE(0 1.8 {cs} 100p 100p .25u 0.5u)
+vrst   rst  GND PULSE(0 1.8 0    100p 100p 40n 256.04u)
+
+{if amode != "model"}
+vdd3v3a vdd3v3a GND     3.3
+vdd1v8a vdda  vdd1v8a   0
+{endif}
+{if dmode != "model"}
+vdd3v3d vdd3v3d GND     3.3
+vdd1v8d vddd  vdd1v8d   0
+{endif}
+
+
+** Analog Components =======================================
+
+{if amode == "model"}
+  {smatch arch}
+  {case "base"}
+    acmp %v([outp outn]) filesrc_cmp
+    .model filesrc_cmp filesource (file="{outdir}/atrace_{start}" amploffset=[0 0] amplscale=[1 1] timeoffset=0 timescale=1)
+  {case "prot"}
+    acmp %v([outp outn outp_neg outn_neg]) filesrc_cmp
+    .model filesrc_cmp filesource (file="{outdir}/atrace_{start}" amploffset=[0 0 0 0] amplscale=[1 1 1 1] timeoffset=0 timescale=1)
+  {endmatch}
+
+{else}
+
+** LDO -----------------------------------------------------
+
+{smatch power}
+{case "single"}
+xldo1 vdd3v3a iref3 n1 in+ vdd1v8a GND ldos_wores
+rld1  vdd1v8a n1  60k m=1
+rld2  n1     GND 120k m=1
+cldo  vdd1v8a GND 100p m=1
+
+{case "cascade"}
+xldo1 vdd3v3a iref3 n1 in+ vddmida GND ldoc1_wores
+rld1  vddmida n1  120k m=1
+rld2  n1      GND 120k m=1
+cld1  vddmida GND 15p m=1
+
+xldo2 vddmida iref7 n2 in+ vdd1v8a GND ldoc2_wores
+rld3  vdd1v8a n2  60k m=1
+rld4  n2     GND 120k m=1
+cld2  vdd1v8a GND 85p m=1
+
+{case "ideal"}
+vdda  vdd1v8a GND  1.8
+
+{endmatch}
+
+** Ramp Control --------------------------------------------
+
+{smatch arch}
+{case "prot"}
+vc0 b0 GND PWL(0 0 {randctl(12,(0,1.8),256e-6/4,1e-9)}) td=0
+vc1 b1 GND PWL(0 0 {randctl(12,(0,1.8),256e-6/4,1e-9)}) td=0
+vc2 b2 GND PWL(0 0 {randctl(12,(0,1.8),256e-6/4,1e-9)}) td=0
+vc3 b3 GND PWL(0 0 {randctl(12,(0,1.8),256e-6/4,1e-9)}) td=0
+vc4 b4 GND PWL(0 0 {randctl(12,(0,1.8),256e-6/4,1e-9)}) td=0
+; abridgea [rst clk] [drst dclk] atod 
+; abridged [{getbus("drc", r=(5,))}] [{getbus("vc", r=(5,), suffix="")}] dtoa 
+; acounter null dclk drst [{getbus("drc", r=(5,))}] proc_counter
+; .model atod adc_bridge(in_low=0.2 in_high=1.6)
+; .model dtoa dac_bridge(out_low=0 out_high=1.8)
+; .model proc_counter d_process (process_file="{python}" process_params=["lib/rampctrlgen.py" "{start}"])
+
+{case "fixed"}
+vc0 b0 GND PWL(0 1.8 512u 1.8 512.001u 0 768 0) td=0
+vc1 b1 GND PWL(0 1.8 512u 1.8 512.001u 0 768 0) td=0
+vc2 b2 GND PWL(0 1.8 512u 1.8 512.001u 0 768 0) td=0
+vc3 b3 GND PWL(0 1.8 512u 1.8 512.001u 0 768 0) td=0
+vc4 b4 GND PWL(0 1.8 512u 1.8 512.001u 0 768 0) td=0
+
+{case "base"}
+{endmatch}
+
+** Control Inverters ---------------------------------------
+
+{if arch != "base"}
+xc0 b0 GND GND vdda vdda b0i sky130_fd_sc_hs__{inverter}_1
+xc1 b1 GND GND vdda vdda b1i sky130_fd_sc_hs__{inverter}_1
+xc2 b2 GND GND vdda vdda b2i sky130_fd_sc_hs__{inverter}_1
+xc3 b3 GND GND vdda vdda b3i sky130_fd_sc_hs__{inverter}_1
+xc4 b4 GND GND vdda vdda b4i sky130_fd_sc_hs__{inverter}_1
+{endif}
+
+** Ramp Generator ------------------------------------------
+
+{if arch=="base"}
+
+C1  vx   inp  24p     m=1
+R1  vref vx   12.7Meg m=1
+XMR inp  rst vx vx sky130_fd_pr__nfet_01v8 L=0.15 W=10 nf=1 ad='int((nf+1)/2) * W/nf * 0.29' as='int((nf+2)/2) * W/nf * 0.29'
++ pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)' nrd='0.29 / W' nrs='0.29 / W'
++ sa=0 sb=0 sd=0 mult=1 m=1
+xopamp  vdda iref1 vx vp inp GND opamp_singleslope_wcapnew
+
+{else}
+xidac vdda vx_ vx_neg_ b4 b3 b2 b1 b0 b4i b3i b2i b1i b0i iref4 GND idac
+vmeas_idacp vx     vx_     0
+
+xopampp vdda iref1 vx vp inp GND opamp_singleslope_wcapnew
+C1 vx inp 20p m=1
+XM32 inp rst vx vx sky130_fd_pr__nfet_01v8 L=0.15 W=20 nf=1 ad='int((nf+1)/2) * W/nf * 0.29' as='int((nf+2)/2) * W/nf * 0.29'
++ pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)' nrd='0.29 / W' nrs='0.29 / W'
++ sa=0 sb=0 sd=0 mult=2 m=2
+
+xopampn vdda iref2 vx_neg vp inp_neg GND opamp_singleslope_wcapnew
+C2 vx_neg inp_neg 20p m=1
+XM39 net3 rst inp_neg GND sky130_fd_pr__nfet_01v8 L=0.15 W=20 nf=1 ad='int((nf+1)/2) * W/nf * 0.29'
++ as='int((nf+2)/2) * W/nf * 0.29' pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)'
++ nrd='0.29 / W' nrs='0.29 / W' sa=0 sb=0 sd=0 mult=2 m=2
+V11 net3 net4 1
+XM40 net4 rst vx_neg GND sky130_fd_pr__nfet_01v8 L=0.15 W=20 nf=1 ad='int((nf+1)/2) * W/nf * 0.29'
++ as='int((nf+2)/2) * W/nf * 0.29' pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)'
++ nrd='0.29 / W' nrs='0.29 / W' sa=0 sb=0 sd=0 mult=2 m=2
+{endif}
+
+
+** Comparators ---------------------------------------------
+
+xcompp vdda inp     clk outp     pix outn     iref5 GND comparator_ss_h
+{if arch != "base"}
+xcompn vdda inp_neg clk outp_neg pix outn_neg iref6 GND comparator_ss_h
+{endif}
+
+{endif}
+** END Analog ==============================================
+
+** LDO -----------------------------------------------------
+
+{if dmode != "model"}
+  {smatch power}
+  {case "single"}
+  xldo3 vdd3v3d iref8 n3 in+ vdd1v8d GND ldos_wores
+  rld5  vdd1v8d n3  60k m=1
+  rld6  n3      GND 120k m=1
+  cld5  vdd1v8d GND 100p m=1
+  
+  {case "cascade"}
+  xldo3 vdd3v3d iref8 n3 in+ vddmidd GND ldoc1_wores
+  rld5  vddmidd n3  120k m=1
+  rld6  n3     GND 120k m=1
+  cld3  vddmidd GND 15p m=1
+  
+  xldo4 vddmidd iref9 n4 in+ vdd1v8d GND ldoc2_wores
+  rld7  vdd1v8d n4  60k m=1
+  rld8  n4     GND 120k m=1
+  cld4  vdd1v8d GND 85p m=1
+  
+  {case "ideal"}
+  vddd  vdd1v8d GND  1.8
+  
+  {endmatch}
+{else}
+  vddd  vdd1v8d GND  1.8
+{endif}
+
+** Digital Components ======================================
+
+; model is implemented in each component
+
+xcounter clk rst cen {getbus("count")} overflow GND GDN vddd vddd counter_half 
+xcen     rst GND GND vddd vddd cen_d sky130_fd_sc_hs__inv_1                      ; cen = delayed inverted rst
+xcen_ff  clk cen_d GND GND vddd vddd cen sky130_fd_sc_hs__dfxtp_1
+
+; TODO prot_old vs prot is should the dummy pins get a sampler 
+
+{smatch arch}
+{case "prot" || "prot_old"}
+  xsamplep clk2 rst outp outn 
+  +           {getbus("count")} {getbus("pixel")} {getbus("pixeld")} 
+  +           GND GND vddd vddd double_rate_sampler
+{case "prot_old"}
+  xsamplen clk2 rst outp_neg outn_neg 
+  +           {getbus("count")} {getbus("pixel")} {getbus("pixeld")} 
+  +           GND GND vddd vddd double_rate_sampler
+{case "base"}
+  xedge_detector clk rst outp enable GND vdd negedge_detector
+  xregister_array clk rst enable {getbus("count")} {getbus("pixel")} GND vdd register_array
+{endmatch}
+
+** END Digital =============================================
+
+** Control -------------------------------------------------
+
+.option method = Gear  ; Kemal likes this option
+.options reltol=1e-4   ; Kemal suggestion
+.tran {ts} {ce} uic
+
+{if smode == "main"}
+  ; .include {outdir}/op.ic
+  .include {outdir}/{amode}_{dmode}_op.ic
+{endif}
+
+
+{ifndef batch}
+.control
+  shell mkdir -p {outdir}
+  set wr_singlescale
+  set wr_vecnames
+  {ifdef cpu}set num_threads={cpu}{endif}
+
+  let iseed = {start}
+  set dlm = "_d"
+  while iseed <= {stop}
+    echo Running Sweep $&iseed/{start}:{step}:{stop}
+
+    let value   = iseed % 256
+    let subseed = floor(iseed/256)
+    if subseed > 0
+      let frac_offset_den = 2^floor(log(subseed)/log(2))
+      let frac_offset_num = (subseed - frac_offset_den)*2 + 1
+      let frac_offset     = frac_offset_num / (frac_offset_den*2)
+      echo Den $&frac_offset_den
+      echo Num $&frac_offset_num
+      echo Off $&frac_offset
+
+      ; let value = value + frac_offset
+      let pix_voltage = value + frac_offset
+    else
+      let pix_voltage = value
+    end
+    let pix_voltage = pix_voltage / 256 + 0.2
+    echo Voltage $&pix_voltage
+
+    alter vpix pix_voltage
+
+    run
+    ; let cut-tstart = {cs}
+    ; let cut-tstop = {ce}
+    ; cutout
+
+    {smatch amode!="model", dmode!="model"}
+    {case True, False}
+      wrdata {outdir}/ptrace_a_$&iseed$dlm$&value 0-I(vdd3v3a) 0-I(vdd1v8a)
+      wrdata {outdir}/atrace_$&iseed outp outn {if arch=="prot"}outp_neg outn_neg {endif}
+
+    {case False, True}
+      wrdata {outdir}/ptrace_d_$&iseed$dlm$&value 0-I(vdd3v3d) 0-I(vdd1v8d)
+      let  pixel = {dbus("pixel")}
+      echo -n "seed $&iseed: " >> {outdir}/summary
+      meas tran dout find pixel at={ce} >> {outdir}/summary
+
+    {case True, True}
+      wrdata {outdir}/ptrace_a_$&iseed$dlm$&value 0-I(vdd3v3a) 0-I(vdd1v8a)
+      wrdata {outdir}/ptrace_d_$&iseed$dlm$&value 0-I(vdd3v3d) 0-I(vdd1v8d)
+
+    {endmatch}
+
+
+    {if smode == "ic"}
+      ; wrnodev {outdir}/op.ic
+      wrnodev {outdir}/{amode}_{dmode}_op.ic
+      exit
+    {endif}
+
+    let  pixel = {dbus("pixel")}
+    echo -n "seed $&iseed: " >> {outdir}/summary
+    meas tran dout find pixel at={ce} >> {outdir}/summary
+
+    {ifdef plot}
+      plot 0-i(vdd1v8a) 0-i(vdd3v3a)
+      {if arch != "base"}
+        plot inp inp_neg
+        plot outp outn
+        let  count = {dbus("count")}
+        plot count pixel
+      {endif}
+    {else}
+      destroy all
+    {endif}
+
+    let iseed = iseed + {step}
+  end
+  {ifndef plot}
+    exit
+  {endif}
+.endc
+{else}
+.save pix 
++ {if amode!="model"}i(vdd3v3a) i(vdd1v8a) inp outp outn {if arch=="prot"}outp_neg outn_neg{endif}{endif}
++ {if dmode!="model"}i(vdd3v3d) i(vdd1v8d) {getbus("count")} {getbus("pixel")}{endif}
+{endif}
+.end
+
+.GLOBAL GND
+.end
+
