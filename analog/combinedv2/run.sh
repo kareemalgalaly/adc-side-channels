@@ -14,9 +14,10 @@ runic=""
 append=""
 outdir=""
 keepold=""
+multicp=""
 runanlg=1
 
-while getopts "o:s:S:q:nNBkiIA" opt
+while getopts "o:s:S:q:nNBkmiIA" opt
 do
     case "$opt" in 
         o ) outdir="outfiles/${dataset}" ;;
@@ -27,6 +28,7 @@ do
         n ) norun=1                      ;;
         N ) norun=1;append=1             ;;
         k ) keepold=1                    ;;
+        m ) multicp=1                    ;;
         i ) runic=1                      ;;
         I ) runic=force                  ;;
         A ) runanlg=""                   ;;
@@ -91,16 +93,28 @@ if ! [ "$interactive" ]; then
     echo Running in Batch mode
 
     for i in $(seq $sstart $sstop); do
+        if [ "$multicp" ]; then echo -n "[ -f .multisync/$i ] || ( touch .multisync/$i &&"; fi
         if [ "$keepold" ]; then
-            echo -n "[ -f $outdir/ptrace_d_${i}_d* ] || " >> jobs.sh
+            echo -n "[ -f $outdir/ptrace_d_${i}_d* ] || ( ( " >> jobs.sh
+        else
+            echo -n '( ( ' >> jobs.sh
         fi
 
         if [ "$runanlg" = 1 ]; then
+            if [ "$keepold" ]; then
+                echo -n "[ -f $outdir/ptrace_d_${i}_a* ] || " >> jobs.sh
+            fi
         echo -n "${NGBCH}_a_${i} <($SMAIN batch= 'start=$i' 'dmode=model') && " >> jobs.sh
-        echo -n         "ngspice <($SPOST batch= 'start=$i' 'dmode=model') && " >> jobs.sh
+        echo -n         "ngspice <($SPOST batch= 'start=$i' 'dmode=model') ) && " >> jobs.sh
         fi
         echo -n "${NGBCH}_d_${i} <($SMAIN batch= 'start=$i' 'amode=model') && " >> jobs.sh
-        echo            "ngspice <($SPOST batch= 'start=$i' 'amode=model') "    >> jobs.sh
+        echo -n         "ngspice <($SPOST batch= 'start=$i' 'amode=model') ) "  >> jobs.sh
+
+        if [ "$multicp" ]; then
+            echo " )" >>  jobs.sh
+        else
+            echo >> jobs.sh
+        fi
     done
 
 else
