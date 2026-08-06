@@ -8,26 +8,28 @@
 sstart=0
 sstop=255
 queue=1
-batch=""
+interactive=""
 norun=""
 runic=""
 append=""
 outdir=""
 keepold=""
+runanlg=1
 
-while getopts "o:s:S:q:nNbkiI" opt
+while getopts "o:s:S:q:nNBkiIA" opt
 do
     case "$opt" in 
         o ) outdir="outfiles/${dataset}" ;;
         s ) sstart="${OPTARG}"           ;;
         S ) sstop="${OPTARG}"            ;;
         q ) queue="${OPTARG}"            ;;
-        b ) batch=1                      ;;
+        B ) interactive=1                ;;
         n ) norun=1                      ;;
         N ) norun=1;append=1             ;;
         k ) keepold=1                    ;;
         i ) runic=1                      ;;
-        I ) runic=2                      ;;
+        I ) runic=force                  ;;
+        A ) runanlg=""                   ;;
     esac
 done
 
@@ -69,14 +71,14 @@ if ! [ "$append" ]; then
     echo "#!/bin/bash" > jobs.sh
 fi
 
-if ! [ -f $outdir/*_model_op.ic ] && [ "$runic" ] || [ "$runic" = 2 ]; then
+if ! [ -f $outdir/*_model_op.ic ] && [ "$runic" ] || [ "$runic" = force ]; then
     echo Running Analog IC Simulation
     echo ngspice -i "<($TENG main.tspice "$@" $SARGS smode=ic start=128 stop=128)"
     if ! [ "$norun" ]; then
         ngspice -i <($TENG main.tspice "$@" $SARGS dmode=model smode=ic start=128 stop=128 cpu=8)
     fi
 fi
-if ! [ -f $outdir/model_*_op.ic ] && [ "$runic" ] || [ "$runic" = 2 ]; then
+if ! [ -f $outdir/model_*_op.ic ] && [ "$runic" ] || [ "$runic" = force ]; then
     echo Running Digital IC Simulation
     echo ngspice -i "<($TENG main.tspice "$@" $SARGS smode=ic start=128 stop=128)"
     if ! [ "$norun" ]; then
@@ -84,7 +86,7 @@ if ! [ -f $outdir/model_*_op.ic ] && [ "$runic" ] || [ "$runic" = 2 ]; then
     fi
 fi
 
-if [ "$batch" ]; then
+if ! [ "$interactive" ]; then
     COUNT=1
     echo Running in Batch mode
 
@@ -93,25 +95,36 @@ if [ "$batch" ]; then
             echo -n "[ -f $outdir/ptrace_d_${i}_d* ] || " >> jobs.sh
         fi
 
+        if [ "$runanlg" = 1 ]; then
         echo -n "${NGBCH}_a_${i} <($SMAIN batch= 'start=$i' 'dmode=model') && " >> jobs.sh
         echo -n         "ngspice <($SPOST batch= 'start=$i' 'dmode=model') && " >> jobs.sh
+        fi
         echo -n "${NGBCH}_d_${i} <($SMAIN batch= 'start=$i' 'amode=model') && " >> jobs.sh
         echo            "ngspice <($SPOST batch= 'start=$i' 'amode=model') "    >> jobs.sh
     done
 
 else
-    COUNT=$(((sstop - sstart + 1) / queue))
-    echo Interactively batching $COUNT per thread $sstart-$sstop
+    # Interactive batching
+    # COUNT=$(((sstop - sstart + 1) / queue))
+    # echo Interactively batching $COUNT per thread $sstart-$sstop
 
-    for i in $(seq 1 $queue); do
-        istop=$((sstart + COUNT))
-        if [ $istop -gt $sstop ]; then
-            istop=$((sstop + 1))
-        fi
-        echo "ngspice -i <($SMAIN start=$sstart stop=$istop)" >> jobs.sh
-        sstart=$istop
-    done
+    # for i in $(seq 1 $queue); do
+    #     istop=$((sstart + COUNT))
+    #     if [ $istop -gt $sstop ]; then
+    #         istop=$((sstop + 1))
+    #     fi
+    #     echo "ngspice -i <($SMAIN start=$sstart stop=$istop)" >> jobs.sh
+    #     sstart=$istop
+    # done
 
+    # Just Interactive
+    if [ "$runanlg" = 1 ]; then
+        echo Running Analog Interactive
+        ngspice -i <($SMAIN start=$sstart stop=$sstop interactive=1 plot=1 dmode=model)
+    fi
+    echo Running Digital Interactive
+    ngspice -i <($SMAIN start=$sstart stop=$sstop interactive=1 plot=1 amode=model)
+    exit
 fi
 echo "Generated jobs.sh"
 

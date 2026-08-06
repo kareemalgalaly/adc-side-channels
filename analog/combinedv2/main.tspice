@@ -15,11 +15,11 @@
 *                                         ic      : simulate initial conditions
 *                                         main    : simulate using initial conditions
 *   plot                -         define (don't quit at end of interactive)
-*   batch               -         define (select batch mode)
+*   interactive         -         define (select interactive mode)
 *   layout              -         str in (cap, full) or unset
 *   start   {start}     1         start pixel for simulation
-*   step    {step}      1         not used in batch mode
-*   stop    {stop}      256       not used in batch mode
+*   step    {step}      1         only used in interactive mode
+*   stop    {stop}      256       only used in interactive mode
 
 {default outdir "outfiles"}
 {default corner "tt"}
@@ -37,23 +37,23 @@
 
 {smatch smode}
 {case "full"}
-{if power=="ideal"}
-  {define ts 0.1u} ; 0.01, 0.005
-  {define cs 0u}
-  {define ce 256u}
+{if arch=="base"}
+  {default ts "0.1u"} ; 0.01, 0.005
+  {default cs "0u"}
+  {default ce "257u"}
 {else}
-  {define ts 0.1u} ; 0.01, 0.005
-  {define cs 500u}
-  {define ce 768u}
+  {default ts "0.1u"} ; 0.01, 0.005
+  {default cs "500u"}
+  {default ce "771u"}
 {endif}
 {case "ic"}
-  {define ts 0.1u}
-  {define cs 500u}
-  {define ce 512u}
+  {default ts "0.1u"}
+  {default cs "500u"}
+  {default ce "514u"}
 {case "main"}
-  {define ts 0.1u}
-  {define cs 0u}
-  {define ce 256u}
+  {default ts "0.1u"}
+  {default cs "0u"}
+  {default ce "257u"}
 {endmatch}
 {define version }
 {define dlib synth}
@@ -171,7 +171,11 @@ vpix  pix  GND {pix_voltage}
 ; Ceyda notes this can affect signal behavior
 vclk   clk  GND PULSE(0 1.8 {cs} 100p 100p .5u 1u)
 vclk2  clk2 GND PULSE(0 1.8 {cs} 100p 100p .25u 0.5u)
+{if arch == "base"}
+vrst   rst  GND PULSE(0 1.8 40n  100p 100p 1u  257u)
+{else}
 vrst   rst  GND PULSE(0 1.8 0    100p 100p 40n 256.04u)
+{endif}
 
 {if amode != "model"}
 vdd3v3a vdd3v3a GND     3.3
@@ -272,6 +276,7 @@ xopamp  vdda iref1 vx vp inp GND opamp_singleslope_wcapnew
 {else}
 xidac vdda vx_ vx_neg_ b4 b3 b2 b1 b0 b4i b3i b2i b1i b0i iref4 GND idac
 vmeas_idacp vx     vx_     0
+vmeas_idacn vx_neg vx_neg_ 0
 
 xopampp vdda iref1 vx vp inp GND opamp_singleslope_wcapnew
 C1 vx inp 20p m=1
@@ -350,15 +355,15 @@ xcen_ff  clk cen_d GND GND vddd vddd cen sky130_fd_sc_hs__dfxtp_1
   +           {getbus("count")} {getbus("pixel")} {getbus("pixeld")} 
   +           GND GND vddd vddd double_rate_sampler
 {case "base"}
-  xedge_detector clk rst outp enable GND vdd negedge_detector
-  xregister_array clk rst enable {getbus("count")} {getbus("pixel")} GND vdd register_array
+  xedge_detector clk rst outp enable GND vddd negedge_detector
+  xregister_array clk rst enable {getbus("count")} {getbus("pixel")} GND vddd register_array
 {endmatch}
 
 ** END Digital =============================================
 
 ** Control -------------------------------------------------
 
-.option method = Gear  ; Kemal likes this option
+.option method = Gear  ; Kemal likes this option (esp for power sims)
 .options reltol=1e-4   ; Kemal suggestion
 .tran {ts} {ce} uic
 
@@ -368,7 +373,7 @@ xcen_ff  clk cen_d GND GND vddd vddd cen sky130_fd_sc_hs__dfxtp_1
 {endif}
 
 
-{ifndef batch}
+{ifdef interactive}
 .control
   shell mkdir -p {outdir}
   set wr_singlescale
@@ -429,17 +434,24 @@ xcen_ff  clk cen_d GND GND vddd vddd cen sky130_fd_sc_hs__dfxtp_1
       exit
     {endif}
 
-    let  pixel = {dbus("pixel")}
-    echo -n "seed $&iseed: " >> {outdir}/summary
-    meas tran dout find pixel at={ce} >> {outdir}/summary
+    {if dmode!="model"}
+      let  pixel = {dbus("pixel")}
+      let  count = {dbus("count")}
+      echo -n "seed $&iseed: " >> {outdir}/summary
+      meas tran dout find pixel at={ce} >> {outdir}/summary
+    {endif}
 
     {ifdef plot}
-      plot 0-i(vdd1v8a) 0-i(vdd3v3a)
+      plot {if amode!="model"}0-i(vdd1v8a){endif} {if dmode!="model"}0-i(vdd1v8d){endif}
       {if arch != "base"}
-        plot inp inp_neg
+        {if amode!="model"}
+          plot inp inp_neg
+        {endif}
         plot outp outn
-        let  count = {dbus("count")}
-        plot count pixel
+        {if dmode!="model"}
+          let  count = {dbus("count")}
+          plot count pixel
+        {endif}
       {endif}
     {else}
       destroy all
@@ -453,8 +465,9 @@ xcen_ff  clk cen_d GND GND vddd vddd cen sky130_fd_sc_hs__dfxtp_1
 .endc
 {else}
 .save pix 
-+ {if amode!="model"}i(vdd3v3a) i(vdd1v8a) inp outp outn {if arch=="prot"}outp_neg outn_neg{endif}{endif}
-+ {if dmode!="model"}i(vdd3v3d) i(vdd1v8d) {getbus("count")} {getbus("pixel")}{endif}
++ clk rst outp
++ {if amode!="model"}i(vdd3v3a) i(vdd1v8a) vdda inp outn {if arch=="prot"}outp_neg outn_neg{endif}{endif}
++ {if dmode!="model"}i(vdd3v3d) i(vdd1v8d) vddd enable {getbus("count")} {getbus("pixel")}{endif}
 {endif}
 .end
 
