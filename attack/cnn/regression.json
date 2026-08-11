@@ -16,6 +16,32 @@
             "type"       : "bitwise",
             "inputs"     : 1
         },
+        "ldo_bw_2" : {
+            "definition" : "C(10,10,1):BN1:R:P(5,5):C(5,5,1):R:P(2,2):F(100):R:F(2):S",
+            "nparams"    : "10*10 + 5*5*2 + 100*(2560*10/5/2*5/2) + 2*(100) = ",
+            "type"       : "bitwise",
+            "inputs"     : 2
+        },
+        "ldo_mb" : {
+            "definition" : "C(10,10,1):BN1:R:P(5,5):C(5,5,1):R:P(2,2):F(100):R:F(8)",
+            "type"       : "multibit",
+            "inputs"     : 1
+        },
+        "ldo_mb_2" : {
+            "definition" : "C(10,10,1):BN1:R:P(5,5):C(5,5,1):R:P(2,2):F(100):R:F(8)",
+            "type"       : "multibit",
+            "inputs"     : 2
+        },
+        "ldo_se" : {
+            "definition" : "C(10,10,1):BN1:R:P(5,5):C(5,5,1):R:P(2,2):F(100):R:F(1)",
+            "type"       : "single_ended",
+            "inputs"     : 1
+        },
+        "ldo_se_2" : {
+            "definition" : "C(10,10,1):BN1:R:P(5,5):C(5,5,1):R:P(2,2):F(100):R:F(1)",
+            "type"       : "single_ended",
+            "inputs"     : 2
+        },
         "twocol" : {
             "definition" : "C(10,5,1,1):R:P(5,5):C(10,3,1,1):R:P(2,2):F(200):R:F(200):R:F(2):S",
             "type"       : "bitwise",
@@ -25,131 +51,221 @@
             "definition" : "C(5,5,2,1,1):R:P(5,1,5,1):C(5,3,2,1,1):R:P(2,1,2,1):F(100):R:BN1:F(100):R:BN1:F(1)",
             "type"       : "single_ended",
             "inputs"     : 2
-        },
-        "ldo_bw_2" : {
-            "definition" : "C(10,10,1):BN1:R:P(5,5):C(5,5,1):R:P(2,2):F(100):R:F(2):S",
-            "nparams"    : "10*10 + 5*5*2 + 100*(2560*10/5/2*5/2) + 2*(100) = ",
-            "type"       : "bitwise",
-            "inputs"     : 2
         }
     },
-    "datasets" : {
+    "odatasets" : {
         "nlg_xx_tt" : {
             "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:base_corner:tt",
             "format"      : "ptrace_a_\\d+_d(\\d+)",
-            "cstart"      : 512e-6,
+            "sample_duration" : 257e-6,
             "column"      : 1
         },
         "dig_xx_tt" : {
             "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:base_corner:tt",
             "format"      : "ptrace_d_\\d+_d(\\d+)",
-            "cstart"      : 512e-6,
+            "sample_duration" : 257e-6,
             "column"      : 1
         },
         "nlg_xx_ss" : {
             "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:base_corner:ss",
             "format"      : "ptrace_a_\\d+_d(\\d+)",
+            "sample_duration" : 257e-6,
             "column"      : 1
         },
         "dig_xx_ss" : {
             "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:base_corner:ss",
             "format"      : "ptrace_d_\\d+_d(\\d+)",
+            "sample_duration" : 257e-6,
             "column"      : 1
         },
         "nlg_xx_fs" : {
             "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:base_corner:fs",
             "format"      : "ptrace_a_\\d+_d(\\d+)",
+            "sample_duration" : 257e-6,
             "column"      : 1
         },
         "dig_xx_fs" : {
             "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:base_corner:fs",
             "format"      : "ptrace_d_\\d+_d(\\d+)",
+            "sample_duration" : 257e-6,
             "column"      : 1
         },
         "cmp_xp_tt" : {
             "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:prot_corner:tt",
-            "format"      : "atrace_(\\d+)"
+            "format"      : "atrace_(\\d+)",
+            "cstart"      : 512e-6
         },
         "nlg_xp_tt" : {
             "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:prot_corner:tt",
             "format"      : "ptrace_a_\\d+_d(\\d+)",
-            "column"      : 1
+            "column"      : 1,
+            "cstart"      : 512e-6
         },
         "dig_xp_tt" : {
             "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:prot_corner:tt",
             "format"      : "ptrace_d_\\d+_d(\\d+)",
-            "column"      : 1
+            "column"      : 1,
+            "cstart"      : 512e-6
         },
         "nlg_xp_ss" : {
             "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:prot_corner:ss",
             "format"      : "ptrace_a_\\d+_d(\\d+)",
-            "column"      : 1
+            "column"      : 1,
+            "cstart"      : 512e-6
+        },
+        "dig_xp_ss" : {
+            "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:prot_corner:ss",
+            "format"      : "ptrace_d_\\d+_d(\\d+)",
+            "column"      : 1,
+            "cstart"      : 512e-6
+        },
+        "nlg_xp_fs" : {
+            "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:prot_corner:fs",
+            "format"      : "ptrace_a_\\d+_d(\\d+)",
+            "column"      : 1,
+            "cstart"      : 512e-6
+        },
+        "dig_xp_fs" : {
+            "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:prot_corner:fs",
+            "format"      : "ptrace_d_\\d+_d(\\d+)",
+            "column"      : 1,
+            "cstart"      : 512e-6
         }
     },
-    "ndatasets" : {
-        "cmp_xx_tt" : {
-            "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:base_corner:tt",
-            "format"      : "atrace_(\\d+)"
-        },
+    "datasets" : {
         "nlg_xx_tt" : {
             "path"        : "cmb_xx_tt",
             "format"      : "raw_s\\d+_(\\d+)\\.txt",
             "type"        : "raw",
+            "len"         : 2570,
             "column"      : 0
         },
         "dig_xx_tt" : {
             "path"        : "cmb_xx_tt",
             "format"      : "raw_s\\d+_(\\d+)\\.txt",
             "type"        : "raw",
+            "len"         : 2570,
             "column"      : 1
         },
         "cmb_xx_tt" : {
-            "path"        : "cmb_x_tt",
+            "path"        : "cmb_xx_tt",
             "format"      : "raw_s\\d+_(\\d+)\\.txt",
             "type"        : "raw",
+            "len"         : 2570,
             "columns"     : 2
         },
         "nlg_xx_ss" : {
             "path"        : "cmb_xx_ss",
             "format"      : "raw_s\\d+_(\\d+)\\.txt",
             "type"        : "raw",
+            "len"         : 2570,
             "column"      : 0
         },
         "dig_xx_ss" : {
             "path"        : "cmb_xx_ss",
             "format"      : "raw_s\\d+_(\\d+)\\.txt",
             "type"        : "raw",
+            "len"         : 2570,
             "column"      : 1
         },
         "cmb_xx_ss" : {
-            "path"        : "cmb_x_ss",
+            "path"        : "cmb_xx_ss",
             "format"      : "raw_s\\d+_(\\d+)\\.txt",
             "type"        : "raw",
+            "len"         : 2570,
             "columns"     : 2
         },
         "nlg_xx_fs" : {
             "path"        : "cmb_xx_fs",
             "format"      : "raw_s\\d+_(\\d+)\\.txt",
             "type"        : "raw",
+            "len"         : 2570,
             "column"      : 0
         },
         "dig_xx_fs" : {
             "path"        : "cmb_xx_fs",
             "format"      : "raw_s\\d+_(\\d+)\\.txt",
             "type"        : "raw",
+            "len"         : 2570,
             "column"      : 1
         },
         "cmb_xx_fs" : {
             "path"        : "cmb_xx_fs",
             "format"      : "raw_s\\d+_(\\d+)\\.txt",
             "type"        : "raw",
+            "len"         : 2570,
+            "columns"     : 2
+        },
+        "nlg_xp_tt" : {
+            "path"        : "cmb_xp_tt",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "len"         : 2570,
+            "column"      : 0
+        },
+        "dig_xp_tt" : {
+            "path"        : "cmb_xp_tt",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "len"         : 2560,
+            "column"      : 1
+        },
+        "cmb_xp_tt" : {
+            "path"        : "cmb_xp_tt",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "len"         : 2560,
+            "columns"     : 2
+        },
+        "nlg_xp_ss" : {
+            "path"        : "cmb_xp_ss",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "len"         : 2560,
+            "column"      : 0
+        },
+        "dig_xp_ss" : {
+            "path"        : "cmb_xp_ss",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "len"         : 2560,
+            "column"      : 1
+        },
+        "cmb_xp_ss" : {
+            "path"        : "cmb_xp_ss",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "len"         : 2560,
+            "columns"     : 2
+        },
+        "nlg_xp_fs" : {
+            "path"        : "cmb_xp_fs",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "len"         : 2560,
+            "column"      : 0
+        },
+        "dig_xp_fs" : {
+            "path"        : "cmb_xp_fs",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "len"         : 2560,
+            "column"      : 1
+        },
+        "cmb_xp_fs" : {
+            "path"        : "cmb_xp_fs",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "len"         : 2560,
             "columns"     : 2
         }
+
     },
-    "tests" : [],
-    "tosts" : [
+    "tosts" : [],
+    "tests" : [
         {
             "desc"          : "Base (ideal uprot): Analog",
+            "skip"          : false,
             "networks"      : ["ldo_bw"],
             "datasets"      : ["nlg_xx_tt"],
             "test_dataset"  : ["nlg_xx_ss", "nlg_xx_fs"],
@@ -160,6 +276,7 @@
         },
         {
             "desc"          : "Base (ideal uprot): Digital",
+            "skip"          : false,
             "networks"      : ["ldo_bw"],
             "datasets"      : ["dig_xx_tt"],
             "test_dataset"  : ["dig_xx_ss", "dig_xx_fs"],
@@ -178,12 +295,67 @@
             "learning_decay": 0.000025,
             "optimizer"     : "Amsgrad",
             "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "Prot (ideal prot): Combined MB, SE",
+            "skip"          : false,
+            "networks"      : ["ldo_mb_2", "ldo_se_2"],
+            "datasets"      : ["cmb_xx_tt"],
+            "test_dataset"  : ["cmb_xx_ss", "cmb_xx_fs"],
+            "learning_rate" : [0.0002],
+            "learning_decay": 0.00002,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 20000
+        },
+        {
+            "desc"          : "Prot (ideal prot): Analog",
+            "skip"          : false,
+            "networks"      : ["ldo_bw"],
+            "datasets"      : ["nlg_xp_tt"],
+            "test_dataset"  : ["nlg_xp_ss", "nlg_xp_fs"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.000025,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "Prot (ideal prot): Digital",
+            "skip"          : false,
+            "networks"      : ["ldo_bw"],
+            "datasets"      : ["dig_xp_tt"],
+            "test_dataset"  : ["dig_xp_ss", "dig_xp_fs"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.000025,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "Prot (ideal prot): Combined",
+            "skip"          : false,
+            "networks"      : ["ldo_bw_2"],
+            "datasets"      : ["cmb_xp_tt"],
+            "test_dataset"  : ["cmb_xp_ss", "cmb_xp_fs"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.000025,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "Prot (ideal prot): Combined MB",
+            "skip"          : false,
+            "networks"      : ["ldo_mb_2"],
+            "datasets"      : ["cmb_xp_tt"],
+            "test_dataset"  : ["cmb_xp_ss", "cmb_xp_fs"],
+            "learning_rate" : [0.0002],
+            "learning_decay": 0.00002,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 20000
         }
     ],
     "defaults" : {
         "sample_mode"     : ["MAX"],
         "sample_interval" : 0.1e-6,
-        "sample_duration" : 260e-6,
+        "sample_duration" : 256e-6,
         "columns"         : 1,
         "normalizer"      : "scale",
         "trace_scale"     : 1,
