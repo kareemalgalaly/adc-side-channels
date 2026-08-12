@@ -16,6 +16,7 @@
 
 import torch.nn as nn
 import re
+import traceback
 from operator import mul
 
 ## Regex Definitions ---------------------------------------
@@ -142,7 +143,9 @@ def build_cnn(definition, debug=False):
         else:
             raise RuntimeError(f"Could not parse definition entry <{token}>")
 
-    if debug: print(shapes)
+    if debug:
+        print(shapes)
+        print(*layers, sep="\n")
     return nn.ModuleList(layers), flatten
 
 ## Pytorch class -------------------------------------------
@@ -155,6 +158,8 @@ class GenericCNN(nn.Module):
         self.cols  = cols
 
     def forward(self, x):
+        og = x
+
         #if self.debug: print(x.shape, "input")
         if self.cols == 1:
             x = x.unsqueeze(1) 
@@ -164,9 +169,29 @@ class GenericCNN(nn.Module):
             if i == self.flatten:
                 x = x.view(x.size(0), -1)
                 #if self.debug: print(x.shape, "flatten")
-            x = layer(x)
+            try:
+                x = layer(x)
+            except Exception as e:
+                print(f"\nError on layer {i} {layer}\n{traceback.format_exc()}")
+                try:
+                    self.forward_debug(og)
+                except:
+                    pass
+                exit(1)
             #if self.debug: print(x.shape, layer)
         return x
+
+    def forward_debug(self, x):
+        if self.cols == 1:
+            x = x.unsqueeze(1) 
+
+        for i, layer in enumerate(self.layers):
+            print(i, x.shape, layer)
+            if i == self.flatten:
+                x = x.view(x.size(0), -1)
+            x = layer(x)
+        return x
+
     
 ## Demo example --------------------------------------------
 

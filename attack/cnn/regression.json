@@ -196,11 +196,35 @@
             "len"         : 2570,
             "columns"     : 2
         },
+        "nlg_xx_g1" : {
+            "path"        : "cmb_xx_tt",
+            "paths"       : ["cmb_xx_ss"],
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "len"         : 2570,
+            "column"      : 0
+        },
+        "dig_xx_g1" : {
+            "path"        : "cmb_xx_tt",
+            "paths"       : ["cmb_xx_ss"],
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "len"         : 2570,
+            "column"      : 1
+        },
+        "cmb_xx_g1" : {
+            "path"        : "cmb_xx_tt",
+            "paths"       : ["cmb_xx_ss"],
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "len"         : 2570,
+            "columns"     : 2
+        },
         "nlg_xp_tt" : {
             "path"        : "cmb_xp_tt",
             "format"      : "raw_s\\d+_(\\d+)\\.txt",
             "type"        : "raw",
-            "len"         : 2570,
+            "len"         : 2560,
             "column"      : 0
         },
         "dig_xp_tt" : {
