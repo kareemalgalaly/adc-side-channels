@@ -26,7 +26,7 @@ FIGY = 3.5
 #job_launch_time = time.ctime()
 job_launch_time = time.strftime("%y%m%d_%H%M")
 
-argparser.add_argument("-t", "--test",      type=str, default="",   help="Limit run tests to those whose description matches the specified regex")
+argparser.add_argument("-t", "--test",      type=str, default=".*", help="Limit run tests to those whose description matches the specified regex")
 argparser.add_argument("-r", "--repeat",    type=int, default=1,    help="Rerun training/test this many times. requires -f flag to work properly")
 argparser.add_argument(      "--seed",      type=int, default=None, help="Override random seed")
 argparser.add_argument("-c", "--cpuonly",   action='store_true', help="Don't use GPU even if available")
@@ -34,6 +34,7 @@ argparser.add_argument("-n", "--nowrite",   action='store_true', help="Don't wri
 argparser.add_argument("-f", "--force",     action='store_true', help="Overwrite output files")
 argparser.add_argument("-p", "--preview",   action='store_true', help="Don't run anything only list runs that would occur")
 argparser.add_argument("-x", "--headless",  action='store_true', help="Do not open any gui's")
+argparser.add_argument(      "--validate",  action="store_true", help="Use first test dataset for validation")
 argparser.add_argument(      "--noplot",    action="store_true", help="Do not do any plotting")
 argparser.add_argument(      "--nndebug",   action='store_true', help="Print information about cnn creation.")
 argparser.add_argument(      "--gradplot",  action="store_true", help="Plot gradient")
@@ -141,7 +142,7 @@ class CNNRegression(Regression):
                     for line in file.readlines():
                         self.skip_tests.add(line.partition(",")[0])
 
-        self.tests = [t for t in self.tests if re.match(args.test, t.description)]
+        self.tests = [t for t in self.tests if re.fullmatch(args.test, t.description)]
         if self.args.repeat > 1:
             self.tests.append(None)
             self.tests *= self.args.repeat
@@ -209,8 +210,18 @@ class CNNRegression(Regression):
 
         ## Basic parameters --------------------------------
 
-        plot_period = 10 if self.args.fineplot else 100 if self.device else 10
-        acc_period  = 1  if self.args.fineplot else 100 if self.device else 10
+        if self.args.fineplot:
+            plot_period = 10
+            acc_period  = 1
+        elif self.args.validate:
+            plot_period = 100
+            acc_period  = 10
+        elif self.device:
+            plot_period = 100
+            acc_period  = 100
+        else:
+            plot_period = 10
+            acc_period  = 10
 
         self.set_seed()
         start_tm = time.monotonic()
@@ -240,6 +251,13 @@ class CNNRegression(Regression):
         #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=100, factor=0.7)
         scheduler = None
 
+        ## Validation Data ---------------------------------
+
+        stall_len   = 0
+        max_test_a  = 1/256 if bit == -1 else 1/2
+        max_test_at = 0
+        min_test_l  = 1e10
+        min_test_lt = 0
     
         ## Plotting Arrays --------------------------------- 
 
@@ -282,13 +300,37 @@ class CNNRegression(Regression):
                     acc_indx = epoch // acc_period
                     acc_arr[acc_indx] = accuracy
                     facc = float(accuracy)
-                    pacc = max(facc, pacc)
+                    if facc > pacc:
+                        pacc = facc
+                        stall_len = 0
+                    else:
+                        stall_len += acc_period
 
-                    if self.args.testplot:
+                    if self.args.testplot or self.args.validate:
                         test_builder.set_test()
                         l, a = self.do_nn_pass(network, test_dataloader, cnn, optimizer, criterion, scheduler, nt, False, True)
-                        test_arr[acc_indx] = a
-                        test_builder.set_train()
+
+                        if self.args.validate:
+                            if l < min_test_l: 
+                                min_test_l  = l
+                                min_test_lt = 0
+                            else:
+                                min_test_lt += 1
+
+                            if a > max_test_a: 
+                                max_test_a  = a
+                                max_test_at = 0
+                            else:
+                                max_test_at += 1
+
+                        if self.args.testplot:
+                            test_arr[acc_indx] = a
+                            test_builder.set_train()
+
+                        progress.update(epoch, loss=round(loss.item(), 6), acc=round(facc,4), pacc=round(pacc,4), tst=round(a.item(), 4))
+                    else:
+                        progress.update(epoch, loss=round(loss.item(), 6), acc=round(facc,4), pacc=round(pacc,4))
+
 
                     if self.args.gradplot:
                         grd = 0
@@ -300,7 +342,6 @@ class CNNRegression(Regression):
                         grad_arr[acc_indx] = grd / cnt
                         grads.clear()
 
-                    progress.update(epoch, loss=round(loss.item(), 6), acc=round(facc,4), pacc=round(pacc,4))
 
                 if plot_metrics:
                     if loss_g: loss_g.remove()
@@ -322,11 +363,27 @@ class CNNRegression(Regression):
 
                     self.fig.canvas.flush_events() # update plots without moving window to foreground
 
+
+                if calc_metrics and self.args.validate:
+                    # if min_test_lt > test.val_duration and (l-min_test_l) > test.val_loss_cut:
+                    # if min_test_lt > test.val_duration and (1-min_test_l/l) > test.val_loss_cut:
+                    #     progress.update(epoch, msg=f"Val Loss Cutoff"); break
+                    #if max_test_at > test.val_duration and (1-a/max_test_a) > test.val_acc_cut:
+                    #if max_test_at > test.val_duration and ((max_test_a-a) > test.val_acc_cut:
+                    if max_test_at > test.val_duration and (max_test_a-a) > test.val_acc_cut * max(test.val_duration/max_test_at, 0.05):
+                        progress.update(epoch, msg=f"Val Acc Cutoff"); break
+                    if a >= test.max_accuracy:
+                        progress.update(epoch, msg=f"Hit Val Acc {test.max_accuracy}"); break
+
                 if calc_metrics and (accuracy >= test.max_accuracy):
                     progress.update(epoch, msg=f"Hit Acc {test.max_accuracy}"); break
 
                 if loss <= test.max_loss:
                     progress.update(epoch, msg=f"Hit Loss {test.max_loss}"); break
+
+                if stall_len >= test.val_stall:
+                    progress.update(epoch, msg=f"Training stalled"); break
+
 
         except KeyboardInterrupt as e:
             progress.update(epoch, msg="Interrupted  ")
@@ -380,7 +437,7 @@ class CNNRegression(Regression):
             test_dataset.builder.set_test()
             test_dataloader = test_dataset.builder.dataloader if bit == "_" else test_dataset.builder.dataloaders[bit]
 
-            l, test_accuracy = self.do_nn_pass(network, test_dataloader, cnn, optimizer, criterion, scheduler, nt, False, True)
+            l, test_accuracy = self.do_nn_pass(network, test_dataloader, cnn, optimizer, criterion, scheduler, nt, False, True, False)
             progress.update(epoch, tst=round(float(test_accuracy), 4))
             progress.stop(epoch+1)
 
@@ -389,7 +446,7 @@ class CNNRegression(Regression):
 
         return False
 
-    def do_nn_pass(self, network, dataloader, cnn, optimizer, criterion, scheduler, nt, do_backward, do_accuracy):
+    def do_nn_pass(self, network, dataloader, cnn, optimizer, criterion, scheduler, nt, do_backward, do_accuracy, do_loss=True):
         correct = 0
         count   = 0
         loss = None
@@ -409,11 +466,16 @@ class CNNRegression(Regression):
             optimizer.zero_grad()
             output = cnn(inputs)
 
+            if se: labels = labels.reshape(output.shape)
+
+            # Calculate Loss
+
+            if do_loss or do_backward:
+                loss = criterion(output, labels)
+
             # Backward
 
             if do_backward:
-                if se: labels = labels.reshape(output.shape)
-                loss = criterion(output, labels)
                 loss.backward()
                 optimizer.step()
                 if scheduler: scheduler.step(loss)
@@ -423,15 +485,8 @@ class CNNRegression(Regression):
             if do_accuracy:
                 count += len(output)
                 if se:
-                    labels = labels.reshape(output.shape)
                     correct += (output.round() == labels.round()).sum()
                 elif mb:
-                    # print("----")
-                    # print(output)
-                    # print(output.round())
-                    # print(labels)
-                    # print(output.round() == labels)
-                    # ((output > 0) == labels).sum()
                     # fully correct
                     correct += (((output > 0) == labels).sum(1) == 8).sum()
                     # bits correct

@@ -5,10 +5,35 @@
             "type"       : "bitwise",
             "inputs"     : 1
         },
+        "paper_2" : {
+            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:BN1:F(100):R:BN1:F(100):R:BN1:F(2):S",
+            "type"       : "bitwise",
+            "inputs"     : 2
+        },
+        "paper_2v2" : {
+            "definition" : "C(10,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:BN1:F(100):R:BN1:F(100):R:BN1:F(2):S",
+            "type"       : "bitwise",
+            "inputs"     : 2
+        },
         "paper_se" : {
             "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:BN1:F(100):R:BN1:F(1)",
             "type"       : "single_ended",
             "inputs"     : 1
+        },
+        "paper_se_2" : {
+            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:BN1:F(100):R:BN1:F(1)",
+            "type"       : "single_ended",
+            "inputs"     : 2
+        },
+        "paper_mb" : {
+            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:BN1:F(100):R:BN1:F(8)",
+            "type"       : "multibit",
+            "inputs"     : 1
+        },
+        "paper_mb_2" : {
+            "definition" : "C(10,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:BN1:F(100):R:BN1:F(8)",
+            "type"       : "multibit",
+            "inputs"     : 2
         },
         "ldo_bw" : {
             "definition" : "C(10,10,1):BN1:R:P(5,5):C(5,5,1):R:P(2,2):F(100):R:F(2):S",
@@ -290,21 +315,22 @@
         {
             "desc"          : "Base (ideal uprot): Analog",
             "skip"          : false,
-            "networks"      : ["ldo_bw"],
+            "networks"      : ["paper"],
             "datasets"      : ["nlg_xx_tt"],
             "test_dataset"  : ["nlg_xx_ss", "nlg_xx_fs"],
             "learning_rate" : [0.0003],
             "learning_decay": 0.000025,
+            "val_acc_cut"   : 0.2,
             "optimizer"     : "Amsgrad",
             "max_epochs"    : 5000
         },
         {
             "desc"          : "Base (ideal uprot): Digital",
             "skip"          : false,
-            "networks"      : ["ldo_bw"],
+            "networks"      : ["paper"],
             "datasets"      : ["dig_xx_tt"],
             "test_dataset"  : ["dig_xx_ss", "dig_xx_fs"],
-            "learning_rate" : [0.0003],
+            "learning_rate" : [0.00025],
             "learning_decay": 0.000025,
             "optimizer"     : "Amsgrad",
             "max_epochs"    : 5000
@@ -312,7 +338,7 @@
         {
             "desc"          : "Base (ideal uprot): Combined",
             "skip"          : false,
-            "networks"      : ["ldo_bw_2"],
+            "networks"      : ["paper_2", "paper_2v2"],
             "datasets"      : ["cmb_xx_tt"],
             "test_dataset"  : ["cmb_xx_ss", "cmb_xx_fs"],
             "learning_rate" : [0.0003],
@@ -321,20 +347,23 @@
             "max_epochs"    : 5000
         },
         {
-            "desc"          : "Prot (ideal prot): Combined MB, SE",
-            "skip"          : false,
-            "networks"      : ["ldo_mb_2", "ldo_se_2"],
+            "desc"          : "Base (ideal prot): Combined MB, SE",
+            "skip"          : true,
+            "networks"      : ["paper_mb_2", "ldo_mb_2", "paper_se_2", "ldo_se_2"],
             "datasets"      : ["cmb_xx_tt"],
             "test_dataset"  : ["cmb_xx_ss", "cmb_xx_fs"],
             "learning_rate" : [0.0002],
             "learning_decay": 0.00002,
+            "val_acc_cut"   : 1,
+            "val_duration"  : 70,
+            "val_stall"     : 1000,
             "optimizer"     : "Amsgrad",
             "max_epochs"    : 20000
         },
         {
             "desc"          : "Prot (ideal prot): Analog",
             "skip"          : false,
-            "networks"      : ["ldo_bw"],
+            "networks"      : ["paper"],
             "datasets"      : ["nlg_xp_tt"],
             "test_dataset"  : ["nlg_xp_ss", "nlg_xp_fs"],
             "learning_rate" : [0.0003],
@@ -345,7 +374,7 @@
         {
             "desc"          : "Prot (ideal prot): Digital",
             "skip"          : false,
-            "networks"      : ["ldo_bw"],
+            "networks"      : ["paper"],
             "datasets"      : ["dig_xp_tt"],
             "test_dataset"  : ["dig_xp_ss", "dig_xp_fs"],
             "learning_rate" : [0.0003],
@@ -356,23 +385,29 @@
         {
             "desc"          : "Prot (ideal prot): Combined",
             "skip"          : false,
-            "networks"      : ["ldo_bw_2"],
+            "networks"      : ["paper_2", "paper_2v2"],
             "datasets"      : ["cmb_xp_tt"],
             "test_dataset"  : ["cmb_xp_ss", "cmb_xp_fs"],
-            "learning_rate" : [0.0003],
+            "learning_rate" : [0.0002],
             "learning_decay": 0.000025,
+            "val_acc_cut"   : 0.4,
+            "val_duration"  : 4,
             "optimizer"     : "Amsgrad",
             "max_epochs"    : 5000
         },
         {
             "desc"          : "Prot (ideal prot): Combined MB",
-            "skip"          : false,
-            "networks"      : ["ldo_mb_2"],
+            "skip"          : true,
+            "networks"      : ["paper_mb_2", "ldo_mb_2"],
             "datasets"      : ["cmb_xp_tt"],
             "test_dataset"  : ["cmb_xp_ss", "cmb_xp_fs"],
             "learning_rate" : [0.0002],
             "learning_decay": 0.00002,
+            "val_acc_cut"   : 1,
+            "val_duration"  : 70,
+            "val_stall"     : 1000,
             "optimizer"     : "Amsgrad",
+            "val_acc_cut"   : 0.3,
             "max_epochs"    : 20000
         }
     ],
@@ -381,7 +416,7 @@
         "sample_interval" : 0.1e-6,
         "sample_duration" : 256e-6,
         "columns"         : 1,
-        "normalizer"      : "scale",
+        "normalizer"      : "autoscale",
         "trace_scale"     : 1,
         "optimizer"       : "Adam",
         "loss"            : "CrossEntropyLoss",

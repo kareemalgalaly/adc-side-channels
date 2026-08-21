@@ -338,6 +338,10 @@ class Test(HashableBase):
         self.max_loss      = info.get('max_loss',       defaults.get('max_loss'       ,    0))
         self.batch_size    = info.get('batch_size',     defaults.get('batch_size'     ,   -1))
         self.train_split   = info.get('train_split',    defaults.get('train_split'    ,    1))
+        self.val_loss_cut  = info.get('val_loss_cut',   defaults.get('val_loss_cut'   ,  0.1))
+        self.val_acc_cut   = info.get('val_acc_cut',    defaults.get('val_acc_cut'    ,  0.3))
+        self.val_duration  = info.get('val_duration',   defaults.get('val_duration'   ,    2))
+        self.val_stall     = info.get('val_stall',      defaults.get('val_stall'      ,  500))
 
         #if not isinstance(self.learning_rate, list): self.learning_rate = [self.learning_rate]
         #if not isinstance(self.optimizer,     list): self.optimizer     = [self.optimizer]
@@ -361,6 +365,10 @@ class Test(HashableBase):
         that.max_loss      = self.max_loss
         that.batch_size    = self.batch_size
         that.train_split   = self.train_split
+        that.val_loss_cut  = self.val_loss_cut
+        that.val_acc_cut   = self.val_acc_cut
+        that.val_duration  = self.val_duration
+        that.val_stall     = self.val_stall
         return that
 
     def get_csv(self, test_index=0):

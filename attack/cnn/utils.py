@@ -7,6 +7,7 @@
 
 import sys
 import math
+import traceback
 from hashlib import shake_128
 
 # bar_chr = '-X'
@@ -58,7 +59,13 @@ class ProgressBar:
 
         if kwargs is not {}: self.kwargs.update(kwargs)
 
-        print(f"\r{self.f_start.format(**self.kwargs)}{self.bar(value)} {value:{self.val_len}}/{self.max_val} {self.f_end.format(**self.kwargs)}", end='', file=self.out, flush=True)
+        try:
+            print(f"\r{self.f_start.format(**self.kwargs)}{self.bar(value)} {value:{self.val_len}}/{self.max_val} {self.f_end.format(**self.kwargs)}", end='', file=self.out, flush=True)
+        except:
+            print(traceback.format_exc())
+            print("f_start", self.f_start)
+            print("f_end",   self.f_end)
+            print("kwargs",  self.kwargs)
 
     def stop(self, value=-1):
         if not(self.running): return
