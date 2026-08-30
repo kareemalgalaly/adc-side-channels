@@ -48,7 +48,7 @@ Tools have been tested on MacOS Sequoia, Tahoe (arm64), Debian 12 Bookworm (amd6
     PDK_CELL_LIB 	?= ${PATH_TO_EFABLESS_FD_SC_HS_REPO}/cells
     PDK_LIBERTY     ?= ${PATH_TO_SKYWATER_REPO}/latest/timing/sky130_fd_sc_hs__tt_025C_1v50.lib
 ```
-6. Run the synth make command
+6. Run the `synth` make command
 
 To synthesize digital/design/counters/counter_half.v run
 ```
