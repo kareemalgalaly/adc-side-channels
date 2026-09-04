@@ -15,6 +15,26 @@
             "type"       : "bitwise",
             "inputs"     : 2
         },
+        "paper_2v3" : {
+            "definition" : "C(10,10,1):R:P(5,5):C(5,5,1):R:P(2,2):F(100):R:BN1:F(100):R:BN1:F(2):S",
+            "type"       : "bitwise",
+            "inputs"     : 2
+        },
+        "paper_2v4" : {
+            "definition" : "C(10,10,1):R:P(5,5):C(10,3,1):R:P(2,2):F(100):R:BN1:F(100):R:BN1:F(100):R:BN1:F(2):S",
+            "type"       : "bitwise",
+            "inputs"     : 2
+        },
+        "paper_2v5" : {
+            "definition" : "C(10,10,1):R:P(5,5):C(10,3,1):R:P(2,2):F(200):R:BN1:F(100):R:BN1:F(100):R:BN1:F(2):S",
+            "type"       : "bitwise",
+            "inputs"     : 2
+        },
+        "paper_2v6" : {
+            "definition" : "C(10,5,1):R:P(5,5):C(10,3,1):R:P(2,2):F(200):R:BN1:F(100):R:BN1:F(100):R:BN1:F(2):S",
+            "type"       : "bitwise",
+            "inputs"     : 2
+        },
         "paper_se" : {
             "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:BN1:F(100):R:BN1:F(1)",
             "type"       : "single_ended",
@@ -314,7 +334,7 @@
     "tests" : [
         {
             "desc"          : "Base (ideal uprot): Analog",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["paper"],
             "datasets"      : ["nlg_xx_tt"],
             "test_dataset"  : ["nlg_xx_ss", "nlg_xx_fs"],
@@ -326,7 +346,7 @@
         },
         {
             "desc"          : "Base (ideal uprot): Digital",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["paper"],
             "datasets"      : ["dig_xx_tt"],
             "test_dataset"  : ["dig_xx_ss", "dig_xx_fs"],
@@ -338,7 +358,7 @@
         {
             "desc"          : "Base (ideal uprot): Combined",
             "skip"          : false,
-            "networks"      : ["paper_2", "paper_2v2"],
+            "networks"      : ["paper_2v5"],
             "datasets"      : ["cmb_xx_tt"],
             "test_dataset"  : ["cmb_xx_ss", "cmb_xx_fs"],
             "learning_rate" : [0.0003],
@@ -362,7 +382,7 @@
         },
         {
             "desc"          : "Prot (ideal prot): Analog",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["paper"],
             "datasets"      : ["nlg_xp_tt"],
             "test_dataset"  : ["nlg_xp_ss", "nlg_xp_fs"],
@@ -373,7 +393,7 @@
         },
         {
             "desc"          : "Prot (ideal prot): Digital",
-            "skip"          : false,
+            "skip"          : true,
             "networks"      : ["paper"],
             "datasets"      : ["dig_xp_tt"],
             "test_dataset"  : ["dig_xp_ss", "dig_xp_fs"],
@@ -384,8 +404,8 @@
         },
         {
             "desc"          : "Prot (ideal prot): Combined",
-            "skip"          : false,
-            "networks"      : ["paper_2", "paper_2v2"],
+            "skip"          : true,
+            "networks"      : ["paper_2v5"],
             "datasets"      : ["cmb_xp_tt"],
             "test_dataset"  : ["cmb_xp_ss", "cmb_xp_fs"],
             "learning_rate" : [0.0002],

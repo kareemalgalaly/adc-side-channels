@@ -22,10 +22,16 @@ argparser.add_argument("-D", "--datasets", type=str, default=["a1u_tt:min"], nar
 argparser.add_argument("-H", "--histogram", action="store_true", help="Plot histogram of data")
 argparser.add_argument("-S", "--stack", action="store_true", help="Stack traces on same plot")
 argparser.add_argument("-L", "--labels", nargs="+", default=[])
+argparser.add_argument(      "--title", default=None)
 args = argparser.parse_args()
 
 regression = Regression(args)
 regression.load()
+
+## Plot Parameters ----------------------------------
+
+plt.rcParams['figure.dpi'] = 300
+plt.rcParams['figure.autolayout'] = True
 
 ## Datasets -----------------------------------------
 
@@ -52,6 +58,11 @@ else:
 for label, ax in zip(args.traces, axs):
     if not args.histogram:
         ax.set_title(f"Trace {label}")
+        ax.set_xlabel("Time (us)")
+        ax.set_ylabel("Normalized Power")
+
+    if args.title:
+        ax.set_title(args.title)
 
     for dname in datasets:
         try:
