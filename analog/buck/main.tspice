@@ -1,0 +1,90 @@
+; Buck Converter
+
+{default tr 0.5e-12}
+{default dd 1/5}   ; discharge fraction
+{default ts 3e-12} ; switching period
+{default td ts*dd}
+{default vddext 3.3}
+{default vddint 1.8}
+{default corner "tt"}
+{default variant "sc_hd"} ; FIXME switch back to sc_hs
+{default ninv 5}
+
+; {ifxst /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice}
+;   .lib "/foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice" {corner}
+;   .includecs "/foss/pdk/sky130A/libs.ref/sky130_fd_{variant}/spice/sky130_fd_{variant}.spice"
+; {else}
+; {ifxst /usr/local/lib/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice}
+;   .lib "/usr/local/lib/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice" {corner}
+;   .includecs "/usr/local/lib/pdk/sky130A/libs.ref/sky130_fd_{variant}/spice/sky130_fd_{variant}.spice"
+; {else}
+;   .lib "models/sky130.lib.spice" {corner}
+; {endif}
+; {endif}
+
+* input ----------------------------------------------------
+
+vin vin gnd {vddext}
+vref vref gnd {eval vddint/2}
+
+* control --------------------------------------------------
+
+; ideal feedback
+ven dis gnd PULSE(0 {vddext} 0 {tr} {tr} {td} {ts})
+
+; ; BFB
+; 
+; rbfb1 vo vbfb  1k
+; rbfb3 vbfb gnd 1k
+; 
+; ; AE
+; 
+; eae vae gnd vref vbfb 100
+; 
+; ; Comparator
+; 
+; vsaw saw gnd PWL(0 0 {eval ts} {vddext}) r=0
+; bcmp dis gnd V=V(vae) > V(saw) ? {vddext} : 0
+
+
+* switches -------------------------------------------------
+
+SD lhi gnd dis gnd NSWITCH ON
+SE lhi vin gnd dis PSWITCH OFF
+.model NSWITCH SW vt={eval vddext/2}  vh=0 ron=1 roff=1Meg
+.model PSWITCH SW vt={eval -vddext/2} vh=0 ron=1 roff=1Meg
+
+* inductor -------------------------------------------------
+
+; pin ---- lhi --uuuuu-- llo --\/\/\/----- vo
+
+L1 lhi llo 10n
+RL1 llo vo 0.1
+
+* output loading -------------------------------------------
+
+; ILoad llo gnd 808n
+; CO    vo gnd 10f
+Rload vo gnd 2k
+
+; Vout vo gnd {vddint}
+
+* misc -----------------------------------------------------
+
+; vddd vddd gnd 1.8
+; 
+; {for i in range(ninv-1)}
+; xclkinv{i} clk{i} gnd gnd vddd vddd clk{eval i+1} sky130_fd_{variant}__inv_1
+; cclkinv{i} clk{i} gnd 0.1f
+; {endfor}
+; xclkinv{eval ninv-1} clk{eval ninv-1} gnd gnd vddd vddd clk0 sky130_fd_{variant}__inv_1
+; cclkinv{eval ninv-1} clk{eval ninv-1} gnd 0.1f
+; 
+; xinv1 dis gnd gnd vddd vddd nrg  sky130_fd_{variant}__inv_1
+; xinv2 nrg gnd gnd vddd vddd dis1 sky130_fd_{variant}__inv_1
+
+.control
+  tran 1p 100p
+  plot i(l1)
+  plot dis
+.endc
