@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 # - equivalently this means that given a static knob for 
 #   the entire sample period, 
 #   slope = final peak-to-peak / nominal peak-to-peak
+#   slope = nominal_sample_period (256) / sample_period
 # - this version assumes the knobs linearly
 #   interpolate between smin and smax
 # ------------------------------------------------
@@ -16,6 +17,10 @@ def knobs2slopelut(knob, bits=5, smin=0.5, smax=1.5):
     kmax = 1 << bits
     knob &= kmax - 1
     return (knob / kmax) * (smax - smin) + smin
+
+def knobs2period(knob, bits=5, smin=0.5, smax=1.5):
+    slope = knobs2slopelut(knob, bits=bits, smin=smin, smax=smax)
+    return (1 << bits) / slope
 
 # ------------------------------------------------
 # func: decode_counter
@@ -36,6 +41,20 @@ def decode_counter(count, knobs, sample_period=256, bits=5, smin=0.5, smax=1.5):
 
     return int(ncount)
 
+def decode_counter_v2(count, knobs, sample_period=256, bits=5, smin=0.5, smax=1.5):
+    steps = len(knobs)
+    step_period = sample_period // steps
+    full, rem = divmod(count, step_period)
+
+    ncount = 0
+    for i in range(full):
+        slope = knobs2slopelut(knobs[i], bits, smin, smax)
+        ncount += step_period * slope
+    slope = knobs2slopelut(knobs[full], bits, smin, smax)
+    ncount += rem * slope
+
+    return int(ncount)
+
 # Testing --------------------------------------------------
 
 def test_decode(count, knobs, sample_period=256, bits=5, smin=0.5, smax=1.5):
@@ -43,7 +62,7 @@ def test_decode(count, knobs, sample_period=256, bits=5, smin=0.5, smax=1.5):
     print(f"count = {count}, knobs = {knobs} -> {v}")
 
 def plot_decode(count, knobs, sample_period=256, bits=5, smin=0.5, smax=1.5):
-    v = decode_counter(count, knobs, sample_period, bits, smin, smax)
+    v = decode_counter_v2(count, knobs, sample_period, bits, smin, smax)
     print(f"count = {count}, knobs = {knobs} -> {v}")
     y = np.zeros(256)
     step_size = sample_period // len(knobs)
@@ -69,10 +88,12 @@ def plot_decode(count, knobs, sample_period=256, bits=5, smin=0.5, smax=1.5):
 # Main -----------------------------------------------------
 
 if __name__ == "__main__":
-    test_decode(100, [0]*4)
-    test_decode(100, [1 << 4]*4)
-    test_decode(100, [(1 << 5) - 1]*4)
-    plot_decode(100, [1 << 4]*4)
-    plot_decode(77, [0, 1 << 4, (1 << 5) - 1, 20])
-    plot_decode(220, [5, 19, 11, 30])
+    smin=0.1
+    smax=1.9
+    test_decode(100, [0]*4, smin=smin, smax=smax)
+    test_decode(100, [1 << 4]*4, smin=smin, smax=smax)
+    test_decode(100, [(1 << 5) - 1]*4, smin=smin, smax=smax)
+    plot_decode(100, [1 << 4]*4, smin=smin, smax=smax)
+    plot_decode(77, [0, 1 << 4, (1 << 5) - 1, 20], smin=smin, smax=smax)
+    plot_decode(220, [5, 19, 11, 30], smin=smin, smax=smax)
 
