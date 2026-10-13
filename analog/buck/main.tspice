@@ -9,6 +9,8 @@
 {default corner "tt"}
 {default variant "sc_hd"} ; FIXME switch back to sc_hs
 {default ninv 5}
+{default inductance 10e-9}
+{default simtime 100e-15}
 
 ; {ifxst /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice}
 ;   .lib "/foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice" {corner}
@@ -58,7 +60,7 @@ SE lhi vin gnd dis PSWITCH OFF
 
 ; pin ---- lhi --uuuuu-- llo --\/\/\/----- vo
 
-L1 lhi llo 10n
+L1 lhi llo {inductance}
 RL1 llo vo 0.1
 
 * output loading -------------------------------------------
@@ -84,7 +86,7 @@ Rload vo gnd 2k
 ; xinv2 nrg gnd gnd vddd vddd dis1 sky130_fd_{variant}__inv_1
 
 .control
-  tran 1p 100p
+  tran {eval simtime/100} {simtime}
   plot i(l1)
   plot dis
 .endc
