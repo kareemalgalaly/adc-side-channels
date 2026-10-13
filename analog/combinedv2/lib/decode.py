@@ -36,6 +36,10 @@ def decode_counter(count, knobs, sample_period=256, bits=5, smin=0.5, smax=1.5):
 
     return int(ncount)
 
+# SUM from 0 to floor(count * num_steps / sample_period) 
+#     of SLOPE_LUT[C[i]] * sample_period / num_steps
+# + SLOPE_LUT[C[floor(count * num_steps / sample_period)]] * (count * num_steps % sample_period)
+
 # Testing --------------------------------------------------
 
 def test_decode(count, knobs, sample_period=256, bits=5, smin=0.5, smax=1.5):

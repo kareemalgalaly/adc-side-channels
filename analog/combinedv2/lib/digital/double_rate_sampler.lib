@@ -140,6 +140,9 @@ c_count_false.7   count_false.7  VGND 9.820939e-16
 
 ** layout --------------------------------------------------
 
-.lib layout
-.endl layout
+.lib layout_full
+.endl layout_full
 
+
+.lib layout_cap
+.endl layout_cap
