@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 ###############################################################################
 # File        : attack/cnn/regress.py
 # Author      : kareemahmad

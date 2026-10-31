@@ -2,7 +2,7 @@
 
 {default tr 0.5e-12}
 {default dd 1/5}   ; discharge fraction
-{default ts 3e-12} ; switching period
+{default ts 1e-11} ; switching period
 {default td ts*dd}
 {default vddext 3.3}
 {default vddint 1.8}
@@ -10,7 +10,7 @@
 {default variant "sc_hd"} ; FIXME switch back to sc_hs
 {default ninv 5}
 {default inductance 10e-9}
-{default simtime 100e-15}
+{default simtime 100e-12}
 
 ; {ifxst /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice}
 ;   .lib "/foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice" {corner}
@@ -32,29 +32,30 @@ vref vref gnd {eval vddint/2}
 * control --------------------------------------------------
 
 ; ideal feedback
-ven dis gnd PULSE(0 {vddext} 0 {tr} {tr} {td} {ts})
+; ven dis gnd PULSE(0 {vddext} 0 {tr} {tr} {td} {ts})
 
-; ; BFB
-; 
-; rbfb1 vo vbfb  1k
-; rbfb3 vbfb gnd 1k
-; 
-; ; AE
-; 
-; eae vae gnd vref vbfb 100
-; 
-; ; Comparator
-; 
-; vsaw saw gnd PWL(0 0 {eval ts} {vddext}) r=0
-; bcmp dis gnd V=V(vae) > V(saw) ? {vddext} : 0
+; BFB
+
+rbfb1 vo vbfb  1k
+rbfb3 vbfb gnd 1k
+
+; AE
+
+bae vae gnd V=max(min((V(vref)-V(vbfb))*200, {vddext}), 0)
+
+; Comparator
+
+vsaw saw gnd PWL(0 0 {eval ts} {vddext}) r=0
+; bcmp dis gnd V=V(vae) < V(saw) ? {vddext} : 0
+bcmp dis gnd V=max(min((V(saw)-V(vae))*50, {vddext}), 0)
 
 
 * switches -------------------------------------------------
 
 SD lhi gnd dis gnd NSWITCH ON
 SE lhi vin gnd dis PSWITCH OFF
-.model NSWITCH SW vt={eval vddext/2}  vh=0 ron=1 roff=1Meg
-.model PSWITCH SW vt={eval -vddext/2} vh=0 ron=1 roff=1Meg
+.model NSWITCH SW vt={eval vddext/2}  vh=0.1 ron=5 roff=100k
+.model PSWITCH SW vt={eval -vddext/2} vh=0.1 ron=5 roff=100k
 
 * inductor -------------------------------------------------
 
@@ -67,7 +68,7 @@ RL1 llo vo 0.1
 
 ; ILoad llo gnd 808n
 ; CO    vo gnd 10f
-Rload vo gnd 2k
+Rload vo gnd 1k
 
 ; Vout vo gnd {vddint}
 
@@ -85,8 +86,11 @@ Rload vo gnd 2k
 ; xinv1 dis gnd gnd vddd vddd nrg  sky130_fd_{variant}__inv_1
 ; xinv2 nrg gnd gnd vddd vddd dis1 sky130_fd_{variant}__inv_1
 
+.option method = Gear 
 .control
-  tran {eval simtime/100} {simtime}
+  tran {eval 10e-14} {simtime}
   plot i(l1)
-  plot dis
+  plot dis 
+  plot vo
+  plot vae saw
 .endc

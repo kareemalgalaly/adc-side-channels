@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 ###############################################################################
 # File        : adc-side-channel/attack/cnn/viewer.py
 # Author      : kareemahmad
@@ -23,6 +25,7 @@ argparser.add_argument("-H", "--histogram", action="store_true", help="Plot hist
 argparser.add_argument("-S", "--stack", action="store_true", help="Stack traces on same plot")
 argparser.add_argument("-L", "--labels", nargs="+", default=[])
 argparser.add_argument(      "--title", default=None)
+argparser.add_argument("--large", action="store_true")
 args = argparser.parse_args()
 
 regression = Regression(args)
@@ -30,7 +33,7 @@ regression.load()
 
 ## Plot Parameters ----------------------------------
 
-plt.rcParams['figure.dpi'] = 300
+if args.large: plt.rcParams['figure.dpi'] = 300
 plt.rcParams['figure.autolayout'] = True
 
 ## Datasets -----------------------------------------
@@ -95,11 +98,11 @@ for label, ax in zip(args.traces, axs):
         if args.histogram:
             if datasets[dname].cols == 1:
                 ax.hist(trace, bins=50, histtype='step', label=lbl)
-                print(f"{dname}[{label}]", min(trace), max(trace))
+                print(f"{dname}[{label}]", min(trace), max(trace), np.average(trace))
             else:
                 for c, trace_i in enumerate(trace): 
                     ax.hist(trace_i, bins=50, histtype='step', label=f"{lbl}.{c}")
-                    print(f"{dname}.{c}[{label}] ({lbl})", min(trace_i), max(trace_i))
+                    print(f"{dname}.{c}[{label}] ({lbl})", min(trace_i), max(trace_i), np.average(trace_i))
         else:
             if datasets[dname].cols == 1:
                 if time is None:
@@ -108,10 +111,8 @@ for label, ax in zip(args.traces, axs):
                 print(f"{lbl}\t[{trace.min():7.3} : {trace.max():7.3}]")
             else:
                 if time is None:
-                    print(type(start), type(stop))
                     time = np.linspace(start, stop, num=trace.shape[1])
                 for i, trace_i in enumerate(trace):
-                    print(i, trace_i)
                     ax.plot(time, trace_i, alpha=0.5, label=f"{lbl}[{i}]", linestyle='solid')
 
     if not args.stack: ax.legend()

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 ###############################################################################
 # File        : adc-side-channel/attack/cnn/anim.py
 # Author      : kareemahmad
