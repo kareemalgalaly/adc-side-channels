@@ -135,31 +135,42 @@ def build_cnn(definition, networks, bit=-1, debug=False):
         #     shapes.append(out_shape)
 
         elif m := re_t.match(token):
-            info = m.group(1).split()
+            info = m.group(1).split(',')
             num_layer = len(info) // 3
             input_len = shapes[-1][0] 
             layer_chs = shapes[-1][1] // num_layer
+
             ns = []
+            ls = []
+            cs = []
+
+            print("prev shape", shapes[-1])
+            print("assm shape", (input_len, layer_chs))
 
             for i in range(0, len(info), 3):
                 ntw = networks[info[i]]
-                wgt = info[i+1]
-                if bit != -1: wgt += f"_{bit}"
+                if bit == -1:
+                    wgt = f"outputs/{info[i+1]}.state"
+                else:
+                    wgt = f"outputs/{info[i+1]}_{bit}.state"
                 stp = int(info[i+2])
-                dfn = f"{input_len},{input_chs}:{ntw.definition}"
+                dfn = f"{input_len},{layer_chs}:{ntw.definition}"
                 lyr = GenericCNN(dfn, networks, cols=layer_chs, stop=stp, bit=bit, debug=False)
-                lyr.load_state_dict(torch.load(wgt, map_location='cpu')) # moved to gpu later
+                lyr.load_state_dict(torch.load(wgt, map_location='cpu', weights_only=True)) # moved to gpu later
+                print(lyr.shapes[stp])
+                ls.append(lyr.shapes[stp][0])
+                cs.append(1 if len(lyr.shapes[stp]) == 1 else lyr.shapes[stp][1])
                 ns.append(lyr)
 
-            output_len, output_chs = ns[0].shapes[-1]
-            for n in ns[1:]: 
-                if output_len != n.shapes[-1][0]:
-                    print(f"Mismatched output length {output_len}, {n.shapes[-1]}")
-                    exit(2)
-                output_chs += n.shapes[-1][1]
+            output_len = ls[0]
+            output_chs = sum(cs)
+            for l in ls: assert l == output_len
+
+            shape = (output_len, output_chs)
+            print(shape)
 
             layers.append(StackCNN(ns))
-            shapes.append((output_len, output_chs))
+            shapes.append(shape)
 
         elif token == 'R':
             layers.append(nn.ReLU())
@@ -216,11 +227,11 @@ class StackCNN(nn.Module):
         outputs = []
 
         with torch.no_grad(): # TODO i don't know if this is necessarily better
-            for i, layer in self.layers:
+            for i, layer in enumerate(self.layers):
                 inp = x[:, i, :]
                 outputs.append(layer(inp))
 
-        return torch.cat(output, dim=1)
+        return torch.cat(outputs, dim=1)
     
 ## Demo example --------------------------------------------
 

@@ -42,6 +42,7 @@ argparser.add_argument(      "--nndebug",   action='store_true', help="Print inf
 argparser.add_argument(      "--gradplot",  action="store_true", help="Plot gradient")
 argparser.add_argument(      "--testplot",  action="store_true", help="Plot test accuracy")
 argparser.add_argument(      "--fineplot",  action="store_true", help="Plot metrics finely")
+argparser.add_argument(      "--bit",       type=int, choices=range(8), default=None, help="Run only one ADC bit")
 args = argparser.parse_args()
 
 def gradient_hook(module_name, grads):
@@ -88,7 +89,8 @@ class CNNRegression(Regression):
                     try:
                         match network.type:
                             case 'bitwise':
-                                for i in range(self.adc_bitwidth-1, -1, -1):
+                                bits = [self.args.bit] if self.args.bit else range(self.adc_bitwidth-1, -1, -1)
+                                for i in bits:
                                     skip &= self.run_single_test(test, network, dataset, f"{run_hash}_{i}", bit=i)
 
                             case 'single_ended' | 'multibit':
