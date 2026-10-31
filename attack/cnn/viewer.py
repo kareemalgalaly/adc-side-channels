@@ -66,11 +66,13 @@ for label, ax in zip(args.traces, axs):
 
     for dname in datasets:
         try:
+            print(label)
             if label != -1:
-                label = label % 256
                 index = label // 256
+                label = label % 256
             else:
                 index = 0
+            print(label, index)
             info = datasets[dname].get_trace(label, index)
         except KeyError as e:
             print(e)

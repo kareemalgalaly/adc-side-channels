@@ -61,14 +61,15 @@ class HashableBase:
 # ------------------------------------------------
 
 class Network(HashableBase):
-    def __init__(self, name, info, args):
+    def __init__(self, name, info, args, networks):
         self.name       = name
         self.definition = info['definition']
         self.type       = info['type']
-        self.inputs     = info['inputs']
+        # self.inputs     = info['inputs']
         self.weights    = info.get('weights', None)
         self.predef     = self.definition.startswith("predef::")
         self.preprocess = eval(f"lambda x: {info.get('preprocess', 'x')}")
+        self.networks   = networks
 
         self.args = args
 
@@ -78,7 +79,7 @@ class Network(HashableBase):
     # --------------------------------------------
 
     def get_csv(self):
-        return f"{self.type},{self.definition.replace(',',';')},{self.inputs}"
+        return f"{self.type},{self.definition.replace(',',';')},n/a" # formerly self.inputs
 
     # --------------------------------------------
     # func: create
@@ -86,7 +87,7 @@ class Network(HashableBase):
     #   corresponding to the defined network
     # --------------------------------------------
 
-    def create(self, input_len, input_ch):
+    def create(self, input_len, input_ch, bit=-1):
         # predef is not fully functional
         if self.predef:
             import torchvision
@@ -107,7 +108,7 @@ class Network(HashableBase):
             return network
         else:
             desc = f"{input_len},{input_ch}:{self.definition}"
-            return GenericCNN(desc, self.inputs, debug=self.args.nndebug)
+            return GenericCNN(desc, self.networks, input_ch, bit=bit, debug=self.args.nndebug)
            #try:
            #    return GenericCNN(desc, self.inputs, debug=self.args.nndebug)
            #except Exception as e:
@@ -440,7 +441,9 @@ class Regression:
 
         self.defaults = self.dict['defaults']
 
-        self.networks = {name: Network(name, info, self.args) for name, info in self.dict['networks'].items()}
+        self.networks = {}
+        for name, info in self.dict['networks'].items():
+            self.networks[name] = Network(name, info, self.args, self.networks)
         self.gen_datasets(self.dict['datasets'])
         self.gen_tests(self.dict['tests'])
 

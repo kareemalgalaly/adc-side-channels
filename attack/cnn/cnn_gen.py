@@ -14,8 +14,9 @@
 ###############################################################################
 
 
-import torch.nn as nn
 import re
+import torch
+import torch.nn as nn
 import traceback
 from operator import mul
 
@@ -28,6 +29,7 @@ re_b  = re.compile('BN([12])')
 # re_b  = re.compile('BN([12])(\(\d+\))?')
 re_p  = re.compile('P\\((\\d+),(\\d+)\\)')
 # re_p2 = re.compile('P\\((\\d+),(\\d+),(\\d+),(\\d+)\\)')
+re_t  = re.compile('T\\(([^)]+)\\)')
 
 ## Helper Functions ----------------------------------------
 
@@ -45,11 +47,8 @@ def flatten_shape(shape):
     for i in shape[1:]: ret *= i
     return ret
 
-# @dataclass 
-# class regex_match:
-#     ;
 
-def build_cnn(definition, debug=False):
+def build_cnn(definition, networks, bit=-1, debug=False):
     tokens = definition.replace(" ", "").split(":")
     in_shp = tuple(int(s) for s in tokens[0].split(','))
     shapes = [in_shp]
@@ -103,6 +102,7 @@ def build_cnn(definition, debug=False):
             gs = m.groups()
             dim = int(gs[0])
             cin = shapes[-1][-1]
+            shapes.append(shapes[-1])
             # print(f"BatchNorm1({cin}) <- {shapes}")
             match dim:
                 case 1 : layers.append(nn.BatchNorm1d(cin))
@@ -134,11 +134,40 @@ def build_cnn(definition, debug=False):
         #     layers.append(nn.MaxPool2d(kernel_size=kernel, stride=stride))
         #     shapes.append(out_shape)
 
+        elif m := re_t.match(token):
+            info = m.group(1).split()
+            num_layer = len(info) // 3
+            input_len = shapes[-1][0] 
+            layer_chs = shapes[-1][1] // num_layer
+            ns = []
+
+            for i in range(0, len(info), 3):
+                ntw = networks[info[i]]
+                wgt = info[i+1]
+                if bit != -1: wgt += f"_{bit}"
+                stp = int(info[i+2])
+                dfn = f"{input_len},{input_chs}:{ntw.definition}"
+                lyr = GenericCNN(dfn, networks, cols=layer_chs, stop=stp, bit=bit, debug=False)
+                lyr.load_state_dict(torch.load(wgt, map_location='cpu')) # moved to gpu later
+                ns.append(lyr)
+
+            output_len, output_chs = ns[0].shapes[-1]
+            for n in ns[1:]: 
+                if output_len != n.shapes[-1][0]:
+                    print(f"Mismatched output length {output_len}, {n.shapes[-1]}")
+                    exit(2)
+                output_chs += n.shapes[-1][1]
+
+            layers.append(StackCNN(ns))
+            shapes.append((output_len, output_chs))
+
         elif token == 'R':
             layers.append(nn.ReLU())
+            shapes.append(shapes[-1])
 
         elif token == 'S':
             layers.append(nn.Softmax(dim=1))
+            shapes.append(shapes[-1])
 
         else:
             raise RuntimeError(f"Could not parse definition entry <{token}>")
@@ -146,52 +175,52 @@ def build_cnn(definition, debug=False):
     if debug:
         print(shapes)
         print(*layers, sep="\n")
-    return nn.ModuleList(layers), flatten
+    return nn.ModuleList(layers), flatten, shapes
 
 ## Pytorch class -------------------------------------------
 
 class GenericCNN(nn.Module):
-    def __init__(self, definition, cols=1, debug=False):
+    def __init__(self, definition, networks, cols=1, bit=-1, debug=False, stop=None):
         super(GenericCNN, self).__init__()
-        self.layers, self.flatten = build_cnn(definition, debug)
+        self.layers, self.flatten, self.shapes = build_cnn(definition, networks, bit=bit, debug=debug)
         self.debug = debug
         self.cols  = cols
 
-    def forward(self, x):
-        og = x
+        if stop is None: 
+            self.stop = len(self.layers)
+        else:
+            self.stop  = stop if stop > 0 else len(self.layers) + stop - 1
 
-        #if self.debug: print(x.shape, "input")
+    def forward(self, x):
         if self.cols == 1:
             x = x.unsqueeze(1) 
-        #if self.debug: print(x.shape, "unsqueeze")
 
-        for i, layer in enumerate(self.layers):
+        for i, layer in zip(range(self.stop), self.layers):
             if i == self.flatten:
                 x = x.view(x.size(0), -1)
-                #if self.debug: print(x.shape, "flatten")
             try:
                 x = layer(x)
             except Exception as e:
                 print(f"\nError on layer {i} {layer}\n{traceback.format_exc()}")
-                try:
-                    self.forward_debug(og)
-                except:
-                    pass
+                print(i, x.shape, layer)
                 exit(1)
-            #if self.debug: print(x.shape, layer)
         return x
 
-    def forward_debug(self, x):
-        if self.cols == 1:
-            x = x.unsqueeze(1) 
 
-        for i, layer in enumerate(self.layers):
-            print(i, x.shape, layer)
-            if i == self.flatten:
-                x = x.view(x.size(0), -1)
-            x = layer(x)
-        return x
+class StackCNN(nn.Module):
+    def __init__(self, layers):
+        super(StackCNN, self).__init__()
+        self.layers = nn.ModuleList(layers)
 
+    def forward(self, x):
+        outputs = []
+
+        with torch.no_grad(): # TODO i don't know if this is necessarily better
+            for i, layer in self.layers:
+                inp = x[:, i, :]
+                outputs.append(layer(inp))
+
+        return torch.cat(output, dim=1)
     
 ## Demo example --------------------------------------------
 

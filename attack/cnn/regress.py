@@ -75,7 +75,7 @@ class CNNRegression(Regression):
                 self.retrain_datacache(test, dataset)
 
                 for network in test.networks:
-                    assert network.inputs == dataset.cols
+                    # assert network.inputs == dataset.cols
 
                     run_hash = base36hash(network.get_csv() + dataset.get_csv() + test.get_csv())
                     print(f"{run_hash},{network.name},{dataset.name},{test}")
@@ -241,7 +241,7 @@ class CNNRegression(Regression):
 
         ## Build CNN ---------------------------------------
 
-        if cnn := network.create(dataset.len, dataset.cols):
+        if cnn := network.create(dataset.len, dataset.cols, bit):
             cnn = cnn.to(self.device)
         else:
             raise RuntimeError("Failed to build CNN")
