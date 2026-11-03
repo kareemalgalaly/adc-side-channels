@@ -75,7 +75,8 @@ class CNNRegression(Regression):
             self.prepare_datasets(test)
 
             for dataset in test.datasets:
-                self.retrain_datacache(test, dataset)
+                if not self.args.preview:
+                    self.retrain_datacache(test, dataset)
 
                 for network in test.networks:
                     # assert network.inputs == dataset.cols
@@ -121,7 +122,7 @@ class CNNRegression(Regression):
 
     def write_header(self):
         if not(self.args.nowrite or self.args.preview):
-            if not(os.path.isfile(self.csv)):
+            if not(os.path.isfile(self.csv)) or self.args.overwrite:
                 with open(self.csv, "w") as file:
                     file.write("Run ID,Network,Network ID,Network Type,Definition,Inputs,Dataset,Datset ID,")
                     file.write("Type,Path,Dataset Cols,Format,Noise Method,Noise RMS,Normalizer,Datset Info,")

@@ -28,6 +28,8 @@ from cnn_gen import GenericCNN
 argparser = argparse.ArgumentParser()
 argparser.add_argument("-i", "--json",   type=str, default='regression.json', help="JSON description of CNNs")
 argparser.add_argument("-o", "--output", type=str, default='outputs', help="Directory for output files")
+argparser.add_argument(      "--csv",    type=str, default="run_results", help="Output csv name")
+argparser.add_argument(      "--overwrite", action="store_true")
 
 # Base Paths #####################################
 
@@ -422,7 +424,8 @@ class Regression:
     def __init__(self, args, overwrite=False, adc_bitwidth=8):
         self.args = args
         self.json = args.json
-        self.csv  = f'{args.output}/run_results.csv'
+        self.csv  = f'{args.output}/{args.csv}.csv'
+        print(self.csv)
         self.dict = None
 
         self.adc_bitwidth = adc_bitwidth

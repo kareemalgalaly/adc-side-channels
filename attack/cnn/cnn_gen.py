@@ -144,9 +144,6 @@ def build_cnn(definition, networks, bit=-1, debug=False):
             ls = []
             cs = []
 
-            print("prev shape", shapes[-1])
-            print("assm shape", (input_len, layer_chs))
-
             for i in range(0, len(info), 3):
                 ntw = networks[info[i]]
                 if bit == -1:
@@ -157,7 +154,6 @@ def build_cnn(definition, networks, bit=-1, debug=False):
                 dfn = f"{input_len},{layer_chs}:{ntw.definition}"
                 lyr = GenericCNN(dfn, networks, cols=layer_chs, stop=stp, bit=bit, debug=False)
                 lyr.load_state_dict(torch.load(wgt, map_location='cpu', weights_only=True)) # moved to gpu later
-                print(lyr.shapes[stp])
                 ls.append(lyr.shapes[stp][0])
                 cs.append(1 if len(lyr.shapes[stp]) == 1 else lyr.shapes[stp][1])
                 ns.append(lyr)
@@ -167,7 +163,6 @@ def build_cnn(definition, networks, bit=-1, debug=False):
             for l in ls: assert l == output_len
 
             shape = (output_len, output_chs)
-            print(shape)
 
             layers.append(StackCNN(ns))
             shapes.append(shape)
@@ -226,10 +221,10 @@ class StackCNN(nn.Module):
     def forward(self, x):
         outputs = []
 
-        with torch.no_grad(): # TODO i don't know if this is necessarily better
-            for i, layer in enumerate(self.layers):
-                inp = x[:, i, :]
-                outputs.append(layer(inp))
+        # with torch.no_grad(): # TODO this gives worse results and is not typically used when pretraining as far as I know
+        for i, layer in enumerate(self.layers):
+            inp = x[:, i, :]
+            outputs.append(layer(inp))
 
         return torch.cat(outputs, dim=1)
     

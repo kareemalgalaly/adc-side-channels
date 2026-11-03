@@ -13,12 +13,16 @@ from utils import ProgressBar
 
 def build_normalizer(cache, nparams):
     match nparams['norm']:
-        case None       : return NOPNormalizer(cache, nparams)
-        case "scale"    : return ScaleNormalizer(cache, nparams)
-        case "autoscale": return AutoscaleNormalizer(cache, nparams)
-        case "zscore"   : return ZScoreNormalizer(cache, nparams)
-        case "robust"   : return RobustNormalizer(cache, nparams)
-        case _          : raise NotImplementedError(f"Unknown normalization technique {nparams['norm']}")
+        case None           : return NOPNormalizer(cache, nparams)
+        case "scale"        : return ScaleNormalizer(cache, nparams)
+        case "autoscale"    : return AutoscaleNormalizer(cache, nparams)
+        case "zscore"       : return ZScoreNormalizer(cache, nparams)
+        case "robust"       : return RobustNormalizer(cache, nparams)
+        case "tautoscale"   : return TraceAutoscaleNormalizer(cache, nparams)
+        case "tzscore"      : return TraceZScoreNormalizer(cache, nparams)
+        case "trobust"      : return TraceRobustNormalizer(cache, nparams)
+        case "crobust"      : return ChannelRobustNormalizer(cache, nparams)
+        case _              : raise NotImplementedError(f"Unknown normalization technique {nparams['norm']}")
 
 ## Normalizers ---------------------------------------------
 
@@ -107,9 +111,9 @@ class AutoscaleNormalizer(ScaleNormalizer):
         progress.stop(i+1)
 
 # ------------------------------------------------
-# class: AutoscaleNormalizer
+# class: ZScoreNormalizer
 # - A normalizer that uniformly shifts and scales 
-# - all traces to achieve average value 0 and 
+#   all traces to achieve average value 0 and 
 #   stddev of 1
 # ------------------------------------------------
 
@@ -144,11 +148,85 @@ class ZScoreNormalizer(ScaleNormalizer):
 
 # ------------------------------------------------
 # class: RobustNormalizer
+# - A normalizer that uniformly shifts and scales 
+#   all traces to achieve median value 0 and 
+#   inter-quartile range of 1
+# ------------------------------------------------
+
+class RobustNormalizer(ScaleNormalizer):
+    def __init__(self, cache, params):
+        super().__init__(cache, params)
+        self.med = None
+        self.iqr = None
+
+    def train(self):
+        progress = ProgressBar(f_start=f"{{state}} {self.cache.name} ", max_val=len(self.cache))
+        progress.start(state="Loading Dataset")
+
+        all_data = []
+        for i, tinf in enumerate(self.cache.iter_raw()):
+            all_data.append(tinf.trace)
+            progress.update(i)
+
+        all_data = np.array(all_data)
+        q1, q2, q3 = np.percentile(all_data, (25, 50, 75))
+        self.iqr = q3 - q1
+        self.med = q2
+        print("med", self.med)
+        print("iqr", self.iqr)
+        progress.stop(i+1)
+
+    def load_training(self, them):
+        super().load_training(them)
+        self.med = them.med
+        self.iqr = them.iqr
+
+    def do_fit(self, index): return (self.cache.raw_cache[index].trace - self.med) / self.iqr * self.mult
+
+# ------------------------------------------------
+# class: TraceZScoreNormalizer
+# - A normalizer that shifts and scales each trace
+#   to achieve mean value 0 and std-deviation of 1
+# ------------------------------------------------
+
+class TraceAutoscaleNormalizer(ScaleNormalizer):
+    def do_fit(self, index): 
+        trace = self.cache.raw_cache[index].trace 
+        avg = np.mean(trace)
+        return trace / avg * self.mult
+# ------------------------------------------------
+# class: TraceZScoreNormalizer
+# - A normalizer that shifts and scales each trace
+#   to achieve mean value 0 and std-deviation of 1
+# ------------------------------------------------
+
+class TraceZScoreNormalizer(ScaleNormalizer):
+    def do_fit(self, index): 
+        trace = self.cache.raw_cache[index].trace 
+        avg = np.mean(trace)
+        std = np.std(trace, mean=self.avg)
+        return (trace - avg) / std * self.mult
+
+# ------------------------------------------------
+# class: TraceRobustNormalizer
+# - A normalizer that shifts and scales each trace
+#   to achieve median value 0 and inter-quartile
+#   range of 1
+# ------------------------------------------------
+
+class TraceRobustNormalizer(ScaleNormalizer):
+    def do_fit(self, index): 
+        trace = self.cache.raw_cache[index].trace 
+        q1, q2, q3 = np.percentile(trace, (25, 50, 75))
+        return (trace - q2) / (q3 - q1) * self.mult
+
+# ------------------------------------------------
+# class: ChannelRobustNormalizer
 # - A normalizer that uses scikit's RobustScaler
 #   to per-channel normalize traces in a dataset 
 # ------------------------------------------------
 
-class RobustNormalizer(Normalizer):
+class ChannelRobustNormalizer(Normalizer):
     def __init__(self, cache, params):
         super().__init__(cache, params)
         self.fitted = False
