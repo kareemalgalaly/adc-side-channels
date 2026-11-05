@@ -105,6 +105,7 @@ data = {
         "columns"     : 2
     }
 }
+
 defs = {
     "sample_mode"     : ["MAX"],
     "sample_interval" : 0.1e-6,
@@ -246,28 +247,34 @@ class PCNN(CNN):
         jdct["definition"] = f"T({pcnn},{awgt},{pcrp},{pcnn},{dwgt},{pcrp}):{jdct["definition"]}"
         return jdct
 
-def gen_tests(cnns, typ):
+def gen_tests(cnns, typ, norm):
+    if isinstance(norm, list):
+        tests = []
+        for n in norm:
+            tests.extend(gen_tests(cnns, typ, norm))
+        return tests
+
     match typ:
-        case "cmb":
+        case "combined":
             test = dict(test_base)
             test['networks'] = [cnn.name for cnn in cnns]
-            test['datasets'] = ["cmb_xp_tt"]
-            test['test_dataset'] = ["cmb_xp_ss"] #, "cmb_xp_fs"]
+            test['datasets'] = [f"cmb_xp_tt{norm}"]
+            test['test_dataset'] = [f"cmb_xp_ss{norm}"] #, "cmb_xp_fs"]
             return [test]
 
         case "single":
             atest = dict(test_base)
             atest['networks'] = [cnn.name for cnn in cnns]
-            atest['datasets'] = ["nlg_xp_tt"]
-            atest['test_dataset'] = ["nlg_xp_ss"] #, "cmb_xp_fs"]
+            atest['datasets'] = [f"nlg_xp_tt{norm}"]
+            atest['test_dataset'] = [f"nlg_xp_ss{norm}"] #, "cmb_xp_fs"]
             dtest = dict(atest)
-            dtest['datasets'] = ["dig_xp_tt"]
-            dtest['test_dataset'] = ["dig_xp_ss"] #, "cmb_xp_fs"]
+            dtest['datasets'] = [f"dig_xp_tt{norm}"]
+            dtest['test_dataset'] = [f"dig_xp_ss{norm}"] #, "cmb_xp_fs"]
             return [atest, dtest]
 
         case "pretrained":
-            tests = gen_tests([cnns[0]], "single")
-            tests += gen_tests(cnns[1:], "cmb")
+            tests = gen_tests([cnns[0]], "single", norm)
+            tests += gen_tests(cnns[1:], "combined", norm)
             return tests
 
     raise NotImplementedError(f"Unrecognized type {typ}")
@@ -280,25 +287,31 @@ def load_sweep_csv(cnnd={}, ctgs=[]):
         csv.add_computed_column(lambda n: cnnd[n].spec.get(ctg, None), "Network", name=ctg)
     return csv
 
+def get_ctgs(spec):
+    return [k for k, v in spec.items() if hasattr(v, "__iter__") and not isinstance(v, str)]
+
 def get_best_cnn(table):
     maxacc = 0
     maxcnn = None
 
+    res = []
     for tests, data in table.items():
         cnn = tests[0][-1]
         acc = data[0]
-        logger.info(f"Result {cnn} {acc}")
+        res.append(f"{cnn} {acc}")
         if acc > maxacc:
             maxacc = acc
             maxcnn = cnn
 
+    logger.info("Results:\n  %s", "\n  ".join(res))
+
     return maxcnn
 
-def evaluate(data, defs, rpt, bit, typ, **spec):
+def evaluate(data, defs, rpt, bit, typ, norm=[""], **spec):
     cnns = CNN.from_spec(**spec)
     logger.info("Evaluate:\n  spec = %s\n  %s", str(spec), "\n  ".join(f"{cnn} {cnn!r}" for cnn in cnns))
     cnnd = {cnn.name : cnn for cnn in cnns}
-    ctgs = [k for k, v in spec.items() if not hasattr(v, "__iter__") or isinstance(v, str)]
+    ctgs = get_ctgs(spec)
 
     evaluate_core(data, defs, rpt, bit, typ, cnns)
     csv = load_sweep_csv(cnnd, ctgs)
@@ -321,11 +334,11 @@ def evaluate(data, defs, rpt, bit, typ, **spec):
     logger.info(f"Best CNN = {cnn} {cnn!r}")
     return cnn
 
-def evaluate_core(data, defs, rpt, bit, typ, cnns, preview=False):
+def evaluate_core(data, defs, rpt, bit, typ, cnns, norm=[""], preview=False, overwrite=True):
     jdct = dict(
         networks = {cnn.name:cnn.json() for cnn in cnns},
         datasets = data,
-        tests = gen_tests(cnns, typ),
+        tests = gen_tests(cnns, typ, norm),
         defaults = defs
     )
 
@@ -333,9 +346,10 @@ def evaluate_core(data, defs, rpt, bit, typ, cnns, preview=False):
         json.dump(jdct, file)
 
     program = ["./regress.py", "-f", "-r", str(rpt), "--json", "experiments/sweep.json", 
-               "--headless", "--csv", "sweep", "--overwrite"]
+               "--headless", "--csv", "sweep"]
 
     if bit is not None: program.extend(["--bit", str(bit)])
+    if overwrite: program.append("--overwrite")
     if preview:
         program.append("--preview")
         r = subprocess.run(program, env=ENV, capture_output=True, text=True)
@@ -365,7 +379,7 @@ def evaluate_pretrain(cnn, data, defs, rpt, bit, **spec):
     cnns = [cnn] + PCNN.from_spec(**spec)
     logger.info("Evaluate:\n  pretraining {%s}\n  spec = %s\n  %s", str(cnn.spec), str(spec), "\n  ".join(f"{cnn} {cnn!r}" for cnn in cnns))
     cnnd = {cnn.name : cnn for cnn in cnns}
-    ctgs = [k for k, v in spec.items() if hasattr(v, "__iter__") and not isinstance(v, str)]
+    ctgs = get_ctgs(spec)
 
     evaluate_core(data, defs, rpt, bit, "pretrained", cnns)
     csv = load_sweep_csv(cnnd, ctgs)
@@ -401,28 +415,32 @@ if __name__ == "__main__":
     base = CNN()
     logger.info(f"Starting Evaluation\n  repeat = {rpt}\n  bit = {bit}\n  cnn = {base!r}")
 
-    if False: # combined sweep
-        # Evaluation 1
+    if False: # combined/single sweep
+        mode = "single" # combined
 
-        spec = base.modify_spec(csiz=(5, 10, 20, 30), cchn=(5, 10, 20, 30))
-        best = evaluate(data, defs, rpt, bit, "cmb", **spec)
+        # # Evaluation 1
 
-        # Evaluation 2 
+        # spec = base.modify_spec(csiz=(5, 10, 20, 40), cchn=(5, 10, 20, 30))
+        # best = evaluate(data, defs, rpt, bit, mode, **spec)
 
-        spec = best.modify_spec(cnum = (1,2,3,4), fnum = (1,2,3,4))
-        best = evaluate(data, defs, rpt, bit, "cmb", **spec)
+        # # Evaluation 2 
+
+        # spec = best.modify_spec(cnum = (1,2,3,4), fnum = (1,2,3,4))
+        # best = evaluate(data, defs, rpt, bit, mode, **spec)
 
         # Evaluation 3
 
+        best = CNN(cnum=1, csiz=5, cchn=30, csdc=0.6, ccdc=1, fnum=4, fsiz=100, fdec=1, cpst='R:P(5,5)', fpst='R:BN1', mode='bw')
+
         spec = best.modify_spec(cpst=("R:P(5,5)","R:P(5,5):BN1"), fpst=("R:BN1","R"))
-        best = evaluate(data, defs, rpt, bit, "cmb", **spec)
+        best = evaluate(data, defs, rpt, bit, mode, **spec)
 
         # Evaluation 4
 
         spec = best.modify_spec(ccdc=(1,0.5), csdc=(1,0.6), fdec=(1,0.5))
-        best = evaluate(data, defs, rpt, bit, "cmb", **spec)
+        best = evaluate(data, defs, rpt, bit, mode, **spec)
 
-    if True: # pretrained sweep
+    if False: # pretrained sweep
         sngl = CNN()
         base = PCNN(cnum=0)
 
@@ -432,4 +450,16 @@ if __name__ == "__main__":
 
         spec = best.modify_spec(pcrp = (6, 9, 12, 15), cnum = (1, 2, 3, 4))
         best = evaluate_pretrain(sngl, data, defs, rpt, bit, **spec)
+
+    if True: # normalizer sweep
+        normalizers = ["scale", "autoscale", "zscore", "robust", "tautoscale", "tzscore", "trobust", "crobust"]
+
+        for norm in normalizers:
+            for dsname in list(data.keys()):
+                dsinfo = dict(data[dsname])
+                dsinfo['normalizer'] = norm
+                data[f"{dsname}{norm}"] = dsinfo
+
+        base = CNN()
+        evaluate(data, defs, rpt, bit, mode, norm=normalizers, **base.spec)
 

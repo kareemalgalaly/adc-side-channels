@@ -139,7 +139,7 @@ class CSV:
         if self.header:
             if (v := self.header.get(key)) is not None:
                 return v
-        raise KeyError
+        raise KeyError(f"No column for {key}")
 
     def add_computed_column(self, formula, *cols, name=None):
         stdh = next(self.stdgen)
@@ -206,8 +206,9 @@ class CSV:
 
         return table
 
-    def write_pivot(self, file, data={}, rows=[], cols=[], filters={}):
-        pivot = self.pivot(data=data, rows=rows, cols=cols, filters=filters)
+    def write_pivot(self, file, data={}, rows=[], cols=[], filters={}, pivot=None, mode="w"):
+        if pivot is None:
+            pivot = self.pivot(data=data, rows=rows, cols=cols, filters=filters)
 
         #             col 0            C0v1             C0v2
         #             col 1            C1v1   C1v2      C1v1        C1v2
@@ -256,7 +257,7 @@ class CSV:
                 table.append(["", *data_row])
 
         # write to file
-        with open(file, "w", newline='') as csvfile:
+        with open(file, mode, newline='') as csvfile:
             writer = csv.writer(csvfile)
             for row in table:
                 writer.writerow(row)

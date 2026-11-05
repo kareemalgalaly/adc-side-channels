@@ -207,8 +207,8 @@ class GenericCNN(nn.Module):
             try:
                 x = layer(x)
             except Exception as e:
-                print(f"\nError on layer {i} {layer}\n{traceback.format_exc()}")
-                print(i, x.shape, layer)
+                print(f"\nError on layer {i} {layer}\ninput shape {x.shape}\nshapes {self.shapes}")
+                print(traceback.format_exc())
                 exit(1)
         return x
 
