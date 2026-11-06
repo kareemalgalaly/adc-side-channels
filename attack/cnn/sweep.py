@@ -21,7 +21,7 @@ import logging
 logging.basicConfig(
     # filename = f"outputs/sweep.log",
     handlers = [
-        logging.FileHandler('outputs/sweep.log', mode='w'),
+        logging.FileHandler('outputs/sweep.log'), #, mode='w'),
         logging.StreamHandler(sys.stdout)
         ],
     level    = logging.INFO,
@@ -34,7 +34,8 @@ import argparse
 
 argparser = argparse.ArgumentParser(prog="sweep")
 argparser.add_argument("-r", "--repeat" , type=int, default=1, help="")
-argparser.add_argument("-b", "--bit" , type=int, choices=range(8), default=None, help="")
+argparser.add_argument("-b", "--bit" ,    type=int, choices=range(8), default=None, help="")
+argparser.add_argument("-s", "--seed" ,   type=int, default=1, help="")
 args = argparser.parse_args()
 
 ENV = dict(os.environ)
@@ -111,7 +112,7 @@ defs = {
     "sample_interval" : 0.1e-6,
     "sample_duration" : 256e-6,
     "columns"         : 1,
-    "normalizer"      : "autoscale",
+    "normalizer"      : "zscore",
     "trace_scale"     : 1,
     "optimizer"       : "Adam",
     "loss"            : "CrossEntropyLoss",
@@ -181,7 +182,7 @@ class CNN:
                         ncnns.append(c.modify({key : v}))
                 cnns = ncnns
 
-        return ncnns
+        return cnns
 
     def modify_spec(self, **spec):
         nspec = dict(self.spec)
@@ -251,7 +252,7 @@ def gen_tests(cnns, typ, norm):
     if isinstance(norm, list):
         tests = []
         for n in norm:
-            tests.extend(gen_tests(cnns, typ, norm))
+            tests.extend(gen_tests(cnns, typ, n))
         return tests
 
     match typ:
@@ -261,6 +262,19 @@ def gen_tests(cnns, typ, norm):
             test['datasets'] = [f"cmb_xp_tt{norm}"]
             test['test_dataset'] = [f"cmb_xp_ss{norm}"] #, "cmb_xp_fs"]
             return [test]
+
+        case "analog":
+            atest = dict(test_base)
+            atest['networks'] = [cnn.name for cnn in cnns]
+            atest['datasets'] = [f"nlg_xp_tt{norm}"]
+            atest['test_dataset'] = [f"nlg_xp_ss{norm}"] #, "cmb_xp_fs"]
+            return [atest]
+
+        case "digital":
+            dtest = dict(atest)
+            dtest['datasets'] = [f"dig_xp_tt{norm}"]
+            dtest['test_dataset'] = [f"dig_xp_ss{norm}"] #, "cmb_xp_fs"]
+            return [dtest]
 
         case "single":
             atest = dict(test_base)
@@ -272,8 +286,20 @@ def gen_tests(cnns, typ, norm):
             dtest['test_dataset'] = [f"dig_xp_ss{norm}"] #, "cmb_xp_fs"]
             return [atest, dtest]
 
+        case "singlept":
+            atest = dict(test_base)
+            atest['networks'] = [cnn.name for cnn in cnns]
+            atest['datasets'] = [f"nlg_xp_tt{norm}"]
+            atest['test_dataset'] = [f"nlg_xp_ss{norm}"] #, "cmb_xp_fs"]
+            atest['train_split'] = 0.4
+            dtest = dict(atest)
+            dtest['datasets'] = [f"dig_xp_tt{norm}"]
+            dtest['test_dataset'] = [f"dig_xp_ss{norm}"] #, "cmb_xp_fs"]
+            dtest['train_split'] = 0.4
+            return [atest, dtest]
+
         case "pretrained":
-            tests = gen_tests([cnns[0]], "single", norm)
+            tests = gen_tests([cnns[0]], "singlept", norm)
             tests += gen_tests(cnns[1:], "combined", norm)
             return tests
 
@@ -290,48 +316,28 @@ def load_sweep_csv(cnnd={}, ctgs=[]):
 def get_ctgs(spec):
     return [k for k, v in spec.items() if hasattr(v, "__iter__") and not isinstance(v, str)]
 
-def get_best_cnn(table):
+def get_best_cnn(table, cnnd, pretrained=False):
     maxacc = 0
     maxcnn = None
+    maxnrm = None
 
     res = []
     for tests, data in table.items():
+        nrm = tests[0][-2]
         cnn = tests[0][-1]
         acc = data[0]
+        if pretrained and cnn.startswith("c"): continue
         res.append(f"{cnn} {acc}")
         if acc > maxacc:
             maxacc = acc
             maxcnn = cnn
+            maxnrm = nrm
 
     logger.info("Results:\n  %s", "\n  ".join(res))
 
-    return maxcnn
+    cnn = cnnd[maxcnn]
+    cnn.nrm = maxnrm
 
-def evaluate(data, defs, rpt, bit, typ, norm=[""], **spec):
-    cnns = CNN.from_spec(**spec)
-    logger.info("Evaluate:\n  spec = %s\n  %s", str(spec), "\n  ".join(f"{cnn} {cnn!r}" for cnn in cnns))
-    cnnd = {cnn.name : cnn for cnn in cnns}
-    ctgs = get_ctgs(spec)
-
-    evaluate_core(data, defs, rpt, bit, typ, cnns)
-    csv = load_sweep_csv(cnnd, ctgs)
-
-    data = {
-        "Test Accuracy" : np.average
-        }
-    filters = {
-        "Crashed": lambda x: not x,
-        "Learning": lambda x: x,
-        }
-    if bit is not None: filters["Bit"] = lambda x: x == bit
-    cols = ["Bit"]
-    rows = ["Test Dataset", *ctgs, "Network"]
-
-    table = csv.pivot(data=data, filters=filters, cols=cols, rows=rows)
-    csv.write_pivot("outputs/sweep_pivots.csv", data=data, filters=filters, cols=cols, rows=rows, pivot=table, mode="a")
-    cnn = cnnd[get_best_cnn(table)]
-
-    logger.info(f"Best CNN = {cnn} {cnn!r}")
     return cnn
 
 def evaluate_core(data, defs, rpt, bit, typ, cnns, norm=[""], preview=False, overwrite=True):
@@ -343,10 +349,10 @@ def evaluate_core(data, defs, rpt, bit, typ, cnns, norm=[""], preview=False, ove
     )
 
     with open("experiments/sweep.json", "w") as file:
-        json.dump(jdct, file)
+        json.dump(jdct, file, indent=2)
 
     program = ["./regress.py", "-f", "-r", str(rpt), "--json", "experiments/sweep.json", 
-               "--headless", "--csv", "sweep"]
+               "--headless", "--csv", "sweep", "--seed", str(seed)]
 
     if bit is not None: program.extend(["--bit", str(bit)])
     if overwrite: program.append("--overwrite")
@@ -363,8 +369,38 @@ def evaluate_core(data, defs, rpt, bit, typ, cnns, norm=[""], preview=False, ove
             rfile.readline()
             wfile.write(rfile.read())
 
+def evaluate(data, defs, rpt, bit, typ, norm=[""], **spec):
+    cnns = CNN.from_spec(**spec)
+    logger.info("Evaluate:\n  spec = %s\n  %s", str(spec), "\n  ".join(f"{cnn} {cnn!r}" for cnn in cnns))
+    cnnd = {cnn.name : cnn for cnn in cnns}
+    ctgs = get_ctgs(spec)
+
+    evaluate_core(data, defs, rpt, bit, typ, cnns, norm=norm)
+    csv = load_sweep_csv(cnnd, ctgs)
+
+    cdata = {
+        "Test Accuracy" : np.average
+        }
+    filters = {
+        "Crashed": lambda x: not x,
+        "Learning": lambda x: x,
+        }
+    if bit is not None: filters["Bit"] = lambda x: x == bit
+    cols = ["Bit"]
+    rows = ["Test Dataset", *ctgs, "Network"]
+    if norm and norm[0] != "":
+        csv.add_computed_column(lambda n: n[n.find(":")+1:n.find(";")], "Normalizer", name="Normtype")
+        rows.insert(-1, "Normtype")
+
+    table = csv.pivot(data=cdata, filters=filters, cols=cols, rows=rows)
+    csv.write_pivot("outputs/sweep_pivots.csv", data=cdata, filters=filters, cols=cols, rows=rows, pivot=table, mode="a")
+    cnn = get_best_cnn(table, cnnd)
+
+    logger.info(f"Best CNN = {cnn} {cnn!r}")
+    return cnn
+
 def evaluate_pretrain(cnn, data, defs, rpt, bit, **spec):
-    out = evaluate_core(data, defs, rpt, bit, "single", [cnn], preview=True)
+    out = evaluate_core(data, defs, rpt, bit, "singlept", [cnn], preview=True)
     out = out.split("\n")
     awgt = None
     dwgt = None
@@ -384,7 +420,7 @@ def evaluate_pretrain(cnn, data, defs, rpt, bit, **spec):
     evaluate_core(data, defs, rpt, bit, "pretrained", cnns)
     csv = load_sweep_csv(cnnd, ctgs)
     
-    data = {
+    cdata = {
         "Test Accuracy" : np.average
         }
     filters = {
@@ -396,70 +432,106 @@ def evaluate_pretrain(cnn, data, defs, rpt, bit, **spec):
     cols = ["Bit"]
     rows = ["Test Dataset", *ctgs, "Network"]
 
-    table = csv.pivot(data=data, filters=filters, cols=cols, rows=rows)
-    csv.write_pivot("outputs/sweep_pivots.csv", data=data, filters=filters, cols=cols, rows=rows, pivot=table, mode="a")
-    cnn = cnnd[get_best_cnn(table)]
+    table = csv.pivot(data=cdata, filters=filters, cols=cols, rows=rows)
+    csv.write_pivot("outputs/sweep_pivots.csv", data=cdata, filters=filters, cols=cols, rows=rows, pivot=table, mode="a")
+    cnn = get_best_cnn(table, cnnd, pretrained=True)
 
     logger.info(f"Best CNN = {cnn} {cnn!r}")
     return cnn
 
+# Sweeps ---------------------------------------------------
+
+def simple_sweep(mode):
+    logger.info("Simple sweep: %s", mode)
+
+    if mode == "combined":
+        best = CNN(cnum = 2, cchn = 10, csiz = 5, fnum = 3, fsiz = 100)
+    else:                              
+        best = CNN(cnum = 2, cchn = 5, csiz = 5, fnum = 3, fsiz = 100)
+
+    spec = best.modify_spec(cpst=("R:P(5,5)","R:P(5,5):BN1"), fpst=("R:BN1","R"), csdc=(1,0.6))
+    best = evaluate(data, defs, rpt, bit, mode, **spec)
+
+    spec = best.modify_spec(csiz=(5, 10, 20, 40), cchn=(5, 10, 20, 30))
+    best = evaluate(data, defs, rpt, bit, mode, **spec)
+
+    spec = best.modify_spec(cnum = (0,1,2,3,4), fnum = (1,2,3,4))
+    best = evaluate(data, defs, rpt, bit, mode, **spec)
+
+    spec = best.modify_spec(fdec = (0.5,1), fsiz = (50,100,200))
+    best = evaluate(data, defs, rpt, bit, mode, **spec)
+
+    # spec = best.modify_spec(ccdc=(1,0.5), csdc=(1,0.6), fdec=(1,0.5))
+    # best = evaluate(data, defs, rpt, bit, mode, **spec)
+
+    return best
+
+def pretrained_sweep(sngl):
+    logger.info("Pretrained sweep")
+
+    base = PCNN(cnum=0)
+
+    # pretrain
+    lmin = sngl.spec['cnum'] * 3
+    lmax = sngl.spec['fnum'] * 3 + lmin
+    spec = base.modify_spec(pcrp = range(max(lmin,3), lmax+1, 3), fnum = (1, 2, 3, 4, 5))
+    best = evaluate_pretrain(sngl, data, defs, rpt, bit, **spec)
+
+    spec = best.modify_spec(fdec=(0.5,1), fsiz=(50,100,200))
+    best = evaluate_pretrain(sngl, data, defs, rpt, bit, **spec)
+
+    spec = best.modify_spec(fpst=("R:BN1","R"))
+    best = evaluate_pretrain(sngl, data, defs, rpt, bit, **spec)
+
+    # spec = best.modify_spec(pcrp = (6, 9, 12, 15), cnum = (0, 1))
+    # best = evaluate_pretrain(sngl, data, defs, rpt, bit, **spec)
+
+    return best
+
+def normalizer_sweep(mode):
+    logger.info("Normalizer sweep: %s", mode)
+    normalizers = ["autoscale", "zscore", "robust", "tautoscale", "tzscore", "trobust", "raw"]
+
+    dsnames = list(data.keys())
+    for norm in normalizers:
+        for dsname in dsnames:
+            dsinfo = dict(data[dsname])
+            dsinfo['normalizer'] = norm
+            data[f"{dsname}{norm}"] = dsinfo
+
+    if mode == "combined":
+        best = CNN(cnum = 2, cchn = 10, csiz = 5, fnum = 3, fsiz = 100, fpst="R")
+    else:                              
+        best = CNN(cnum = 2, cchn = 5, csiz = 5, fnum = 3, fsiz = 100, fpst="R")
+
+    best = evaluate(data, defs, rpt, bit, mode, norm=normalizers, **best.spec)
+
+    logger.info("Selected Normalizer: %s", best.nrm)
+    defs['normalizer'] = best.nrm
+    return best.nrm
+
+# Main -----------------------------------------------------
 
 if __name__ == "__main__":
     bit = args.bit
     rpt = args.repeat
+    seed = args.seed
 
     # # Test Eval
     # best = evaluate(cnns, data, defs, test_base, num_rpt, bit_sel, csiz=(5, 10), cchn=(5, 10))
     # exit(1)
 
-    base = CNN()
-    logger.info(f"Starting Evaluation\n  repeat = {rpt}\n  bit = {bit}\n  cnn = {base!r}")
+    logger.info(f"Starting Evaluation\n  repeat = {rpt}\n  bit = {bit}")
 
-    if False: # combined/single sweep
-        mode = "single" # combined
+    # 5 min
+    normalizer_sweep("analog")
+    best = simple_sweep("analog")
 
-        # # Evaluation 1
+    # # 7 min
+    pretrained_sweep(best)
+    pretrained_sweep(CNN(cnum = 2, cchn = 5, csiz = 5, fnum = 3, fsiz = 100))
 
-        # spec = base.modify_spec(csiz=(5, 10, 20, 40), cchn=(5, 10, 20, 30))
-        # best = evaluate(data, defs, rpt, bit, mode, **spec)
-
-        # # Evaluation 2 
-
-        # spec = best.modify_spec(cnum = (1,2,3,4), fnum = (1,2,3,4))
-        # best = evaluate(data, defs, rpt, bit, mode, **spec)
-
-        # Evaluation 3
-
-        best = CNN(cnum=1, csiz=5, cchn=30, csdc=0.6, ccdc=1, fnum=4, fsiz=100, fdec=1, cpst='R:P(5,5)', fpst='R:BN1', mode='bw')
-
-        spec = best.modify_spec(cpst=("R:P(5,5)","R:P(5,5):BN1"), fpst=("R:BN1","R"))
-        best = evaluate(data, defs, rpt, bit, mode, **spec)
-
-        # Evaluation 4
-
-        spec = best.modify_spec(ccdc=(1,0.5), csdc=(1,0.6), fdec=(1,0.5))
-        best = evaluate(data, defs, rpt, bit, mode, **spec)
-
-    if False: # pretrained sweep
-        sngl = CNN()
-        base = PCNN(cnum=0)
-
-        # pretrain
-        spec = base.modify_spec(pcrp = (6, 9, 12, 15), fnum = (1, 2, 3, 4))
-        best = evaluate_pretrain(sngl, data, defs, rpt, bit, **spec)
-
-        spec = best.modify_spec(pcrp = (6, 9, 12, 15), cnum = (1, 2, 3, 4))
-        best = evaluate_pretrain(sngl, data, defs, rpt, bit, **spec)
-
-    if True: # normalizer sweep
-        normalizers = ["scale", "autoscale", "zscore", "robust", "tautoscale", "tzscore", "trobust", "crobust"]
-
-        for norm in normalizers:
-            for dsname in list(data.keys()):
-                dsinfo = dict(data[dsname])
-                dsinfo['normalizer'] = norm
-                data[f"{dsname}{norm}"] = dsinfo
-
-        base = CNN()
-        evaluate(data, defs, rpt, bit, mode, norm=normalizers, **base.spec)
+    # 13 min
+    normalizer_sweep("combined")
+    simple_sweep("combined")
 

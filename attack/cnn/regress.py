@@ -67,7 +67,9 @@ class CNNRegression(Regression):
 
         for test in self.tests:
             if test is None: 
-                if not self.args.seed:
+                if self.args.seed:
+                    self.seed += 1
+                else:
                     self.seed = int.from_bytes(os.urandom(4))
                     print("Running with seed:", self.seed)
                 continue

@@ -9,11 +9,13 @@ import numpy as np
 from sklearn.preprocessing import RobustScaler
 from utils import ProgressBar
 
+DTYPE = np.float32
+
 ## Generic Constructor -------------------------------------
 
 def build_normalizer(cache, nparams):
     match nparams['norm']:
-        case None           : return NOPNormalizer(cache, nparams)
+        case None | "raw"   : return NOPNormalizer(cache, nparams)
         case "scale"        : return ScaleNormalizer(cache, nparams)
         case "autoscale"    : return AutoscaleNormalizer(cache, nparams)
         case "zscore"       : return ZScoreNormalizer(cache, nparams)
@@ -133,10 +135,8 @@ class ZScoreNormalizer(ScaleNormalizer):
             progress.update(i)
 
         all_data = np.array(all_data)
-        self.avg = np.mean(all_data)
+        self.avg = np.mean(all_data, dtype=DTYPE)
         self.std = np.std(all_data, mean=self.avg)
-        print("avg", self.avg)
-        print("std", self.std)
         progress.stop(i+1)
 
     def load_training(self, them):
@@ -170,10 +170,8 @@ class RobustNormalizer(ScaleNormalizer):
 
         all_data = np.array(all_data)
         q1, q2, q3 = np.percentile(all_data, (25, 50, 75))
-        self.iqr = q3 - q1
-        self.med = q2
-        print("med", self.med)
-        print("iqr", self.iqr)
+        self.iqr = DTYPE(q3 - q1)
+        self.med = DTYPE(q2)
         progress.stop(i+1)
 
     def load_training(self, them):
@@ -192,7 +190,7 @@ class RobustNormalizer(ScaleNormalizer):
 class TraceAutoscaleNormalizer(ScaleNormalizer):
     def do_fit(self, index): 
         trace = self.cache.raw_cache[index].trace 
-        avg = np.mean(trace)
+        avg = np.mean(trace, dtype=DTYPE)
         return trace / avg * self.mult
 # ------------------------------------------------
 # class: TraceZScoreNormalizer
@@ -203,8 +201,8 @@ class TraceAutoscaleNormalizer(ScaleNormalizer):
 class TraceZScoreNormalizer(ScaleNormalizer):
     def do_fit(self, index): 
         trace = self.cache.raw_cache[index].trace 
-        avg = np.mean(trace)
-        std = np.std(trace, mean=self.avg)
+        avg = np.mean(trace, dtype=DTYPE)
+        std = np.std(trace, mean=avg)
         return (trace - avg) / std * self.mult
 
 # ------------------------------------------------
@@ -218,7 +216,9 @@ class TraceRobustNormalizer(ScaleNormalizer):
     def do_fit(self, index): 
         trace = self.cache.raw_cache[index].trace 
         q1, q2, q3 = np.percentile(trace, (25, 50, 75))
-        return (trace - q2) / (q3 - q1) * self.mult
+        med = DTYPE(q2)
+        iqr = DTYPE(q3 - q1)
+        return (trace - med) / iqr * self.mult
 
 # ------------------------------------------------
 # class: ChannelRobustNormalizer
