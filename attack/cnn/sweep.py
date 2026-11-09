@@ -441,29 +441,29 @@ def evaluate_pretrain(cnn, data, defs, rpt, bit, **spec):
 
 # Sweeps ---------------------------------------------------
 
-def simple_sweep(mode, best):
+def simple_eval(mode, spec, skip):
+    if skip: 
+        cnns = CNN.from_spec(**spec)
+        best = skip.pop(0)
+    else: 
+        best = evaluate(data, defs, rpt, bit, mode, **spec)
+    logger.info(f"Best CNN = {best} {best!r}")
+    return best
+
+def simple_sweep(mode, best, skip=[]):
     logger.info("Simple sweep: %s", mode)
 
     spec = best.modify_spec(cpst=("R:P(5,5)","R:P(5,5):BN1"), fpst=("R:BN1","R"), csdc=(1,0.6))
-    # best = evaluate(data, defs, rpt, bit, mode, **spec)
-    cnns = CNN.from_spec(**spec)
-    best = CNN(cnum=2, csiz=5, cchn=5, csdc=1, ccdc=1, fnum=3, fsiz=100, fdec=1, cpst='R:P(5,5):BN1', fpst='R:BN1', mode='bw')
-    logger.info(f"Best CNN = {best} {best!r}")
+    best = simple_eval(mode, spec, skip)
 
     spec = best.modify_spec(csiz=(5, 10, 20, 40), cchn=(5, 10, 20, 30))
-    # best = evaluate(data, defs, rpt, bit, mode, **spec)
-    cnns = CNN.from_spec(**spec)
-    best = CNN(cnum=2, csiz=20, cchn=20, csdc=1, ccdc=1, fnum=3, fsiz=100, fdec=1, cpst='R:P(5,5):BN1', fpst='R:BN1', mode='bw')
-    logger.info(f"Best CNN = {best} {best!r}")
+    best = simple_eval(mode, spec, skip)
 
     spec = best.modify_spec(cnum = (0,1,2,3), fnum = (1,2,3,4))
-    best = evaluate(data, defs, rpt, bit, mode, **spec)
+    best = simple_eval(mode, spec, skip)
 
     spec = best.modify_spec(fdec = (0.5,1), fsiz = (50,100,200))
-    best = evaluate(data, defs, rpt, bit, mode, **spec)
-
-    # spec = best.modify_spec(ccdc=(1,0.5), csdc=(1,0.6), fdec=(1,0.5))
-    # best = evaluate(data, defs, rpt, bit, mode, **spec)
+    best = simple_eval(mode, spec, skip)
 
     return best
 
