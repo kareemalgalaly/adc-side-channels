@@ -112,7 +112,7 @@ defs = {
     "sample_interval" : 0.1e-6,
     "sample_duration" : 256e-6,
     "columns"         : 1,
-    "normalizer"      : "zscore",
+    "normalizer"      : "trobust",
     "trace_scale"     : 1,
     "optimizer"       : "Adam",
     "loss"            : "CrossEntropyLoss",
@@ -441,21 +441,22 @@ def evaluate_pretrain(cnn, data, defs, rpt, bit, **spec):
 
 # Sweeps ---------------------------------------------------
 
-def simple_sweep(mode):
+def simple_sweep(mode, best):
     logger.info("Simple sweep: %s", mode)
 
-    if mode == "combined":
-        best = CNN(cnum = 2, cchn = 10, csiz = 5, fnum = 3, fsiz = 100)
-    else:                              
-        best = CNN(cnum = 2, cchn = 5, csiz = 5, fnum = 3, fsiz = 100)
-
     spec = best.modify_spec(cpst=("R:P(5,5)","R:P(5,5):BN1"), fpst=("R:BN1","R"), csdc=(1,0.6))
-    best = evaluate(data, defs, rpt, bit, mode, **spec)
+    # best = evaluate(data, defs, rpt, bit, mode, **spec)
+    cnns = CNN.from_spec(**spec)
+    best = CNN(cnum=2, csiz=5, cchn=5, csdc=1, ccdc=1, fnum=3, fsiz=100, fdec=1, cpst='R:P(5,5):BN1', fpst='R:BN1', mode='bw')
+    logger.info(f"Best CNN = {best} {best!r}")
 
     spec = best.modify_spec(csiz=(5, 10, 20, 40), cchn=(5, 10, 20, 30))
-    best = evaluate(data, defs, rpt, bit, mode, **spec)
+    # best = evaluate(data, defs, rpt, bit, mode, **spec)
+    cnns = CNN.from_spec(**spec)
+    best = CNN(cnum=2, csiz=20, cchn=20, csdc=1, ccdc=1, fnum=3, fsiz=100, fdec=1, cpst='R:P(5,5):BN1', fpst='R:BN1', mode='bw')
+    logger.info(f"Best CNN = {best} {best!r}")
 
-    spec = best.modify_spec(cnum = (0,1,2,3,4), fnum = (1,2,3,4))
+    spec = best.modify_spec(cnum = (0,1,2,3), fnum = (1,2,3,4))
     best = evaluate(data, defs, rpt, bit, mode, **spec)
 
     spec = best.modify_spec(fdec = (0.5,1), fsiz = (50,100,200))
@@ -488,7 +489,7 @@ def pretrained_sweep(sngl):
 
     return best
 
-def normalizer_sweep(mode):
+def normalizer_sweep(mode, best):
     logger.info("Normalizer sweep: %s", mode)
     normalizers = ["autoscale", "zscore", "robust", "tautoscale", "tzscore", "trobust", "raw"]
 
@@ -498,11 +499,6 @@ def normalizer_sweep(mode):
             dsinfo = dict(data[dsname])
             dsinfo['normalizer'] = norm
             data[f"{dsname}{norm}"] = dsinfo
-
-    if mode == "combined":
-        best = CNN(cnum = 2, cchn = 10, csiz = 5, fnum = 3, fsiz = 100, fpst="R")
-    else:                              
-        best = CNN(cnum = 2, cchn = 5, csiz = 5, fnum = 3, fsiz = 100, fpst="R")
 
     best = evaluate(data, defs, rpt, bit, mode, norm=normalizers, **best.spec)
 
@@ -517,21 +513,23 @@ if __name__ == "__main__":
     rpt = args.repeat
     seed = args.seed
 
-    # # Test Eval
-    # best = evaluate(cnns, data, defs, test_base, num_rpt, bit_sel, csiz=(5, 10), cchn=(5, 10))
-    # exit(1)
-
     logger.info(f"Starting Evaluation\n  repeat = {rpt}\n  bit = {bit}")
 
-    # 5 min
-    normalizer_sweep("analog")
-    best = simple_sweep("analog")
+    # single-trace (analog) --------------------------------
 
-    # # 7 min
+    best = CNN(cnum=2, cchn=5, csiz=5, csdc=0.6, ccdc=1, fnum=3, fsiz=100, fdec=1, cpst='R:P(5,5)', fpst='R:BN1', mode='bw')
+    normalizer_sweep("analog", best)
+    best = simple_sweep("analog", best)
+
+    # pretrained -------------------------------------------
+
     pretrained_sweep(best)
+    best = CNN(cnum=2, cchn=5, csiz=5, csdc=0.6, ccdc=1, fnum=3, fsiz=100, fdec=1, cpst='R:P(5,5)', fpst='R:BN1', mode='bw')
     pretrained_sweep(CNN(cnum = 2, cchn = 5, csiz = 5, fnum = 3, fsiz = 100))
 
-    # 13 min
-    normalizer_sweep("combined")
-    simple_sweep("combined")
+    # combined ---------------------------------------------
+
+    best = CNN(cnum=2, cchn=10, csiz=5, csdc=0.6, ccdc=1, fnum=3, fsiz=100, fdec=1, cpst='R:P(5,5)', fpst='R:BN1', mode='bw')
+    normalizer_sweep("combined", best)
+    simple_sweep("combined", best)
 

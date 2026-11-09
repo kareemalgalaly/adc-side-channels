@@ -15,6 +15,7 @@ import re
 import os
 import time
 import random
+import traceback
 
 import torch
 import numpy as np
@@ -42,6 +43,7 @@ argparser.add_argument(      "--nndebug",   action='store_true', help="Print inf
 argparser.add_argument(      "--gradplot",  action="store_true", help="Plot gradient")
 argparser.add_argument(      "--testplot",  action="store_true", help="Plot test accuracy")
 argparser.add_argument(      "--fineplot",  action="store_true", help="Plot metrics finely")
+argparser.add_argument(      "--strict",    action="store_true", help="Quit on exception")
 argparser.add_argument(      "--bit",       type=int, choices=range(8), default=None, help="Run only one ADC bit")
 args = argparser.parse_args()
 
@@ -74,48 +76,53 @@ class CNNRegression(Regression):
                     print("Running with seed:", self.seed)
                 continue
 
-            self.prepare_datasets(test)
+            try:
+                self.prepare_datasets(test)
 
-            for dataset in test.datasets:
-                if not self.args.preview:
-                    self.retrain_datacache(test, dataset)
+                for dataset in test.datasets:
+                    if not self.args.preview:
+                        self.retrain_datacache(test, dataset)
 
-                for network in test.networks:
-                    # assert network.inputs == dataset.cols
+                    for network in test.networks:
+                        # assert network.inputs == dataset.cols
 
-                    run_hash = base36hash(network.get_csv() + dataset.get_csv() + test.get_csv())
-                    print(f"{run_hash},{network.name},{dataset.name},{test}")
+                        run_hash = base36hash(network.get_csv() + dataset.get_csv() + test.get_csv())
+                        print(f"{run_hash},{network.name},{dataset.name},{test}")
 
-                    self.prepare_figure(f"{run_hash} ({self.seed})\n{network.name}  -  {dataset.name}  -  {test.optimizer}({test.learning_rate})\n")
-                    skip = True
-    
-                    try:
-                        match network.type:
-                            case 'bitwise':
-                                bits = [self.args.bit] if self.args.bit else range(self.adc_bitwidth-1, -1, -1)
-                                for i in bits:
-                                    skip &= self.run_single_test(test, network, dataset, f"{run_hash}_{i}", bit=i)
+                        self.prepare_figure(f"{run_hash} ({self.seed})\n{network.name}  -  {dataset.name}  -  {test.optimizer}({test.learning_rate})\n")
+                        skip = True
+        
+                        try:
+                            match network.type:
+                                case 'bitwise':
+                                    bits = [self.args.bit] if self.args.bit else range(self.adc_bitwidth-1, -1, -1)
+                                    for i in bits:
+                                        skip &= self.run_single_test(test, network, dataset, f"{run_hash}_{i}", bit=i)
 
-                            case 'single_ended' | 'multibit':
-                                se = network.type == 'single_ended'
-                                dataset.builder.dataset.set_se(se)
-                                for test_dataset in test.test_dataset: test_dataset.builder.dataset.set_se(se)
-                                skip &= self.run_single_test(test, network, dataset, run_hash, bit=-1)
+                                case 'single_ended' | 'multibit':
+                                    se = network.type == 'single_ended'
+                                    dataset.builder.dataset.set_se(se)
+                                    for test_dataset in test.test_dataset: test_dataset.builder.dataset.set_se(se)
+                                    skip &= self.run_single_test(test, network, dataset, run_hash, bit=-1)
 
-                            case _:
-                                raise RuntimeError(f"Unsupported network type {network.type}")
+                                case _:
+                                    raise RuntimeError(f"Unsupported network type {network.type}")
 
 
-                    except KeyboardInterrupt as e:
-                        print("Keyboard Interrupt detected. Shutting down...")
-                        if not(self.args.preview or self.args.nowrite or self.args.noplot):
-                            self.fig.savefig(f'{self.args.output}/{run_hash}_{job_launch_time}.png')
+                        except KeyboardInterrupt as e:
+                            print("Keyboard Interrupt detected. Shutting down...")
+                            if not(self.args.preview or self.args.nowrite or self.args.noplot):
+                                self.fig.savefig(f'{self.args.output}/{run_hash}_{job_launch_time}.png')
+                                plt.close()
+                            exit()
+
+                        if not(self.args.preview or self.args.nowrite or self.args.noplot or skip):
+                            self.fig.savefig(f'{self.args.output}/{run_hash}:{self.seed}.png')
                             plt.close()
-                        exit()
 
-                    if not(self.args.preview or self.args.nowrite or self.args.noplot or skip):
-                        self.fig.savefig(f'{self.args.output}/{run_hash}:{self.seed}.png')
-                        plt.close()
+            except Exception as e:
+                print(traceback.format_exc())
+                if self.args.strict: raise(e)
 
     # --------------------------------------------
     # func: write_header                   HEADER
