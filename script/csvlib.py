@@ -169,13 +169,10 @@ class CSV:
     # - data: dict col : function([values in col])
     # --------------------------------------------
 
-    def pivot(self, data={}, rows=[], cols=[], filters={}):
+    def pivot(self, data=[], rows=[], cols=[], filters={}):
         groups = {}
-        dcs, dfs = zip(*[(self.hdr2col(c),f) for c,f in data.items()])
+        dns, dcs, dfs = zip(*[(n,self.hdr2col(c),f) for n,c,f in data])
         # dcs, dfs = zip(*[(self.hdr2col(c),f[1] if isinstance(f, (list, tuple)) else f) for c,f in data.items()])
-
-        # TODO : support multiple outputs that use the same column: eg average, stdev of same col
-        # TODO : support simple filters where value is a value to match or a list to select from
 
         for row in self.rows():
 
@@ -189,6 +186,7 @@ class CSV:
             if not inc: continue
 
             # Groups ---------------------------------------
+            # collect data from table into groups (row, col pairs)
 
             gs = (tuple([row[self.hdr2col(c)] for c in rows]),
                   tuple([row[self.hdr2col(c)] for c in cols]))
@@ -206,7 +204,7 @@ class CSV:
 
         return table
 
-    def write_pivot(self, file, data={}, rows=[], cols=[], filters={}, pivot=None, mode="w"):
+    def write_pivot(self, file, data=[], rows=[], cols=[], filters={}, pivot=None, mode="w"):
         if pivot is None:
             pivot = self.pivot(data=data, rows=rows, cols=cols, filters=filters)
 
@@ -241,7 +239,7 @@ class CSV:
 
         # row and data header
         # table.append(rows) # row only
-        table.append(rows + sum([[d] + [""]*(len(sorted_cols)-1) for d in data], start=[]))
+        table.append(rows + sum([[d] + [""]*(len(sorted_cols)-1) for d, *_ in data], start=[]))
 
         # data
         for row in sorted_rows:
