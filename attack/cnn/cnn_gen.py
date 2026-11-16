@@ -212,6 +212,9 @@ class GenericCNN(nn.Module):
                 exit(1)
         return x
 
+    def num_params(self):
+        return sum(p.numel() for p in self.parameters() if p.requires_grad)
+
 
 class StackCNN(nn.Module):
     def __init__(self, layers):
