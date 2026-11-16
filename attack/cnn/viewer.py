@@ -43,6 +43,7 @@ try:
     for dname in args.datasets:
         datasets[dname] = regression.datasets[dname]
 except KeyError:
+    print(f"Dataset {dname} does not exist.")
     print("Available Datasets:")
     print(*regression.datasets.keys())
     exit(1)
