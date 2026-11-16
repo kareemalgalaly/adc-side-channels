@@ -456,7 +456,7 @@ class CNNRegression(Regression):
             progress.stop(epoch+1)
 
             with open(self.csv, "a") as file:
-                file.write(f"{run_hash},{network.name},{network},{dataset.name},{dataset},{test.hash()},{test.get_csv(ti)},{bit},{facc},{pacc},{test_accuracy},{loss},{epoch},{runtime},{job_launch_time},{seed}\n")
+                file.write(f"{run_hash},{network.name},{network},{dataset.name},{dataset},{test.hash()},{test.get_csv(ti)},{bit},{facc},{pacc},{test_accuracy},{loss},{epoch},{runtime},{job_launch_time},{self.seed}\n")
 
         return False
 

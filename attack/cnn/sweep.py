@@ -517,15 +517,15 @@ if __name__ == "__main__":
 
     # single-trace (analog) --------------------------------
 
-    best = CNN(cnum=2, cchn=5, csiz=5, csdc=0.6, ccdc=1, fnum=3, fsiz=100, fdec=1, cpst='R:P(5,5)', fpst='R:BN1', mode='bw')
-    normalizer_sweep("analog", best)
-    best = simple_sweep("analog", best)
+    # best = CNN(cnum=2, cchn=5, csiz=5, csdc=0.6, ccdc=1, fnum=3, fsiz=100, fdec=1, cpst='R:P(5,5)', fpst='R:BN1', mode='bw')
+    # normalizer_sweep("analog", best)
+    # best = simple_sweep("analog", best)
 
     # pretrained -------------------------------------------
 
-    pretrained_sweep(best)
-    best = CNN(cnum=2, cchn=5, csiz=5, csdc=0.6, ccdc=1, fnum=3, fsiz=100, fdec=1, cpst='R:P(5,5)', fpst='R:BN1', mode='bw')
-    pretrained_sweep(CNN(cnum = 2, cchn = 5, csiz = 5, fnum = 3, fsiz = 100))
+    # pretrained_sweep(best)
+    # best = CNN(cnum=2, cchn=5, csiz=5, csdc=0.6, ccdc=1, fnum=3, fsiz=100, fdec=1, cpst='R:P(5,5)', fpst='R:BN1', mode='bw')
+    # pretrained_sweep(CNN(cnum = 2, cchn = 5, csiz = 5, fnum = 3, fsiz = 100))
 
     # combined ---------------------------------------------
 

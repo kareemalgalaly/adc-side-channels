@@ -1,0 +1,413 @@
+{
+    "networks" : {
+        "smacd" : {
+            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:F(100):R:F(100):R:F(2):S",
+            "type"       : "bitwise"
+        },
+        "s2adc" : {
+            "definition" : "C(5,5,1):R:P(5,5):C(5,5,1):R:P(5,5):F(100):R:F(100):R:F(100):R:F(2):S",
+            "type"       : "bitwise"
+        },
+        "paper" : {
+            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(2,2):F(100):R:BN1:F(100):R:BN1:F(100):R:BN1:F(2):S",
+            "type"       : "bitwise"
+        },
+        "st_base_actual" : {
+            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(5,5):F(100):R:F(100):R:F(100):R:F(2):S",
+            "type"       : "bitwise"
+        },
+        "st_base" : {
+            "definition" : "C(5,5,1):R:P(5,5):C(5,3,1):R:P(5,5):F(100):R:BN1:F(100):R:BN1:F(100):R:BN1:F(2):S",
+            "type"       : "bitwise"
+        },
+        "st_best" : {
+            "definition" : "F(100):R:BN1:F(100):R:BN1:F(100):R:BN1:F(100):R:BN1:F(2):S",
+            "type"       : "bitwise"
+        },
+        "dt_base" : {
+            "definition" : "C(10,5,1):R:P(5,5):C(10,3,1):R:P(5,5):F(100):R:F(100):R:F(100):R:F(2):S",
+            "type"       : "bitwise"
+        },
+        "dt_base2" : {
+            "definition" : "C(10,5,1):R:P(5,5):C(10,3,1):R:P(5,5):F(100):R:BN1:F(100):R:BN1:F(100):R:BN1:F(2):S",
+            "type"       : "bitwise"
+        },
+        "dt_best" : {
+            "definition" : "C(30,5,1):R:P(5,5):BN1:F(200):R:BN1:F(200):R:BN1:F(200):R:BN1:F(200):R:BN1:F(2):S",
+            "type"       : "bitwise"
+        },
+        "pt_base_base" : {
+            "definition" : "T(paper,5SJ4XC52J4WCCC,6,paper,0WIV5M1FYA7W3F,6):F(100):R:BN1:F(100):R:BN1:F(100):R:BN1:F(2):S",
+            "type"       : "bitwise"
+        },
+        "pt_base_best" : {
+            "definition" : "T(paper,5SJ4XC52J4WCCC,6,paper,0WIV5M1FYA7W3F,6):F(100):R:BN1:F(100):R:BN1:F(100):R:BN1:F(2):S",
+            "type"       : "bitwise"
+        },
+        "pt_best1" : {
+            "definition" : "T(st_best,Y4QVPV5SEF45RH,12,st_best,L39W4BMA3XPYNN,12):F(200):R:BN1:F(200):R:BN1:F(200):R:BN1:F(2):S",
+            "type"       : "bitwise"
+        },
+        "pt_best2" : {
+            "definition" : "T(st_best,Y4QVPV5SEF45RH,12,st_best,L39W4BMA3XPYNN,12):F(200):R:BN1:F(200):R:BN1:F(200):R:BN1:F(200):R:BN1:F(200):R:BN1:F(2):S",
+            "type"       : "bitwise"
+        }
+    },
+    "odatasets" : {
+        "cmp_xp_tt" : {
+            "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:prot_corner:tt",
+            "format"      : "atrace_(\\d+)",
+            "cstart"      : 512e-6
+        },
+        "nlg_xp_tt" : {
+            "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:prot_corner:tt",
+            "format"      : "ptrace_a_\\d+_d(\\d+)",
+            "column"      : 1,
+            "cstart"      : 512e-6
+        },
+        "dig_xp_tt" : {
+            "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:prot_corner:tt",
+            "format"      : "ptrace_d_\\d+_d(\\d+)",
+            "column"      : 1,
+            "cstart"      : 512e-6
+        },
+        "nlg_xp_ss" : {
+            "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:prot_corner:ss",
+            "format"      : "ptrace_a_\\d+_d(\\d+)",
+            "column"      : 1,
+            "cstart"      : 512e-6
+        },
+        "dig_xp_ss" : {
+            "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:prot_corner:ss",
+            "format"      : "ptrace_d_\\d+_d(\\d+)",
+            "column"      : 1,
+            "cstart"      : 512e-6
+        },
+        "nlg_xp_fs" : {
+            "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:prot_corner:fs",
+            "format"      : "ptrace_a_\\d+_d(\\d+)",
+            "column"      : 1,
+            "cstart"      : 512e-6
+        },
+        "dig_xp_fs" : {
+            "path"        : "../combinedv2/outfiles/dataset_power:ideal_arch:prot_corner:fs",
+            "format"      : "ptrace_d_\\d+_d(\\d+)",
+            "column"      : 1,
+            "cstart"      : 512e-6
+        }
+    },
+    "datasets" : {
+        "nlg_xp_tt" : {
+            "path"        : "cmb_xp_tt",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "len"         : 2560,
+            "column"      : 0
+        },
+        "dig_xp_tt" : {
+            "path"        : "cmb_xp_tt",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "len"         : 2560,
+            "column"      : 1
+        },
+        "cmb_xp_tt" : {
+            "path"        : "cmb_xp_tt",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "len"         : 2560,
+            "columns"     : 2
+        },
+        "nlg_xp_ss" : {
+            "path"        : "cmb_xp_ss",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "len"         : 2560,
+            "column"      : 0
+        },
+        "dig_xp_ss" : {
+            "path"        : "cmb_xp_ss",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "len"         : 2560,
+            "column"      : 1
+        },
+        "cmb_xp_ss" : {
+            "path"        : "cmb_xp_ss",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "len"         : 2560,
+            "columns"     : 2
+        },
+        "nlg_xp_fs" : {
+            "path"        : "cmb_xp_fs",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "len"         : 2560,
+            "column"      : 0
+        },
+        "dig_xp_fs" : {
+            "path"        : "cmb_xp_fs",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "len"         : 2560,
+            "column"      : 1
+        },
+        "cmb_xp_fs" : {
+            "path"        : "cmb_xp_fs",
+            "format"      : "raw_s\\d+_(\\d+)\\.txt",
+            "type"        : "raw",
+            "len"         : 2560,
+            "columns"     : 2
+        },
+        "nlg_xp_tttrobust": {
+            "path": "cmb_xp_tt",
+            "format": "raw_s\\d+_(\\d+)\\.txt",
+            "type": "raw",
+            "len": 2560,
+            "column": 0,
+            "normalizer": "trobust"
+        },
+        "dig_xp_tttrobust": {
+            "path": "cmb_xp_tt",
+            "format": "raw_s\\d+_(\\d+)\\.txt",
+            "type": "raw",
+            "len": 2560,
+            "column": 1,
+            "normalizer": "trobust"
+        },
+        "cmb_xp_tttrobust": {
+            "path": "cmb_xp_tt",
+            "format": "raw_s\\d+_(\\d+)\\.txt",
+            "type": "raw",
+            "len": 2560,
+            "columns": 2,
+            "normalizer": "trobust"
+        },
+        "nlg_xp_sstrobust": {
+            "path": "cmb_xp_ss",
+            "format": "raw_s\\d+_(\\d+)\\.txt",
+            "type": "raw",
+            "len": 2560,
+            "column": 0,
+            "normalizer": "trobust"
+        },
+        "dig_xp_sstrobust": {
+            "path": "cmb_xp_ss",
+            "format": "raw_s\\d+_(\\d+)\\.txt",
+            "type": "raw",
+            "len": 2560,
+            "column": 1,
+            "normalizer": "trobust"
+        },
+        "cmb_xp_sstrobust": {
+            "path": "cmb_xp_ss",
+            "format": "raw_s\\d+_(\\d+)\\.txt",
+            "type": "raw",
+            "len": 2560,
+            "columns": 2,
+            "normalizer": "trobust"
+        },
+        "nlg_xp_fstrobust": {
+            "path": "cmb_xp_fs",
+            "format": "raw_s\\d+_(\\d+)\\.txt",
+            "type": "raw",
+            "len": 2560,
+            "column": 0,
+            "normalizer": "trobust"
+        },
+        "dig_xp_fstrobust": {
+            "path": "cmb_xp_fs",
+            "format": "raw_s\\d+_(\\d+)\\.txt",
+            "type": "raw",
+            "len": 2560,
+            "column": 1,
+            "normalizer": "trobust"
+        },
+        "cmb_xp_fstrobust": {
+            "path": "cmb_xp_fs",
+            "format": "raw_s\\d+_(\\d+)\\.txt",
+            "type": "raw",
+            "len": 2560,
+            "columns": 2,
+            "normalizer": "trobust"
+        },
+        "nlg_xp_ttzscore": {
+            "path": "cmb_xp_tt",
+            "format": "raw_s\\d+_(\\d+)\\.txt",
+            "type": "raw",
+            "len": 2560,
+            "column": 0,
+            "normalizer": "zscore"
+        },
+        "dig_xp_ttzscore": {
+            "path": "cmb_xp_tt",
+            "format": "raw_s\\d+_(\\d+)\\.txt",
+            "type": "raw",
+            "len": 2560,
+            "column": 1,
+            "normalizer": "zscore"
+        },
+        "cmb_xp_ttzscore": {
+            "path": "cmb_xp_tt",
+            "format": "raw_s\\d+_(\\d+)\\.txt",
+            "type": "raw",
+            "len": 2560,
+            "columns": 2,
+            "normalizer": "zscore"
+        },
+        "nlg_xp_sszscore": {
+            "path": "cmb_xp_ss",
+            "format": "raw_s\\d+_(\\d+)\\.txt",
+            "type": "raw",
+            "len": 2560,
+            "column": 0,
+            "normalizer": "zscore"
+        },
+        "dig_xp_sszscore": {
+            "path": "cmb_xp_ss",
+            "format": "raw_s\\d+_(\\d+)\\.txt",
+            "type": "raw",
+            "len": 2560,
+            "column": 1,
+            "normalizer": "zscore"
+        },
+        "cmb_xp_sszscore": {
+            "path": "cmb_xp_ss",
+            "format": "raw_s\\d+_(\\d+)\\.txt",
+            "type": "raw",
+            "len": 2560,
+            "columns": 2,
+            "normalizer": "zscore"
+        },
+        "nlg_xp_fszscore": {
+            "path": "cmb_xp_fs",
+            "format": "raw_s\\d+_(\\d+)\\.txt",
+            "type": "raw",
+            "len": 2560,
+            "column": 0,
+            "normalizer": "zscore"
+        },
+        "dig_xp_fszscore": {
+            "path": "cmb_xp_fs",
+            "format": "raw_s\\d+_(\\d+)\\.txt",
+            "type": "raw",
+            "len": 2560,
+            "column": 1,
+            "normalizer": "zscore"
+        },
+        "cmb_xp_fszscore": {
+            "path": "cmb_xp_fs",
+            "format": "raw_s\\d+_(\\d+)\\.txt",
+            "type": "raw",
+            "len": 2560,
+            "columns": 2,
+            "normalizer": "zscore"
+        }
+    },
+    "tosts" : [],
+    "tests" : [
+        {
+            "desc"          : "Base ST Analog",
+            "skip"          : false,
+            "networks"      : ["smacd", "s2adc", "st_base_actual"],
+            "onetworks"      : ["st_base_actual"],
+            "datasets"      : ["nlg_xp_tt"],
+            "test_dataset"  : ["nlg_xp_ss", "nlg_xp_fs"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.000025,
+            "val_acc_cut"   : 0.2,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "Base ST Digital",
+            "skip"          : false,
+            "onetworks"      : ["smacd", "s2adc", "st_base_actual"],
+            "networks"      : ["smacd", "s2adc"],
+            "datasets"      : ["dig_xp_tt"],
+            "test_dataset"  : ["dig_xp_ss", "dig_xp_fs"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.000025,
+            "val_acc_cut"   : 0.2,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "Base DT Combined",
+            "skip"          : false,
+            "networks"      : ["dt_base"],
+            "datasets"      : ["cmb_xp_tt"],
+            "test_dataset"  : ["cmb_xp_ss", "cmb_xp_fs"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.000025,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "Best ST Analog",
+            "skip"          : false,
+            "networks"      : ["st_best"],
+            "datasets"      : ["nlg_xp_tttrobust"],
+            "test_dataset"  : ["nlg_xp_sstrobust", "nlg_xp_fstrobust"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.000025,
+            "val_acc_cut"   : 0.2,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "Best ST Digital",
+            "skip"          : false,
+            "networks"      : ["st_best"],
+            "datasets"      : ["dig_xp_tttrobust"],
+            "test_dataset"  : ["dig_xp_sstrobust", "dig_xp_fstrobust"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.000025,
+            "val_acc_cut"   : 0.2,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "Best DT Combined",
+            "skip"          : false,
+            "networks"      : ["dt_best"],
+            "datasets"      : ["cmb_xp_ttzscore"],
+            "test_dataset"  : ["cmb_xp_sszscore", "cmb_xp_fszscore"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.000025,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 5000
+        },
+        {
+            "desc"          : "Best PT Combined",
+            "skip"          : false,
+            "networks"      : ["pt_best1"],
+            "datasets"      : ["cmb_xp_tttrobust"],
+            "test_dataset"  : ["cmb_xp_sstrobust", "cmb_xp_fstrobust"],
+            "learning_rate" : [0.0003],
+            "learning_decay": 0.000025,
+            "optimizer"     : "Amsgrad",
+            "max_epochs"    : 5000
+        }
+    ],
+    "defaults" : {
+        "sample_mode"     : ["MAX"],
+        "sample_interval" : 0.1e-6,
+        "sample_duration" : 256e-6,
+        "columns"         : 1,
+        "normalizer"      : "autoscale",
+        "trace_scale"     : 1,
+        "optimizer"       : "Adam",
+        "loss"            : "CrossEntropyLoss",
+        "loss_se"         : "MSELoss",
+        "learning_rate"   : 0.0005,
+        "learning_decay"  : 0,
+        "max_learn_rate"  : 0.05,
+        "max_epochs"      : 5000,
+        "max_accuracy"    : 0.99,
+        "max_loss"        : 0.0,
+        "batch_size"      : -1,
+        "train_split"     : 1
+    }
+}
