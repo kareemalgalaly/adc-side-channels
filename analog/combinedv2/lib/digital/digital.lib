@@ -88,3 +88,11 @@
 
 .endl
 
+* Layout Cap -----------------------------------------------
+
+.lib layout_cap
+
+.include lib/digital_cex/negedge_detector.spice
+.include lib/digital_cex/register_array.spice
+
+.endl

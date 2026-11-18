@@ -2,7 +2,7 @@
 set ngbehavior=hsa     ; set compatibility for reading PDK libs
 set skywaterpdk        ; skip some checks for faster lib loading
 set ng_nomodcheck      ; don't check the model parameters
-set num_threads=1      ; CPU processor cores available
+set num_threads=4      ; CPU processor cores available
 option noinit          ; don't print operating point data
 option norefvalue      ; don't print run time statistics
 option klu             ; select KLU as matrix solver

@@ -37,17 +37,16 @@ vref vref gnd {eval vddint/2}
 ; BFB
 
 rbfb1 vo vbfb  1k
-rbfb3 vbfb gnd 1k
+rbfb3 vbfb gnd 0.98k
 
 ; AE
 
-bae vae gnd V=max(min((V(vref)-V(vbfb))*200, {vddext}), 0)
+bae vae gnd V=max(min((V(vref)-V(vbfb))*100, {vddext}), 0)
 
 ; Comparator
 
 vsaw saw gnd PWL(0 0 {eval ts} {vddext}) r=0
-; bcmp dis gnd V=V(vae) < V(saw) ? {vddext} : 0
-bcmp dis gnd V=max(min((V(saw)-V(vae))*50, {vddext}), 0)
+bcmp dis gnd V=max(min((V(saw)-V(vae))*100, {vddext}), 0)
 
 
 * switches -------------------------------------------------
@@ -71,20 +70,6 @@ RL1 llo vo 0.1
 Rload vo gnd 1k
 
 ; Vout vo gnd {vddint}
-
-* misc -----------------------------------------------------
-
-; vddd vddd gnd 1.8
-; 
-; {for i in range(ninv-1)}
-; xclkinv{i} clk{i} gnd gnd vddd vddd clk{eval i+1} sky130_fd_{variant}__inv_1
-; cclkinv{i} clk{i} gnd 0.1f
-; {endfor}
-; xclkinv{eval ninv-1} clk{eval ninv-1} gnd gnd vddd vddd clk0 sky130_fd_{variant}__inv_1
-; cclkinv{eval ninv-1} clk{eval ninv-1} gnd 0.1f
-; 
-; xinv1 dis gnd gnd vddd vddd nrg  sky130_fd_{variant}__inv_1
-; xinv2 nrg gnd gnd vddd vddd dis1 sky130_fd_{variant}__inv_1
 
 .option method = Gear 
 .control

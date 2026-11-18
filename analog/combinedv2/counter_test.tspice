@@ -1,0 +1,93 @@
+** SCRIPT: analog_ldo/counter_test.tspice
+
+* Argument  value       default   notes
+*   corner  {corner}    tt        str in (tt, ss, fs, ...)
+*   amode   {amode}     design    str in (model, design)
+
+{default corner "tt"}
+{default flavor "loadable"}
+{default amode  "model"}{assert amode in ("model", "design")}
+{default seed 4}
+
+{import math}
+{import random}
+{eval random.seed(seed)}
+{define randctl func:k,vs,dlt,ris:" ".join(" ".join([str(i*dlt+ris),str(v),str((i+1)*dlt),str(v)]) for i,v in enumerate(random.choices(vs, k=k)))}
+
+{define  getbus func:name,suffix=".",r=(8,): " ".join(name+str(suffix)+str(i) for i in range(*r))}
+{define  dplot  func:vars: " ".join(var+"/2+"+str(i) for i, var in enumerate(vars.split()))}
+{define  dbus   func:name,suffix=".",r=(8,): "+".join(digitize(name+str(suffix)+str(i))+"*"+str(1 << i) for i in range(*r))}
+{define  digitize func:value:"floor("+str(value)+"/3.6+0.75)"}
+
+{ifxst /foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice}
+  .lib "/foss/pdk/sky130A/libs.tech/ngspice/sky130.lib.spice" {corner}
+  .include "/foss/pdk/sky130A/libs.ref/sky130_fd_sc_hs/spice/sky130_fd_sc_hs.spice"
+{else}
+  .lib "models/sky130.lib.spice" {corner}
+  .include cells/a211oi/sky130_fd_sc_hs__a211oi_1.spice
+  .include cells/a21oi/sky130_fd_sc_hs__a21oi_1.spice
+  .include cells/and2/sky130_fd_sc_hs__and2_1.spice
+  .include cells/and3/sky130_fd_sc_hs__and3_1.spice
+  .include cells/and4/sky130_fd_sc_hs__and4_1.spice
+  .include cells/clkinv/sky130_fd_sc_hs__clkinv_1.spice
+  .include cells/dfxtp/sky130_fd_sc_hs__dfxtp_1.spice
+  .include cells/inv/sky130_fd_sc_hs__inv_1.spice
+  .include cells/mux2i/sky130_fd_sc_hs__mux2i_1.spice
+  .include cells/mux2/sky130_fd_sc_hs__mux2_1.spice
+  .include cells/nand2b/sky130_fd_sc_hs__nand2b_1.spice
+  .include cells/nor2b/sky130_fd_sc_hs__nor2b_1.spice
+  .include cells/nor2/sky130_fd_sc_hs__nor2_1.spice
+  .include cells/nor3b/sky130_fd_sc_hs__nor3b_1.spice
+  .include cells/nor3/sky130_fd_sc_hs__nor3_1.spice
+  .include cells/nor4b/sky130_fd_sc_hs__nor4b_1.spice
+  .include cells/o21a/sky130_fd_sc_hs__o21a_1.spice
+  .include cells/o21bai/sky130_fd_sc_hs__o21bai_1.spice
+  .include cells/o21ba/sky130_fd_sc_hs__o21ba_1.spice
+  .include cells/or2/sky130_fd_sc_hs__or2_1.spice
+  .include cells/or3b/sky130_fd_sc_hs__or3b_1.spice
+  .include cells/xor2/sky130_fd_sc_hs__xor2_1.spice
+{endif}
+
+.lib lib/digital/counter_loadable.lib synth
+
+** Control / Reference -------------------------------------
+
+VDD  VDD GND 1.8
+vclk clk GND PULSE(0 1.8 10n 100p 100p .5u 1u)
+
+vrst rst GND PWL(0 0 {randctl(24,(0,1.8),256e-6/16,1e-9)}) td=0
+vwr  wr  GND PWL(0 0 {randctl(24,(0,1.8),256e-6/16,1e-9)}) td=0
+ven  en  GND PWL(0 0 {randctl(24,(0,1.8),256e-6/16,1e-9)}) td=0
+vc0  b.0 GND PWL(0 0 {randctl(12,(0,1.8),256e-6/4,1e-9)}) td=0
+vc1  b.1 GND PWL(0 0 {randctl(12,(0,1.8),256e-6/4,1e-9)}) td=0
+vc2  b.2 GND PWL(0 0 {randctl(12,(0,1.8),256e-6/4,1e-9)}) td=0
+vc3  b.3 GND PWL(0 0 {randctl(12,(0,1.8),256e-6/4,1e-9)}) td=0
+vc4  b.4 GND PWL(0 0 {randctl(12,(0,1.8),256e-6/4,1e-9)}) td=0
+vc5  b.5 GND PWL(0 0 {randctl(12,(0,1.8),256e-6/4,1e-9)}) td=0
+vc6  b.6 GND PWL(0 0 {randctl(12,(0,1.8),256e-6/4,1e-9)}) td=0
+vc7  b.7 GND PWL(0 0 {randctl(12,(0,1.8),256e-6/4,1e-9)}) td=0
+
+** Control Inverters ---------------------------------------
+
+; .subckt counter_loadable clk rst en wr wdata.0 wdata.1 wdata.2 wdata.3 wdata.4 wdata.5 wdata.6 wdata.7 count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 overflow VGND VNB VPB VPWR
+xcounter clk rst cen wr {getbus("b")} {getbus("count")} overflow GND GDN VDD VDD counter_loadable
+xcen     rst GND GND VDD VDD cen_d sky130_fd_sc_hs__inv_1                      ; cen = delayed inverted rst
+xcen_ff  clk cen_d GND GND VDD VDD cen sky130_fd_sc_hs__dfxtp_1
+
+
+** Control -------------------------------------------------
+
+.option method = Gear  ; Kemal likes this option (esp for power sims)
+.options reltol=1e-4   ; Kemal suggestion
+.tran 0.01u 512u uic
+
+.control
+    run
+    plot rst wr cen
+    plot {dbus("count"), {dbus("b")}
+.endc
+
+.GLOBAL GND
+.end
+
+

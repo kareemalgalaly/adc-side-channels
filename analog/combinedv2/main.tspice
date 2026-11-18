@@ -31,27 +31,31 @@
 {default smode    "full"}
 {default arch     "prot"  }{assert arch in ("base", "fixed", "prot")}
 {default inverter "inv"}{assert inverter in ("clkinv", "inv")}
+{default counter  "half"}{assert counter in ("half", "loadable")}
 {default power    "single"}{assert power in ("ideal", "single", "cascade")}
 {default layout   None}{assert not layout or layout in ("full", "cap")}
 {default python "/usr/bin/python3"}
 
+{ifdef plot}{define interactive True}{endif}
+
+{if counter == "loadable"}
+  {default ts "0.05u"} ; 0.01, 0.005
+{else}
+  {default ts "0.1u"} ; 0.01, 0.005
+{endif}
 {smatch smode}
 {case "full"}
 {if arch=="base"}
-  {default ts "0.1u"} ; 0.01, 0.005
   {default cs "0u"}
   {default ce "257u"}
 {else}
-  {default ts "0.1u"} ; 0.01, 0.005
   {default cs "500u"}
   {default ce "771u"}
 {endif}
 {case "ic"}
-  {default ts "0.1u"}
   {default cs "500u"}
   {default ce "514u"}
 {case "main"}
-  {default ts "0.1u"}
   {default cs "0u"}
   {default ce "257u"}
 {endmatch}
@@ -131,7 +135,7 @@
 .inc lib/analog{version}/preamp_singleslope.cir
 
 
-.lib lib/digital/counter_half.lib {dlib}
+.lib lib/digital/counter_{counter}.lib {dlib}
 .lib lib/digital/digital.lib {dlib}
 .lib lib/digital/double_rate_sampler.lib {dlib}
 
@@ -339,9 +343,19 @@ xcompn vdda inp_neg clk outp_neg pix outn_neg iref6 GND comparator_ss_h
 
 ; model is implemented in each component
 
-xcounter clk rst cen {getbus("count")} overflow GND GDN vddd vddd counter_half 
-xcen     rst GND GND vddd vddd cen_d sky130_fd_sc_hs__inv_1                      ; cen = delayed inverted rst
-xcen_ff  clk cen_d GND GND vddd vddd cen sky130_fd_sc_hs__dfxtp_1
+{smatch counter}
+  {case "half"}
+    xcounter clk rst cen {getbus("count")} overflow GND GND vddd vddd counter_half 
+  {case "loadable"}
+    xcounter clk rst cen rst_d {getbus("countstart")} {getbus("count")} overflow GND GND vddd vddd counter_loadable 
+    {for i in range(8)}
+      vcountstart.{i} countstart.{i} GND {random.choice((0, 1.8))}
+    {endfor}
+{endmatch}
+
+xrst_ff  clk rst GND GND vddd vddd rst_d sky130_fd_sc_hs__dfxtp_1
+xcen     rst_d GND GND vddd vddd cen sky130_fd_sc_hs__inv_1                      ; cen = delayed inverted rst
+; xcwr     rst GND GND vddd vddd cen_d sky130_fd_sc_hs__inv_1                      ; counter write
 
 ; TODO prot_old vs prot is should the dummy pins get a sampler 
 
@@ -443,15 +457,12 @@ xcen_ff  clk cen_d GND GND vddd vddd cen sky130_fd_sc_hs__dfxtp_1
 
     {ifdef plot}
       plot {if amode!="model"}0-i(vdd1v8a){endif} {if dmode!="model"}0-i(vdd1v8d){endif}
-      {if arch != "base"}
-        {if amode!="model"}
-          plot inp inp_neg
-        {endif}
-        plot outp outn
-        {if dmode!="model"}
-          let  count = {dbus("count")}
-          plot count pixel
-        {endif}
+      plot outp
+      plot count pixel
+      {if counter=="loadable"}
+        let countstart={dbus("countstart")}
+        plot countstart
+        plot rst rst_d cen
       {endif}
     {else}
       destroy all

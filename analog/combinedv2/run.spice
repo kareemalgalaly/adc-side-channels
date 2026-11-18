@@ -1,0 +1,251 @@
+** SCRIPT: analog_ldo/main.tspice
+
+* Argument  value       default   notes
+*   outdir  {outdir}    outfiles/ str
+*   corner  {corner}    tt        str in (tt, ss, fs, ...)
+*   amode   {amode}     design    str in (model, design)
+*   dmode   {dmode}     design    str in (model, design)
+*   arch    {arch}      prot      str in  base    : base case w/ single ramp
+*                                         fixed   : ??
+*                                         prot    : double random ramp
+*   power   {power}     single    str in  ideal   : 1.8 V ideal voltage source
+*                                         single  : single ldo 3.3 -> 1.8 V
+*                                         cascade : double ldo 3.3 -> ?? -> 1.8 V
+*   smode               full      str in  full    : full simulation
+*                                         ic      : simulate initial conditions
+*                                         main    : simulate using initial conditions
+*   plot                -         define (don't quit at end of interactive)
+*   interactive         -         define (select interactive mode)
+*   layout              -         str in (cap, full) or unset
+*   start   {start}     1         start pixel for simulation
+*   step    {step}      1         only used in interactive mode
+*   stop    {stop}      256       only used in interactive mode
+
+
+
+
+
+
+
+
+
+
+
+
+   ; 0.01, 0.005
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+; Voltage 0.2 : 0 : : {frac_offset_num} / {eval:frac_offset_den*2}
+
+
+  .lib "models/sky130.lib.spice" tt
+  .include cells/a211oi/sky130_fd_sc_hs__a211oi_1.spice
+  .include cells/a21oi/sky130_fd_sc_hs__a21oi_1.spice
+  .include cells/and2/sky130_fd_sc_hs__and2_1.spice
+  .include cells/and3/sky130_fd_sc_hs__and3_1.spice
+  .include cells/and4/sky130_fd_sc_hs__and4_1.spice
+  .include cells/clkinv/sky130_fd_sc_hs__clkinv_1.spice
+  .include cells/dfxtp/sky130_fd_sc_hs__dfxtp_1.spice
+  .include cells/inv/sky130_fd_sc_hs__inv_1.spice
+  .include cells/mux2i/sky130_fd_sc_hs__mux2i_1.spice
+  .include cells/mux2/sky130_fd_sc_hs__mux2_1.spice
+  .include cells/nand2b/sky130_fd_sc_hs__nand2b_1.spice
+  .include cells/nor2b/sky130_fd_sc_hs__nor2b_1.spice
+  .include cells/nor2/sky130_fd_sc_hs__nor2_1.spice
+  .include cells/nor3b/sky130_fd_sc_hs__nor3b_1.spice
+  .include cells/nor3/sky130_fd_sc_hs__nor3_1.spice
+  .include cells/nor4b/sky130_fd_sc_hs__nor4b_1.spice
+  .include cells/o21a/sky130_fd_sc_hs__o21a_1.spice
+  .include cells/o21bai/sky130_fd_sc_hs__o21bai_1.spice
+  .include cells/o21ba/sky130_fd_sc_hs__o21ba_1.spice
+  .include cells/or2/sky130_fd_sc_hs__or2_1.spice
+  .include cells/or3b/sky130_fd_sc_hs__or3b_1.spice
+  .include cells/xor2/sky130_fd_sc_hs__xor2_1.spice
+
+
+.inc lib/analog/comparator_ss_h.cir
+.inc lib/analog/idac.cir
+.inc lib/analog/latch_singleslope.cir
+.inc lib/analog/ldos_wores.cir
+.inc lib/analog/ldoc1_wores.cir
+.inc lib/analog/ldoc2_wores.cir
+.inc lib/analog/opamp_singleslope_wcapnew.cir
+.inc lib/analog/preamp_singleslope.cir
+
+
+.lib lib/digital/counter_half.lib synth
+.lib lib/digital/digital.lib synth
+.lib lib/digital/double_rate_sampler.lib synth
+
+** Control / Reference -------------------------------------
+
+vp    vp   GND 0.2
+V13   in+  GND 1.2
+vpix  pix  GND 0.2
+
+  iref_op1 iref1 GND 20u
+    iref_op2 iref2 GND 20u
+    iref_idc vdda iref4 10n
+    iref_cp2 iref6 GND 10u
+  
+    iref_ld1 iref3 GND 15u
+
+  
+  iref_cp1 iref5 GND 10u
+
+
+
+  iref_ld3 iref8 GND 15u
+
+
+
+; Kemal suggests no less than 100p in this process
+; Ceyda notes this can affect signal behavior
+vclk   clk  GND PULSE(0 1.8 500u 100p 100p .5u 1u)
+vclk2  clk2 GND PULSE(0 1.8 500u 100p 100p .25u 0.5u)
+
+vrst   rst  GND PULSE(0 1.8 0    100p 100p 40n 256.04u)
+
+
+vdd3v3a vdd3v3a GND     3.3
+vdd1v8a vdda  vdd1v8a   0
+
+vdd3v3d vdd3v3d GND     3.3
+vdd1v8d vddd  vdd1v8d   0
+
+
+
+** Analog Components =======================================
+
+
+
+** LDO -----------------------------------------------------
+
+xldo1 vdd3v3a iref3 n1 in+ vdd1v8a GND ldos_wores
+rld1  vdd1v8a n1  60k m=1
+rld2  n1     GND 120k m=1
+cldo  vdd1v8a GND 100p m=1
+
+
+
+** Ramp Control --------------------------------------------
+
+vc0 b0 GND PWL(0 0 1e-09 1.8 6.4e-05 1.8 6.4001e-05 1.8 0.000128 1.8 0.00012800099999999998 0 0.000192 0 0.000192001 0 0.000256 0 0.000256001 1.8 0.00031999999999999997 1.8 0.000320001 0 0.000384 0 0.000384001 1.8 0.000448 1.8 0.000448001 0 0.000512 0 0.000512001 0 0.000576 0 0.000576001 1.8 0.0006399999999999999 1.8 0.000640001 1.8 0.000704 1.8 0.000704001 1.8 0.000768 1.8) td=0
+vc1 b1 GND PWL(0 0 1e-09 0 6.4e-05 0 6.4001e-05 1.8 0.000128 1.8 0.00012800099999999998 1.8 0.000192 1.8 0.000192001 0 0.000256 0 0.000256001 1.8 0.00031999999999999997 1.8 0.000320001 1.8 0.000384 1.8 0.000384001 1.8 0.000448 1.8 0.000448001 1.8 0.000512 1.8 0.000512001 0 0.000576 0 0.000576001 1.8 0.0006399999999999999 1.8 0.000640001 1.8 0.000704 1.8 0.000704001 1.8 0.000768 1.8) td=0
+vc2 b2 GND PWL(0 0 1e-09 0 6.4e-05 0 6.4001e-05 0 0.000128 0 0.00012800099999999998 0 0.000192 0 0.000192001 1.8 0.000256 1.8 0.000256001 1.8 0.00031999999999999997 1.8 0.000320001 1.8 0.000384 1.8 0.000384001 0 0.000448 0 0.000448001 1.8 0.000512 1.8 0.000512001 0 0.000576 0 0.000576001 1.8 0.0006399999999999999 1.8 0.000640001 1.8 0.000704 1.8 0.000704001 0 0.000768 0) td=0
+vc3 b3 GND PWL(0 0 1e-09 1.8 6.4e-05 1.8 6.4001e-05 0 0.000128 0 0.00012800099999999998 1.8 0.000192 1.8 0.000192001 1.8 0.000256 1.8 0.000256001 0 0.00031999999999999997 0 0.000320001 0 0.000384 0 0.000384001 1.8 0.000448 1.8 0.000448001 0 0.000512 0 0.000512001 0 0.000576 0 0.000576001 1.8 0.0006399999999999999 1.8 0.000640001 0 0.000704 0 0.000704001 1.8 0.000768 1.8) td=0
+vc4 b4 GND PWL(0 0 1e-09 0 6.4e-05 0 6.4001e-05 1.8 0.000128 1.8 0.00012800099999999998 1.8 0.000192 1.8 0.000192001 0 0.000256 0 0.000256001 0 0.00031999999999999997 0 0.000320001 0 0.000384 0 0.000384001 1.8 0.000448 1.8 0.000448001 1.8 0.000512 1.8 0.000512001 0 0.000576 0 0.000576001 1.8 0.0006399999999999999 1.8 0.000640001 1.8 0.000704 1.8 0.000704001 1.8 0.000768 1.8) td=0
+; abridgea [rst clk] [drst dclk] atod 
+; abridged [drc.0 drc.1 drc.2 drc.3 drc.4] [vc0 vc1 vc2 vc3 vc4] dtoa 
+; acounter null dclk drst [drc.0 drc.1 drc.2 drc.3 drc.4] proc_counter
+; .model atod adc_bridge(in_low=0.2 in_high=1.6)
+; .model dtoa dac_bridge(out_low=0 out_high=1.8)
+; .model proc_counter d_process (process_file="/usr/bin/python3" process_params=["lib/rampctrlgen.py" "0"])
+
+
+
+** Control Inverters ---------------------------------------
+
+xc0 b0 GND GND vdda vdda b0i sky130_fd_sc_hs__inv_1
+xc1 b1 GND GND vdda vdda b1i sky130_fd_sc_hs__inv_1
+xc2 b2 GND GND vdda vdda b2i sky130_fd_sc_hs__inv_1
+xc3 b3 GND GND vdda vdda b3i sky130_fd_sc_hs__inv_1
+xc4 b4 GND GND vdda vdda b4i sky130_fd_sc_hs__inv_1
+
+
+** Ramp Generator ------------------------------------------
+
+
+xidac vdda vx_ vx_neg_ b4 b3 b2 b1 b0 b4i b3i b2i b1i b0i iref4 GND idac
+vmeas_idacp vx     vx_     0
+vmeas_idacn vx_neg vx_neg_ 0
+
+xopampp vdda iref1 vx vp inp GND opamp_singleslope_wcapnew
+C1 vx inp 20p m=1
+XM32 inp rst vx vx sky130_fd_pr__nfet_01v8 L=0.15 W=20 nf=1 ad='int((nf+1)/2) * W/nf * 0.29' as='int((nf+2)/2) * W/nf * 0.29'
++ pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)' nrd='0.29 / W' nrs='0.29 / W'
++ sa=0 sb=0 sd=0 mult=2 m=2
+
+xopampn vdda iref2 vx_neg vp inp_neg GND opamp_singleslope_wcapnew
+C2 vx_neg inp_neg 20p m=1
+XM39 net3 rst inp_neg GND sky130_fd_pr__nfet_01v8 L=0.15 W=20 nf=1 ad='int((nf+1)/2) * W/nf * 0.29'
++ as='int((nf+2)/2) * W/nf * 0.29' pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)'
++ nrd='0.29 / W' nrs='0.29 / W' sa=0 sb=0 sd=0 mult=2 m=2
+V11 net3 net4 1
+XM40 net4 rst vx_neg GND sky130_fd_pr__nfet_01v8 L=0.15 W=20 nf=1 ad='int((nf+1)/2) * W/nf * 0.29'
++ as='int((nf+2)/2) * W/nf * 0.29' pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)'
++ nrd='0.29 / W' nrs='0.29 / W' sa=0 sb=0 sd=0 mult=2 m=2
+
+
+
+** Comparators ---------------------------------------------
+
+xcompp vdda inp     clk outp     pix outn     iref5 GND comparator_ss_h
+xcompn vdda inp_neg clk outp_neg pix outn_neg iref6 GND comparator_ss_h
+
+
+
+** END Analog ==============================================
+
+** LDO -----------------------------------------------------
+
+    xldo3 vdd3v3d iref8 n3 in+ vdd1v8d GND ldos_wores
+  rld5  vdd1v8d n3  60k m=1
+  rld6  n3      GND 120k m=1
+  cld5  vdd1v8d GND 100p m=1
+  
+
+
+
+** Digital Components ======================================
+
+; model is implemented in each component
+
+xcounter clk rst cen count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 overflow GND GDN vddd vddd counter_half 
+xcen     rst GND GND vddd vddd cen_d sky130_fd_sc_hs__inv_1                      ; cen = delayed inverted rst
+xcen_ff  clk cen_d GND GND vddd vddd cen sky130_fd_sc_hs__dfxtp_1
+
+; TODO prot_old vs prot is should the dummy pins get a sampler 
+
+  xsamplep clk2 rst outp outn 
+  +           count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 pixel.0 pixel.1 pixel.2 pixel.3 pixel.4 pixel.5 pixel.6 pixel.7 pixeld.0 pixeld.1 pixeld.2 pixeld.3 pixeld.4 pixeld.5 pixeld.6 pixeld.7 
+  +           GND GND vddd vddd double_rate_sampler
+
+
+** END Digital =============================================
+
+** Control -------------------------------------------------
+
+.option method = Gear  ; Kemal likes this option (esp for power sims)
+.options reltol=1e-4   ; Kemal suggestion
+.tran 0.1u 771u uic
+
+
+
+
+
+.save pix 
++ clk rst outp
++ i(vdd3v3a) i(vdd1v8a) vdda inp outn outp_neg outn_neg
++ i(vdd3v3d) i(vdd1v8d) vddd enable count.0 count.1 count.2 count.3 count.4 count.5 count.6 count.7 pixel.0 pixel.1 pixel.2 pixel.3 pixel.4 pixel.5 pixel.6 pixel.7
+
+.end
+
+.GLOBAL GND
+.end
+
