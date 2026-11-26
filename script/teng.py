@@ -77,7 +77,7 @@ loop__re = re.compile(r"\s*for\s+(\w+)\s+in\s+(.*)")                        # Lo
 eloop_re = re.compile(r"\s*endfor\s*")                                      # End of Loop
 decl1_re = re.compile(r"\s*(assert|eval|import)\s+(.*)")                    # Assert / Eval
 decl2_re = re.compile(r"\s*(default|define)\s+(\w+)\s+(.*)")                # Default / Define
-func__re = re.compile(r"\s*(\w+)\s*\(.*\)\s*")                              # Custom function evaluation
+func__re = re.compile(r"\s*([a-zA-Z0-9._]+)\s*\(.*\)\s*")                   # Custom function evaluation
 
 ## --------------------------------------------------
 
