@@ -24,7 +24,7 @@ class Counter:
         data_out[0] = self.value
         return 1
 
-# bits = int(sys.argv[1]) if len(sys.argv) == 2 else 8
+bits = int(sys.argv[1]) if len(sys.argv) == 2 else 8
 
 data_in = d_process.DataIn.from_map(dict(
         enable = (0, 0),
@@ -40,4 +40,5 @@ process = d_process.DProcess(data_in=data_in, data_out=data_out)
 counter = Counter(bits=bits)
 process.set_compute(counter.compute, obj_mode=True, report_tick=True)
 
-process.main() # 0 = ok, -1 = failed init, 1 = failed compute
+code = process.main() # 0 = ok, -1 = failed init, 1 = failed compute
+exit(code)

@@ -38,7 +38,7 @@ def init(pipein, pipeout, din_bits, dout_bits):
 
     version, din, dout = header
     if version != required_version or din != din_bits or dout != dout_bits:
-        printf(f"Error: Incompatible ngspice d_process requiring version {required_version} got {version}, number of inputs {din} expected {din_bits}, and outputs {dout} expected {dout_bits}.")
+        printf(f"Error: Incompatible ngspice d_process requiring version {required_version} got {version}, number of inputs (spice) {din} expected {din_bits}, and outputs (spice) {dout} expected {dout_bits}.")
         pipeout.write(bytes((required_version, din_bits, dout_bits)))
         return 0
 
