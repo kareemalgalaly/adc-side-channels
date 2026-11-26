@@ -12,7 +12,34 @@ import importlib
 import argparse
 import traceback
 
-argparser = argparse.ArgumentParser(prog="teng")
+EPILOG = """
+MAKE SURE YOU TRUST THE ORIGIN OF YOUR TEMPLATE
+
+Example constructions with -A '{' -B '}'
+
+    {default variable expression}
+    {define  macro    value}
+    {variable}
+    {variable=default value}
+    {include filename}
+    {ifdef variable valueIfTrue else valueIfFalse}
+    {ifdef variable}{else}{endif}
+    {ifndef variable}...
+    {ifxst file}...
+    {ifnxst file}...
+    {error message}
+    {match expression}
+      {case value}
+    {endmatch}
+    {for name in expression}
+    {endfor}
+    {assert expression}
+    {eval expression}
+    {import pymodule}
+    {myfunction(arg1, arg2)}
+"""
+
+argparser = argparse.ArgumentParser(prog="teng", description="Template Engine", epilog=EPILOG)
 argparser.add_argument("template", type=str, help="Template file to process")
 argparser.add_argument("-o", "--output", type=str, default=None, help="Output file to process")
 argparser.add_argument("-g", "--enable-globals", action="store_true", help="Allow evals to access python globals()")
@@ -35,6 +62,7 @@ def escape_regex(string):
     return string
 
 var___re = re.compile(r"\s*(\w+)(=(.*))?\s*")                               # Basic variable substitution token
+inc___re = re.compile(r"\s*include (.*)\s*")                                # Basic file include
 ifinl_re = re.compile(r"\s*if(n)?def\s+(\w+)\s+(.*?)(\s+else\s+(.*))?")     # Inline ifdef statement (contains then/else)
 ifdef_re = re.compile(r"\s*if((n)?(def|xst))\s+(.*)\s*")                    # Standard ifdef / ifxst (file exists)
 ifexp_re = re.compile(r"\s*if\s+(.*)")                                      # Generic if statement
@@ -188,6 +216,8 @@ class TEngine:
             if val is None:
                 val = (f_unstrict_mode and token_start + token + token_stop) or ""
             yield val
+        elif m := inc___re.fullmatch(token): 
+            with open(m.groups()[0], "r") as f: yield f.read()
         elif m := decl1_re.fullmatch(token): yield self.handle_decl(m.groups(), env)
         elif m := decl2_re.fullmatch(token): self.handle_decl(m.groups(), env)
         elif m := func__re.fullmatch(token): yield self.eval_expr(token, env) # [1:-1]
