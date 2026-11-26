@@ -10,7 +10,7 @@
 *                                         prot    : double random ramp
 *   power   {power}     single    str in  ideal   : 1.8 V ideal voltage source
 *                                         single  : single ldo 3.3 -> 1.8 V
-*                                         cascade : double ldo 3.3 -> ?? -> 1.8 V
+*                                         cascade : double ldo 3.3 -> 2.4 V -> 1.8 V
 *   smode               full      str in  full    : full simulation
 *                                         ic      : simulate initial conditions
 *                                         main    : simulate using initial conditions
@@ -39,7 +39,7 @@
 {ifdef plot}{define interactive True}{endif}
 
 {if counter == "loadable"}
-  {default ts "0.05u"} ; 0.01, 0.005
+  {default ts "0.03u"} ; 0.01, 0.005
 {else}
   {default ts "0.1u"} ; 0.01, 0.005
 {endif}
@@ -176,9 +176,9 @@ vpix  pix  GND {pix_voltage}
 vclk   clk  GND PULSE(0 1.8 {cs} 100p 100p .5u 1u)
 vclk2  clk2 GND PULSE(0 1.8 {cs} 100p 100p .25u 0.5u)
 {if arch == "base"}
-vrst   rst  GND PULSE(0 1.8 40n  100p 100p 1u  257u)
+vrst   rst  GND PULSE(0 1.8 40n    100p 100p 1u  257u)
 {else}
-vrst   rst  GND PULSE(0 1.8 0    100p 100p 40n 256.04u)
+vrst   rst  GND PULSE(0 1.8 510.5u 100p 100p 1u  258u)
 {endif}
 
 {if amode != "model"}
@@ -326,6 +326,8 @@ xcompn vdda inp_neg clk outp_neg pix outn_neg iref6 GND comparator_ss_h
   rld6  n3     GND 120k m=1
   cld3  vddmidd GND 15p m=1
   
+  ; vddmid should land at 2.4 V 
+
   xldo4 vddmidd iref9 n4 in+ vdd1v8d GND ldoc2_wores
   rld7  vdd1v8d n4  60k m=1
   rld8  n4     GND 120k m=1

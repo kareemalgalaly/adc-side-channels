@@ -11,7 +11,7 @@ MULTMOD=""
 # Arguments ------------------------------------------------
 
 local opt OPTIND
-while getopts "hc:mM" opt
+while getopts "hc:mMe:" opt
 do
     case "$opt" in
         c ) SIM_CNT=$OPTARG ;;
@@ -42,9 +42,9 @@ fi
 
 for power in ideal; do
   for arch in prot; do
-    for chunk in $(seq 3); do
+    for chunk in $(seq 2); do
       for corner in tt ss fs; do # fs 
-        ./run.sh $MULTMOD -s $((256*(chunk-1))) -S $((256*chunk-1)) -q $SIM_CNT -kN power=$power arch=$arch corner=$corner > /dev/null
+        ./run.sh $MULTMOD -s $((256*(chunk-1))) -S $((256*chunk-1)) -q $SIM_CNT -kN power=$power arch=$arch corner=$corner "$@" > /dev/null
         echo "notify -t jobs 'Group Complete' 'power=$power arch=$arch corner=$corner '" >> jobs.sh
       done
     done
